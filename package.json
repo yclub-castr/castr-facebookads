@@ -1,0 +1,33 @@
+{
+  "name": "castr-facebookads",
+  "version": "1.0.0",
+  "description": "",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/yclub-castr/castr-facebookads.git"
+  },
+  "author": "Jun Park",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/yclub-castr/castr-facebookads/issues"
+  },
+  "homepage": "https://github.com/yclub-castr/castr-facebookads#readme",
+  "dependencies": {
+    "body-parser": "^1.18.2",
+    "dotenv": "^4.0.0",
+    "express": "^4.16.2",
+    "moment": "^2.19.1",
+    "moment-timezone": "^0.5.13",
+    "mongodb": "^2.2.33",
+    "tracer": "^0.8.11"
+  },
+  "devDependencies": {
+    "eslint": "^4.9.0",
+    "eslint-config-airbnb-base": "^12.1.0",
+    "eslint-plugin-import": "^2.8.0"
+  }
+}

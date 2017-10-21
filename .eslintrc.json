@@ -1,0 +1,73 @@
+{
+    "extends": "airbnb-base",
+    "rules": {
+        "linebreak-style": [
+            "error",
+            "windows"
+        ],
+        "indent": [
+            "warn",
+            4,
+            {
+                "SwitchCase": 1
+            }
+        ],
+        "strict": "off",
+        "prefer-template": "warn",
+        "eol-last": "warn",
+        "func-names": [
+            "warn",
+            "never"
+        ],
+        "no-underscore-dangle": [
+            "warn",
+            {
+                "allowAfterThis": true
+            }
+        ],
+        "no-unused-vars": "warn",
+        "prefer-arrow-callback": "warn",
+        "max-len": [
+            "warn",
+            {
+                "code": 120,
+                "ignoreComments": true,
+                "ignoreStrings": true,
+                "ignoreTemplateLiterals": true,
+                "ignoreRegExpLiterals": true
+            }
+        ],
+        "import/newline-after-import": "warn",
+        "camelcase": "off",
+        "prefer-destructuring": "off",
+        "object-shorthand": "off",
+        "radix": "off",
+        "no-trailing-spaces": [
+            "off",
+            {
+                "IgnoreComments": true
+            }
+        ],
+        "comma-dangle": [
+            "warn",
+            {
+                "arrays": "never",
+                "objects": "always-multiline",
+                "imports": "never",
+                "exports": "never",
+                "functions": "never"
+            }
+        ],
+        "class-methods-use-this": "off",
+        "no-useless-return": "warn",
+        "no-param-reassign": [
+            "warn",
+            {
+                "props": false
+            }
+        ],
+        "no-prototype-builtins": "off",
+        "newline-per-chained-call": "off",
+        "no-shadow": "error"
+    }
+}
