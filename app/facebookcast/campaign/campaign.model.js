@@ -13,24 +13,23 @@ module.exports = fbCastDB.model(
     'Campaign',
     new mongoose.Schema(
         {
-            castr_loc_id: { type: String, required: true },
-            promotion_id: { type: String, required: true },
-            account_id: { type: String, required: true },
+            castrLocId: { type: String, required: true },
+            promotionId: { type: String, required: true },
+            accountId: { type: String, required: true },
             id: { type: String, required: true },
             name: { type: String, required: true },
             objective: { type: String, enum: OBJECTIVE, required: true },
             status: { type: String, enum: STATUS, required: true },
-            effective_status: { type: String, enum: EFFECTIVE_STATUS, required: true },
-            buying_type: String,
-            budget_rebalance_flag: Boolean,
-            start_time: Date,
-            stop_time: Date,
+            effectiveStatus: { type: String, enum: EFFECTIVE_STATUS, required: true },
+            buyingType: String,
+            budgetRebalanceFlag: Boolean,
+            startTime: Date,
+            stopTime: Date,
         },
         {
-            collection: 'campaign',
             timestamps: {
-                updatedAt: 'time_updated',
-                createdAt: 'time_created',
+                updatedAt: 'timeUpdated',
+                createdAt: 'timeCreated',
             },
         }
     )
