@@ -3,19 +3,25 @@
 const fbCastDB = require('../../db').fbCastDB;
 const mongoose = require('../../db').mongoose;
 
-const STATUS = ['PENDING', 'APPROVED', 'ACTIVE', 'DISINTEGRATED'];
+const Status = {
+    Pending: 'PENDING',
+    Approved: 'APPROVED',
+    Active: 'ACTIVE',
+    Disintegrated: 'DISINTEGRATED',
+};
 
-module.exports = fbCastDB.model(
+exports.Status = Status;
+exports.Model = fbCastDB.model(
     'Project',
     new mongoose.Schema(
         {
             castrLocId: String,
             accountId: String,
             accountName: String,
-            accountStatus: { type: String, enum: STATUS },
+            accountStatus: { type: String, enum: Object.values(Status) },
             pageId: String,
             pageName: String,
-            pageStatus: { type: String, enum: STATUS },
+            pageStatus: { type: String, enum: Object.values(Status) },
             instagramId: String,
             instagramName: String,
             isPBIA: Boolean,
@@ -23,6 +29,13 @@ module.exports = fbCastDB.model(
             accountVerified: Boolean,
             pageVerified: Boolean,
             paymentMethodVerified: Boolean,
+            adLabels: {
+                businessLabel: String,
+                promotionLabels: [{
+                    promotionId: String,
+                    promotionLabel: String,
+                }],
+            },
         },
         {
             timestamps: {
