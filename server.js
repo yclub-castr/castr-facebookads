@@ -21,16 +21,27 @@ mongoDB.isReady()
         logger.debug('Databases are ready');
 
         app.use('/', (req, res, next) => {
-            logger.debug('# Incoming Request');
-            logger.debug(`# ${req.method} ${req.originalUrl}`);
+            logger.debug(`# ${req.method} ${req.path}`);
             next();
         });
 
         const routes = require('./app/routes'); // eslint-disable-line global-require
         app.use('/', routes);
 
+        app.use((err, req, res, next) => {
+            if (err) {
+                let error = err;
+                while (error.error) error = error.error;
+                logger.error(error);
+                res.send({
+                    success: false,
+                    message: err.message,
+                    error: error,
+                });
+            }
+        });
+
         app.listen(port, () => {
-            adsSdk.FacebookAdsApi.init(process.env.ADMIN_SYS_USER_TOKEN);
             logger.debug(`we are live on ${port}`);
         });
     })
