@@ -17,13 +17,12 @@ const getUri = (node, edge) => {
 };
 
 const get = (node, edge, params) => {
-    // params.access_token = process.env.ADMIN_SYS_USER_TOKEN;
+    params.access_token = params.access_token || process.env.ADMIN_SYS_USER_TOKEN;
     const options = {
         uri: getUri(node, edge),
         qs: params,
         headers: {
             'User-Agent': userAgent,
-            Authorization: `OAuth ${process.env.ADMIN_SYS_USER_TOKEN}`,
         },
         json: true,
     };
@@ -35,7 +34,7 @@ const get = (node, edge, params) => {
 };
 
 const post = async (node, edge, params, method) => {
-    params.access_token = process.env.ADMIN_SYS_USER_TOKEN;
+    params.access_token = params.access_token || process.env.ADMIN_SYS_USER_TOKEN;
     const options = {
         method: method,
         uri: getUri(node, edge),
