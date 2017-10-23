@@ -7,10 +7,11 @@ const fbRequest = require('../fbapi');
 const Model = require('./project.model');
 
 const ProjectModel = Model.Model;
+const ProjectStatus = Model.Status;
+
 const accessType = process.env.ACCESS_TYPE;
 const accountRoles = process.env.ACCOUNT_ROLES.split(',');
 const pageRoles = process.env.PAGE_ROLES.split(',');
-const ProjectStatus = Model.Status;
 
 class ProjectService {
     async getProject(params) {
