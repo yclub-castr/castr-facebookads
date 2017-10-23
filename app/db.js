@@ -4,6 +4,7 @@
 
 const logger = require('./utils').logger();
 const mongoose = require('mongoose');
+mongoose.Promise = require('bluebird').Promise;
 
 let castrDB;
 let fbCastDB;
