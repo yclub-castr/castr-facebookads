@@ -3,13 +3,18 @@
 const fbCastDB = require('../../db').fbCastDB;
 const mongoose = require('../../db').mongoose;
 
-const FacebookAds = require('facebook-ads-sdk');
+const Campaign = require('facebook-ads-sdk').Campaign;
 
-const OBJECTIVE = Object.values(FacebookAds.Campaign.Objective);
-const EFFECTIVE_STATUS = Object.values(FacebookAds.Campaign.EffectiveStatus);
-const STATUS = Object.values(FacebookAds.Campaign.Status);
+const Field = Campaign.Field;
+const Objective = Campaign.Objective;
+const EffectiveStatus = Campaign.EffectiveStatus;
+const Status = Campaign.Status;
 
-module.exports = fbCastDB.model(
+exports.Field = Field;
+exports.Objective = Objective;
+exports.EffectiveStatus = EffectiveStatus;
+exports.Status = Status;
+exports.Model = fbCastDB.model(
     'Campaign',
     new mongoose.Schema(
         {
@@ -18,9 +23,9 @@ module.exports = fbCastDB.model(
             accountId: { type: String, required: true },
             id: { type: String, required: true },
             name: { type: String, required: true },
-            objective: { type: String, enum: OBJECTIVE, required: true },
-            status: { type: String, enum: STATUS, required: true },
-            effectiveStatus: { type: String, enum: EFFECTIVE_STATUS, required: true },
+            objective: { type: String, enum: Object.values(Objective), required: true },
+            status: { type: String, enum: Object.values(Status), required: true },
+            effectiveStatus: { type: String, enum: Object.values(EffectiveStatus), required: true },
             buyingType: String,
             budgetRebalanceFlag: Boolean,
             startTime: Date,
