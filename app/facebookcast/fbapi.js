@@ -29,7 +29,7 @@ const get = (node, edge, params) => {
     try {
         return rp(options);
     } catch (err) {
-        throw new Error(err);
+        throw err;
     }
 };
 
@@ -44,7 +44,7 @@ const post = async (node, edge, params, method) => {
     try {
         return rp(options);
     } catch (err) {
-        throw new Error(err);
+        throw err;
     }
 };
 
