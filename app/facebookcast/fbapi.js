@@ -17,7 +17,8 @@ const getUri = (node, edge) => {
 };
 
 const get = (node, edge, params) => {
-    params.access_token = params.access_token || process.env.ADMIN_SYS_USER_TOKEN;
+    if (params) params.access_token = params.access_token || process.env.ADMIN_SYS_USER_TOKEN;
+    else params = { access_token: process.env.ADMIN_SYS_USER_TOKEN }; // eslint-disable-line no-param-reassign
     const options = {
         uri: getUri(node, edge),
         qs: params,
@@ -34,7 +35,8 @@ const get = (node, edge, params) => {
 };
 
 const post = async (node, edge, params, method) => {
-    params.access_token = params.access_token || process.env.ADMIN_SYS_USER_TOKEN;
+    if (params) params.access_token = params.access_token || process.env.ADMIN_SYS_USER_TOKEN;
+    else params = { access_token: process.env.ADMIN_SYS_USER_TOKEN }; // eslint-disable-line no-param-reassign
     const options = {
         method: method,
         uri: getUri(node, edge),
