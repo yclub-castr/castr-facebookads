@@ -5,6 +5,7 @@
 require('dotenv').config();
 
 const express = require('express');
+const cors = require('cors');
 const bodyParser = require('body-parser');
 const mongoDB = require('./app/db');
 const logger = require('./app/utils').logger();
@@ -13,6 +14,7 @@ const adsSdk = require('facebook-ads-sdk');
 const app = express();
 const port = process.env.PORT;
 
+app.use(cors());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 
