@@ -8,14 +8,39 @@ const campaignService = require('./campaign.service');
 const router = express.Router();
 
 router.route('/')
-    .get((req, res) => {
-        campaignService.getCampaigns(req, res);
+    .get(async (req, res, next) => {
+        try {
+            const params = {
+                castrLocId: req.query.castrLocId,
+                promotionId: req.query.promotionId,
+            };
+            res.json(await campaignService.getCampaigns(params));
+        } catch (err) {
+            next(err);
+        }
     })
-    .post((req, res) => {
-        campaignService.createCampaign(req, res);
+    .post(async (req, res, next) => {
+        try {
+            const params = {
+                castrLocId: req.body.castrLocId,
+                promotionId: req.body.promotionId,
+                objective: req.body.objective,
+            };
+            res.json(await campaignService.createCampaign(params));
+        } catch (err) {
+            next(err);
+        }
     })
-    .delete((req, res) => {
-        campaignService.deleteCampaign(req, res);
+    .delete(async (req, res, next) => {
+        try {
+            const params = {
+                castrLocId: req.body.castrLocId,
+                promotionId: req.body.promotionId,
+            };
+            res.json(await campaignService.deleteCampaigns(params));
+        } catch (err) {
+            next(err);
+        }
     });
 
 
