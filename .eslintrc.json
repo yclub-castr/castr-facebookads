@@ -69,6 +69,12 @@
         "no-prototype-builtins": "off",
         "newline-per-chained-call": "off",
         "no-shadow": "error",
-        "no-plusplus": ["error", { "allowForLoopAfterthoughts": true }]
+        "no-plusplus": [
+            "error",
+            {
+                "allowForLoopAfterthoughts": true
+            }
+        ],
+        "no-await-in-loop": "off"
     }
 }
