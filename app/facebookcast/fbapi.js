@@ -6,11 +6,11 @@ const appName = 'Castr';
 const appVersion = 'v0.1.0';
 const userAgent = `${appName}/${appVersion}`;
 
-const host = 'https://graph.facebook.com';
+const host = 'https://graph.facebook.com/';
 const apiVersion = 'v2.10';
 
 const getUri = (node, edge) => {
-    let uri = `${host}/${apiVersion}`;
+    let uri = `${host}${apiVersion}`;
     if (node) uri += `/${node}`;
     if (edge) uri += `/${edge}`;
     return uri;
@@ -50,9 +50,27 @@ const post = async (node, edge, params, method) => {
     }
 };
 
+const batch = async (batchParams) => {
+    const options = {
+        method: 'POST',
+        uri: host,
+        body: {
+            access_token: process.env.ADMIN_SYS_USER_TOKEN,
+            batch: batchParams,
+        },
+        json: true,
+    };
+    try {
+        return rp(options);
+    } catch (err) {
+        throw err;
+    }
+};
+
 module.exports = {
     get: get,
     post: (node, edge, params) => post(node, edge, params, 'POST'),
     delete: (node, edge, params) => post(node, edge, params, 'DELETE'),
-    // post: (node, edge, params) => post(node, edge, params, 'POST')
+    batch: batch,
+    apiVersion: apiVersion,
 };
