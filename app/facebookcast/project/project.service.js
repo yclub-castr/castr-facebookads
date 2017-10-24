@@ -165,7 +165,7 @@ class ProjectService {
                     $set: {
                         accountStatus: ProjectStatus.Approved,
                         accountVerified: true,
-                        'adLabels.businessLabel': adlabel.id,
+                        'adLabels.businessLabel': adlabel,
                     },
                 }
             );
