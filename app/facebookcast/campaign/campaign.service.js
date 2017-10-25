@@ -155,6 +155,7 @@ class CampaignService {
                     const fbResponses = batchResponses[i];
                     for (let j = 0; j < fbResponses.length; j++) {
                         if (fbResponses[i].code !== 200) {
+                            logger.debug('One of batch requests failed, trying again...');
                             batchCompleted = false;
                             break;
                         }
