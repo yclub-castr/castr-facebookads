@@ -80,16 +80,27 @@ class CampaignService {
                 promotionLabels.push({ id: promotionLabel.id, name: promotionId });
                 project.save();
             }
-            const data = {
+            const campaignParams = {
                 [CampaignField.adlabels]: [businessLabel, promotionLabel],
                 [CampaignField.name]: name,
                 [CampaignField.objective]: objective,
                 [CampaignField.budget_rebalance_flag]: true,
                 [CampaignField.status]: CampaignStatus.paused,
+                [CampaignField.execution_options]: ['validate_only', 'include_recommendations'],
                 fields: readFields,
             };
             logger.debug(`Creating campaign for promotion (#${promotionId}) ...`);
-            const campaign = await fbRequest.post(accountId, 'campaigns', data);
+            const validation = await fbRequest.post(accountId, 'campaigns', campaignParams);
+            if (!validation.success) {
+                const msg = 'Failed validation from Facebook';
+                return {
+                    success: false,
+                    message: msg,
+                    data: validation,
+                };
+            }
+            delete campaignParams[CampaignField.execution_options];
+            const campaign = await fbRequest.post(accountId, 'campaigns', campaignParams);
             const msg = `Campaign (#${campaign.id}) created`;
             logger.debug(msg);
             const model = new CampaignModel({
@@ -99,7 +110,7 @@ class CampaignService {
                 id: campaign.id,
                 name: campaign.name,
                 objective: campaign.objective,
-                status: campaign.status,
+                status: campaign.configured_status,
                 effectiveStatus: campaign.effective_status,
                 buyingType: campaign.buying_type,
                 budgetRebalanceFlag: campaign.budget_rebalance_flag,
@@ -111,7 +122,10 @@ class CampaignService {
             return {
                 success: true,
                 message: msg,
-                data: { campaignId: campaign.id },
+                data: {
+                    campaignId: campaign.id,
+                    recommendations: validation.recommendations,
+                },
             };
         } catch (err) {
             throw err;
