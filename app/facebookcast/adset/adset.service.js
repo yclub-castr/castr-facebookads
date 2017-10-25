@@ -72,9 +72,14 @@ class AdSetService {
         const isAutoBid = true;
         const targeting = {
             geo_locations: { countries: ['US'] },
+            // TODO: publisher_platforms : ['facebook', 'audience_network', 'instagram']
         };
         const optimizationGoal = params.optimizationGoal;
-        const promotedObject = null; // TODO: Pixel
+        const promotedObject = {
+            // TODO: Pixel
+            // pixel_id: '<PIXEL_ID>',
+            // custom_event_type: '<EVENT_NAME>',
+        };
         const name = `AdSet [${optimizationGoal}]`;
         try {
             const project = await ProjectModel.findOne({ castrLocId: castrLocId });
