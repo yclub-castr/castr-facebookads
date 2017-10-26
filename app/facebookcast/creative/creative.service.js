@@ -88,31 +88,50 @@ class CreativeService {
             const videoAdSpec = adSpecs[2];
             const slideshowAdSpec = adSpecs[3];
             logger.debug(`Creating creative for promotion (#${promotionId}) ...`);
-            const creative = await fbRequest.post(accountId, 'adcreatives', slideshowAdSpec);
-            const msg = `Creative (#${creative.id}) created`;
+            // const batches = [];
+            // const requests = adSpecs.map((spec) => {
+            //     if (!spec) return null;
+            //     return {
+            //         method: 'POST',
+            //         relative_url: `${fbRequest.apiVersion}/${accountId}/adcreatives`,
+            //         body: spec,
+            //     };
+            // });
+            // const batchResponse = await fbRequest.batch(requests, true);
+            const createPromises = [
+                fbRequest.post(accountId, 'adcreatives', linkAdSpec),
+                fbRequest.post(accountId, 'adcreatives', carouselAdSpec),
+                fbRequest.post(accountId, 'adcreatives', videoAdSpec),
+                fbRequest.post(accountId, 'adcreatives', slideshowAdSpec)
+            ];
+            const creatives = await Promise.all(createPromises);
+            const msg = `${creatives.length} creatives created`;
             logger.debug(msg);
-            const model = new CreativeModel({
-                castrLocId: castrLocId,
-                promotionId: promotionId,
-                accountId: creative.account_id,
-                id: creative.id,
-                name: creative.name,
-                status: creative.status,
-                body: creative.body,
-                title: creative.title,
-                callToActionType: creative.call_to_action_type,
-                effectiveObjectStoryId: creative.effective_object_story_id,
-                objectStorySpec: creative.object_story_spec,
-                objectType: creative.object_type,
-            });
-            await model.save();
-            logger.debug(`Creative (#${creative.id}) stored to DB`);
+            const updatePromises = [];
+            for (let i = 0; i < creatives.length; i++) {
+                const creative = creatives[i];
+                const model = new CreativeModel({
+                    castrLocId: castrLocId,
+                    promotionId: promotionId,
+                    accountId: creative.account_id,
+                    id: creative.id,
+                    name: creative.name,
+                    status: creative.status,
+                    body: creative.body,
+                    title: creative.title,
+                    callToActionType: creative.call_to_action_type,
+                    effectiveObjectStoryId: creative.effective_object_story_id,
+                    objectStorySpec: creative.object_story_spec,
+                    objectType: creative.object_type,
+                });
+                updatePromises.push(model.save());
+            }
+            await Promise.all(updatePromises);
+            logger.debug(`(#${creatives.length}) creative stored to DB`);
             return {
                 success: true,
                 message: msg,
-                data: {
-                    creativeId: creative.id,
-                },
+                data: creatives,
             };
         } catch (err) {
             throw err;
@@ -302,128 +321,150 @@ class CreativeService {
 
     async getVideoAdCreative(projectParams) {
         logger.debug('Creating Single-Video ad creative...');
-        const videoUrl = 'https://s3-us-west-1.amazonaws.com/castr-images/videos/1505555120860.mp4';
-        const video = await this.uploadVideo(projectParams.accountId, videoUrl);
-        const name = 'Creative [SINGLE_VIDEO]';
-        const destinationUrl = 'https://www.mixcloud.com/dondiablo/';
-        const callToAction = {
-            type: CallToActionType.learn_more,
-            value: {
-                link: destinationUrl, // destination URL
-                link_caption: destinationUrl, // display URL
-            },
-        };
-        const objectStorySpec = {
-            video_data: {
-                message: 'try it out', // post text
-                title: 'VIDEO TITLE', // attachment name
-                video_id: video.id,
-                call_to_action: callToAction, // CTA button
-                image_url: 'https://thumbnailer.mixcloud.com/unsafe/128x128/profile/4/b/c/a/c04a-e2d9-4404-9004-4e62e5dc048b', // thumbnail
-                link_description: 'LINK DESCRIPTION', // attachment description
-                page_welcome_message: 'WELCOME', // for messenger
-            },
-            page_id: projectParams.pageId,
-            instagram_actor_id: projectParams.instagramId,
-        };
-        return {
-            name: name,
-            [CreativeField.adlabels]: [projectParams.businessLabel, projectParams.promotionLabel],
-            object_story_spec: objectStorySpec,
-            fields: readFields,
-        };
+        try {
+            const videoUrl = 'https://s3-us-west-1.amazonaws.com/castr-images/videos/1505555120860.mp4';
+            const video = await this.uploadVideo(projectParams.accountId, videoUrl);
+            const name = 'Creative [SINGLE_VIDEO]';
+            const destinationUrl = 'https://www.mixcloud.com/dondiablo/';
+            const callToAction = {
+                type: CallToActionType.learn_more,
+                value: {
+                    link: destinationUrl, // destination URL
+                    link_caption: destinationUrl, // display URL
+                },
+            };
+            const objectStorySpec = {
+                video_data: {
+                    message: 'try it out', // post text
+                    title: 'VIDEO TITLE', // attachment name
+                    video_id: video.id,
+                    call_to_action: callToAction, // CTA button
+                    image_url: 'https://thumbnailer.mixcloud.com/unsafe/128x128/profile/4/b/c/a/c04a-e2d9-4404-9004-4e62e5dc048b', // thumbnail
+                    link_description: 'LINK DESCRIPTION', // attachment description
+                    page_welcome_message: 'WELCOME', // for messenger
+                },
+                page_id: projectParams.pageId,
+                instagram_actor_id: projectParams.instagramId,
+            };
+            return {
+                name: name,
+                [CreativeField.adlabels]: [projectParams.businessLabel, projectParams.promotionLabel],
+                object_story_spec: objectStorySpec,
+                fields: readFields,
+            };
+        } catch (err) {
+            logger.error(err.message);
+            return null;
+        }
     }
 
     async getSlideshowAdCreative(projectParams) {
         logger.debug('Creating Slideshow ad creative...');
-        const imageUrls = [
-            'https://i.ytimg.com/vi/y4-ZXUotFlA/maxresdefault.jpg',
-            'http://channel.nationalgeographic.com/exposure/content/photo/photo/2095189_the-largest-carnivore-in-the-world_uensu6q222ogkowxa262qcibd3ggiqn63zkcn5eeuqux54zcfvtq_757x567.jpg',
-            'http://cdn2.arkive.org/media/C4/C47A0B8A-6458-41B4-A657-3442AECBD887/Presentation.Large/Brown-bears-mating-Alaskan-population.jpg'
-        ];
-        const video = await this.uploadSlideshow(projectParams.accountId, imageUrls);
-        const name = 'Creative [SLIDESHOW]';
-        const destinationUrl = 'https://www.mixcloud.com/dondiablo/';
-        const callToAction = {
-            type: CallToActionType.learn_more,
-            value: {
-                link: destinationUrl, // destination URL
-                link_caption: destinationUrl, // display URL
-            },
-        };
-        const objectStorySpec = {
-            video_data: {
-                message: 'try it out', // post text
-                title: 'SLIDESHOW TITLE', // attachment name
-                video_id: video.id,
-                call_to_action: callToAction, // CTA button
-                image_url: 'https://thumbnailer.mixcloud.com/unsafe/128x128/profile/4/b/c/a/c04a-e2d9-4404-9004-4e62e5dc048b', // thumbnail
-                link_description: 'LINK DESCRIPTION', // attachment description
-                page_welcome_message: 'WELCOME', // for messenger
-            },
-            page_id: projectParams.pageId,
-            instagram_actor_id: projectParams.instagramId,
-        };
-        return {
-            name: name,
-            [CreativeField.adlabels]: [projectParams.businessLabel, projectParams.promotionLabel],
-            object_story_spec: objectStorySpec,
-            fields: readFields,
-        };
+        try {
+            const imageUrls = [
+                'https://i.ytimg.com/vi/y4-ZXUotFlA/maxresdefault.jpg',
+                'http://channel.nationalgeographic.com/exposure/content/photo/photo/2095189_the-largest-carnivore-in-the-world_uensu6q222ogkowxa262qcibd3ggiqn63zkcn5eeuqux54zcfvtq_757x567.jpg',
+                'http://cdn2.arkive.org/media/C4/C47A0B8A-6458-41B4-A657-3442AECBD887/Presentation.Large/Brown-bears-mating-Alaskan-population.jpg'
+            ];
+            const video = await this.uploadSlideshow(projectParams.accountId, imageUrls);
+            const name = 'Creative [SLIDESHOW]';
+            const destinationUrl = 'https://www.mixcloud.com/dondiablo/';
+            const callToAction = {
+                type: CallToActionType.learn_more,
+                value: {
+                    link: destinationUrl, // destination URL
+                    link_caption: destinationUrl, // display URL
+                },
+            };
+            const objectStorySpec = {
+                video_data: {
+                    message: 'try it out', // post text
+                    title: 'SLIDESHOW TITLE', // attachment name
+                    video_id: video.id,
+                    call_to_action: callToAction, // CTA button
+                    image_url: 'https://thumbnailer.mixcloud.com/unsafe/128x128/profile/4/b/c/a/c04a-e2d9-4404-9004-4e62e5dc048b', // thumbnail
+                    link_description: 'LINK DESCRIPTION', // attachment description
+                    page_welcome_message: 'WELCOME', // for messenger
+                },
+                page_id: projectParams.pageId,
+                instagram_actor_id: projectParams.instagramId,
+            };
+            return {
+                name: name,
+                [CreativeField.adlabels]: [projectParams.businessLabel, projectParams.promotionLabel],
+                object_story_spec: objectStorySpec,
+                fields: readFields,
+            };
+        } catch (err) {
+            logger.error(err.message);
+            return null;
+        }
     }
 
     async uploadVideo(accountId, videoUrl) {
         logger.debug(`Uploading video from url (${videoUrl}) ...`);
-        const video = await fbRequest.post(accountId, 'advideos', {
-            file_url: videoUrl,
-            title: 'VIDEO TITLE2', // not shown on ad
-            description: 'VIDEO DESCRIPTION2', // not shown on ad
-            name: 'VIDEO NAME2', // not shown on ad
-        });
-        logger.debug(`Video uploaded (fb_id: ${video.id})`);
-        logger.debug(`Checking the status of uploaded video (#${video.id})`);
-        await new Promise(async (resolve) => {
-            const intervalId = setInterval(async (res, videoId) => {
-                const response = await fbRequest.get(videoId, null, { fields: 'status' });
-                if (response.status.video_status === 'ready') {
-                    logger.debug(`Video (#${videoId}) - READY`);
-                    clearInterval(intervalId);
-                    res();
-                    return;
-                }
-                logger.debug(`Video (#${videoId}) - STATUS: ${response.status.video_status}`);
-            }, 5000, resolve, video.id);
-        });
-        return video;
+        try {
+            const video = await fbRequest.post(accountId, 'advideos', {
+                file_url: videoUrl,
+                title: 'VIDEO TITLE2', // not shown on ad
+                description: 'VIDEO DESCRIPTION2', // not shown on ad
+                name: 'VIDEO NAME2', // not shown on ad
+            });
+            logger.debug(`Video uploaded (fb_id: ${video.id})`);
+            logger.debug(`Checking the status of uploaded video (#${video.id})`);
+            await new Promise(async (resolve) => {
+                const intervalId = setInterval(async (res, videoId) => {
+                    const response = await fbRequest.get(videoId, null, { fields: 'status' });
+                    if (response.status.video_status === 'ready') {
+                        logger.debug(`Video (#${videoId}) - READY`);
+                        clearInterval(intervalId);
+                        res();
+                        return;
+                    } else if (response.status.video_status === 'error') {
+                        throw new Error(`Uploaded video (#${videoId}) got an error`);
+                    }
+                    logger.debug(`Video (#${videoId}) - STATUS: ${response.status.video_status}`);
+                }, 5000, resolve, video.id);
+            });
+            return video;
+        } catch (err) {
+            throw err;
+        }
     }
 
     async uploadSlideshow(accountId, imageUrls) {
         logger.debug(`Creating slideshow from ${imageUrls.length} images...`);
-        const video = await fbRequest.post(accountId, 'advideos', {
-            slideshow_spec: {
-                images_urls: imageUrls,
-                duration_ms: 1500,
-                transition_ms: 750,
-            },
-            title: 'SLIDESHOW TITLE2', // not shown on ad
-            description: 'SLIDESHOW DESCRIPTION2', // not shown on ad
-            name: 'SLIDESHOW NAME2', // not shown on ad
-        });
-        logger.debug(`Slideshow uploaded (fb_id: ${video.id})`);
-        logger.debug(`Checking the status of uploaded slideshow (#${video.id})`);
-        await new Promise(async (resolve) => {
-            const intervalId = setInterval(async (res, videoId) => {
-                const response = await fbRequest.get(videoId, null, { fields: 'status' });
-                if (response.status.video_status === 'ready') {
-                    logger.debug(`Slideshow (#${videoId}) - READY`);
-                    clearInterval(intervalId);
-                    res();
-                    return;
-                }
-                logger.debug(`Slideshow (#${videoId}) - STATUS: ${response.status.video_status}`);
-            }, 5000, resolve, video.id);
-        });
-        return video;
+        try {
+            const video = await fbRequest.post(accountId, 'advideos', {
+                slideshow_spec: {
+                    images_urls: imageUrls,
+                    duration_ms: 1500,
+                    transition_ms: 750,
+                },
+                title: 'SLIDESHOW TITLE2', // not shown on ad
+                description: 'SLIDESHOW DESCRIPTION2', // not shown on ad
+                name: 'SLIDESHOW NAME2', // not shown on ad
+            });
+            logger.debug(`Slideshow uploaded (fb_id: ${video.id})`);
+            logger.debug(`Checking the status of uploaded slideshow (#${video.id})`);
+            await new Promise(async (resolve, reject) => {
+                const intervalId = setInterval(async (res, rej, videoId) => {
+                    const response = await fbRequest.get(videoId, null, { fields: 'status' });
+                    if (response.status.video_status === 'ready') {
+                        logger.debug(`Slideshow (#${videoId}) - READY`);
+                        clearInterval(intervalId);
+                        res();
+                        return;
+                    } else if (response.status.video_status === 'error') {
+                        rej(new Error(`Uploaded slideshow (#${videoId}) got an error`));
+                    }
+                    logger.debug(`Slideshow (#${videoId}) - STATUS: ${response.status.video_status}`);
+                }, 5000, resolve, reject, video.id);
+            });
+            return video;
+        } catch (err) {
+            throw err;
+        }
     }
 
     async chunkUploadVideo(accountId, videoUrl) {
