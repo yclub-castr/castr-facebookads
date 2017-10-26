@@ -9,7 +9,6 @@ const ProjectModel = require('../project/project.model').Model;
 
 const CampaignModel = Model.Model;
 const CampaignStatus = Model.Status;
-const CampaignObjective = Model.Objective;
 const CampaignField = Model.Field;
 
 const excludedFields = [CampaignField.execution_options];
@@ -158,12 +157,14 @@ class CampaignService {
                 method: 'DELETE',
                 relative_url: `${fbRequest.apiVersion}/${id}`,
             }));
+            let attempts = 3;
+            let batchResponses;
             do {
                 logger.debug(`Batching ${campaigns.length} delete campaign requests...`);
                 for (let i = 0; i < Math.ceil(requests.length / 50); i++) {
                     batches.push(fbRequest.batch(requests.slice(i * 50, (i * 50) + 50)));
                 }
-                const batchResponses = await Promise.all(batches);
+                batchResponses = await Promise.all(batches);
                 batchCompleted = true;
                 for (let i = 0; i < batchResponses.length; i++) {
                     const fbResponses = batchResponses[i];
@@ -176,7 +177,15 @@ class CampaignService {
                         if (!batchCompleted) break;
                     }
                 }
-            } while (!batchCompleted);
+                attempts -= 1;
+            } while (!batchCompleted && attempts !== 0);
+            if (!batchCompleted) {
+                return {
+                    success: false,
+                    messasge: 'Batch requests failed 3 times',
+                    data: batchResponses,
+                };
+            }
             logger.debug('FB batch-delete successful');
             const writeResult = await CampaignModel.updateMany(
                 { id: { $in: campaignIds } },
