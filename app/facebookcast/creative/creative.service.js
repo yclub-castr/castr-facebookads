@@ -107,6 +107,7 @@ class CreativeService {
             const creatives = await Promise.all(createPromises);
             const msg = `${creatives.length} creatives created`;
             logger.debug(msg);
+            const responseData = [];
             const updatePromises = [];
             for (let i = 0; i < creatives.length; i++) {
                 const creative = creatives[i];
@@ -125,13 +126,17 @@ class CreativeService {
                     objectType: creative.object_type,
                 });
                 updatePromises.push(model.save());
+                responseData.push({ 
+                    id: creative.id,
+                    name: creative.name,
+                });
             }
             await Promise.all(updatePromises);
             logger.debug(`(#${creatives.length}) creative stored to DB`);
             return {
                 success: true,
                 message: msg,
-                data: creatives,
+                data: responseData,
             };
         } catch (err) {
             throw err;
