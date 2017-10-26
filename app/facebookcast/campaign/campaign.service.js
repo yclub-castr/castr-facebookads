@@ -122,7 +122,7 @@ class CampaignService {
                 success: true,
                 message: msg,
                 data: {
-                    campaignId: campaign.id,
+                    id: campaign.id,
                     recommendations: validation.recommendations,
                 },
             };

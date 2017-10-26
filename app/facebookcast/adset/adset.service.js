@@ -146,7 +146,7 @@ class AdSetService {
                 success: true,
                 message: msg,
                 data: {
-                    adsetId: adset.id,
+                    id: adset.id,
                     recommendations: validation.recommendations,
                 },
             };
