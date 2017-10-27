@@ -5,6 +5,7 @@
 const logger = require('../../utils').logger();
 const moment = require('moment');
 const fbRequest = require('../fbapi');
+const PixelService = require('../pixel/pixel.service');
 const Model = require('./adset.model');
 const ProjectModel = require('../project/project.model').Model;
 
@@ -75,11 +76,6 @@ class AdSetService {
             // TODO: publisher_platforms : ['facebook', 'audience_network', 'instagram']
         };
         const optimizationGoal = params.optimizationGoal;
-        const promotedObject = {
-            // TODO: Pixel
-            // pixel_id: '<PIXEL_ID>',
-            // custom_event_type: '<EVENT_NAME>',
-        };
         const name = `AdSet [${optimizationGoal}]`;
         try {
             const project = await ProjectModel.findOne({ castrLocId: castrLocId });
@@ -92,6 +88,10 @@ class AdSetService {
                     promotionLabel = promotionLabels[i].toObject();
                 }
             }
+            const promotedObject = {
+                pixel_id: (await PixelService.getPixel(project)).data.id,
+                custom_event_type: 'PURCHASE',
+            };
             const adsetParams = {
                 [AdSetField.campaign_id]: campaignId,
                 [AdSetField.adlabels]: [businessLabel, promotionLabel],
