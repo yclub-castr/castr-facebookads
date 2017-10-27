@@ -11,7 +11,6 @@ const ProjectModel = require('../project/project.model').Model;
 
 const CreativeModel = Model.Model;
 const CreativeField = Model.Field;
-const ObjectType = Model.ObjectType;
 const CallToActionType = Model.CallToActionType;
 const CreativeStatus = Model.Status;
 
@@ -417,8 +416,8 @@ class CreativeService {
             });
             logger.debug(`Video uploaded (fb_id: ${video.id})`);
             logger.debug(`Checking the status of uploaded video (#${video.id})`);
-            await new Promise(async (resolve) => {
-                const intervalId = setInterval(async (res, videoId) => {
+            await new Promise(async (resolve, reject) => {
+                const intervalId = setInterval(async (res, rej, videoId) => {
                     const response = await fbRequest.get(videoId, null, { fields: 'status' });
                     if (response.status.video_status === 'ready') {
                         logger.debug(`Video (#${videoId}) - READY`);
@@ -426,10 +425,12 @@ class CreativeService {
                         res();
                         return;
                     } else if (response.status.video_status === 'error') {
-                        throw new Error(`Uploaded video (#${videoId}) got an error`);
+                        clearInterval(intervalId);
+                        rej(new Error(`Uploaded video (#${videoId}) got an error`));
+                        return;
                     }
                     logger.debug(`Video (#${videoId}) - STATUS: ${response.status.video_status}`);
-                }, 5000, resolve, video.id);
+                }, 5000, resolve, reject, video.id);
             });
             return video;
         } catch (err) {
@@ -461,7 +462,9 @@ class CreativeService {
                         res();
                         return;
                     } else if (response.status.video_status === 'error') {
+                        clearInterval(intervalId);
                         rej(new Error(`Uploaded slideshow (#${videoId}) got an error`));
+                        return;
                     }
                     logger.debug(`Slideshow (#${videoId}) - STATUS: ${response.status.video_status}`);
                 }, 5000, resolve, reject, video.id);
