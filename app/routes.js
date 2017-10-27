@@ -8,6 +8,7 @@ const campaignRouter = require('./facebookcast/campaign/campaign.route');
 const adsetRouter = require('./facebookcast/adset/adset.route');
 const adRouter = require('./facebookcast/ad/ad.route');
 const creativeRouter = require('./facebookcast/creative/creative.route');
+const pixelRouter = require('./facebookcast/pixel/pixel.route');
 
 const router = express.Router();
 
@@ -20,5 +21,6 @@ router.use('/campaign', campaignRouter);
 router.use('/adset', adsetRouter);
 router.use('/ad', adRouter);
 router.use('/creative', creativeRouter);
+router.use('/pixel', pixelRouter);
 
 module.exports = router;
