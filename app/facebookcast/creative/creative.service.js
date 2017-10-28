@@ -14,11 +14,19 @@ const CreativeField = Model.Field;
 const CallToActionType = Model.CallToActionType;
 const CreativeStatus = Model.Status;
 
-const excludedFields = [
-    CreativeField.call_to_action,
-    CreativeField.image_file
-];
-const readFields = Object.values(CreativeField).filter(field => !excludedFields.includes(field)).toString();
+const readFields = [
+    CreativeField.account_id,
+    CreativeField.id,
+    CreativeField.name,
+    CreativeField.status,
+    CreativeField.body,
+    CreativeField.title,
+    CreativeField.call_to_action_type,
+    CreativeField.effective_object_story_id,
+    CreativeField.object_story_spec,
+    CreativeField.object_type
+].toString();
+
 const tempDir = '../../temp/';
 
 class CreativeService {
@@ -27,20 +35,43 @@ class CreativeService {
         const promotionId = params.promotionId;
         try {
             const project = await ProjectModel.findOne({ castrLocId: castrLocId });
-            const accountId = project.accountId;
             const creativeParams = { fields: readFields };
-            logger.debug(`Fetching creatives by promotion id (#${promotionId}) ...`);
-            const creatives = await fbRequest.get(accountId, 'adcreatives', creativeParams);
-            if (!creatives) {
-                throw new Error('Could not find ad label to read creatives');
+            let creatives = [];
+            let fbResponse;
+            if (promotionId) {
+                logger.debug(`Fetching creatives by promotion id (#${promotionId}) ...`);
+                const promotionLabel = project.adLabels.promotionLabels.filter(label => label.name === promotionId)[0];
+                do {
+                    if (fbResponse) {
+                        fbResponse = await request.get(fbResponse.paging.next, { json: true });
+                    } else {
+                        fbResponse = await fbRequest.get(promotionLabel.id, 'adcreatives', creativeParams);
+                    }
+                    const notDeleted = fbResponse.data.filter(creative => creative.status !== CreativeStatus.deleted);
+                    creatives = creatives.concat(notDeleted);
+                } while (fbResponse.paging.next);
+            } else if (castrLocId) {
+                logger.debug(`Fetching creatives by business id (#${castrLocId}) ...`);
+                const businessLabel = project.adLabels.businessLabel;
+                do {
+                    if (fbResponse) {
+                        fbResponse = await request.get(fbResponse.paging.next, { json: true });
+                    } else {
+                        fbResponse = await fbRequest.get(businessLabel.id, 'adcreatives', creativeParams);
+                    }
+                    const notDeleted = fbResponse.data.filter(creative => creative.status !== CreativeStatus.deleted);
+                    creatives = creatives.concat(notDeleted);
+                } while (fbResponse.paging.next);
+            } else {
+                throw new Error('Missing params: must provide either `castrLocId` or `promotionId`');
             }
-            const msg = `${creatives.data.length} creatives fetched`;
+            const msg = `${creatives.length} creatives fetched`;
             logger.debug(msg);
-            this.syncCreatives(creatives.data, castrLocId, promotionId);
+            this.syncCreatives(creatives, castrLocId, promotionId);
             return {
                 success: true,
                 message: msg,
-                data: creatives.data,
+                data: creatives,
             };
         } catch (err) {
             throw err;
@@ -125,7 +156,7 @@ class CreativeService {
                     objectType: creative.object_type,
                 });
                 updatePromises.push(model.save());
-                responseData.push({ 
+                responseData.push({
                     id: creative.id,
                     name: creative.name,
                 });
