@@ -30,6 +30,7 @@ class AdService {
             const adParams = { fields: readFields };
             let ads;
             if (promotionId) {
+                // TODO: implement paging-based GET
                 const promotionlabels = project.adLabels.promotionLabels;
                 for (let i = 0; i < promotionlabels.length; i++) {
                     if (promotionlabels[i].name === promotionId) {

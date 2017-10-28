@@ -39,6 +39,7 @@ class CreativeService {
             let creatives = [];
             let fbResponse;
             if (promotionId) {
+                // TODO: implement paging-based GET
                 logger.debug(`Fetching creatives by promotion id (#${promotionId}) ...`);
                 const promotionLabel = project.adLabels.promotionLabels.filter(label => label.name === promotionId)[0];
                 do {

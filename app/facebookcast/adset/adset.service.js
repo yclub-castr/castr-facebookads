@@ -32,6 +32,7 @@ class AdSetService {
             const adsetParams = { fields: readFields };
             let adsets;
             if (promotionId) {
+                // TODO: implement paging-based GET
                 const promotionlabels = project.adLabels.promotionLabels;
                 for (let i = 0; i < promotionlabels.length; i++) {
                     if (promotionlabels[i].name === promotionId) {
