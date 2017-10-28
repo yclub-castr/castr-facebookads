@@ -3,6 +3,7 @@
 'use strict';
 
 const logger = require('../../utils').logger();
+const timezone = require('../../constants').timezone;
 const fbRequest = require('../fbapi');
 const Model = require('./project.model');
 
@@ -150,10 +151,12 @@ class ProjectService {
             logger.debug(`Creating adlabel for adaccount owned by Business (#${castrLocId}) ...`);
             const promises = [
                 fbRequest.post(accountId, 'userpermissions', data),
-                fbRequest.post(accountId, 'adlabels', { name: castrLocId })
+                fbRequest.post(accountId, 'adlabels', { name: castrLocId }),
+                fbRequest.get(accountId, null, { fields: 'timezone_id' })
             ];
             const fbResponses = await Promise.all(promises);
             const adlabel = fbResponses[1];
+            const momentTzId = timezone(fbResponses[2].timezone_id);
             logger.debug(`System user assigned to Business (#${castrLocId}) adaccount`);
             logger.debug(`Adlabel created for Business (#${castrLocId})`);
             await ProjectModel.update(
@@ -166,6 +169,7 @@ class ProjectService {
                         accountStatus: ProjectStatus.Approved,
                         accountVerified: true,
                         'adLabels.businessLabel': adlabel,
+                        timezone: momentTzId,
                     },
                 }
             );

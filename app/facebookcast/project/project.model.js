@@ -37,6 +37,7 @@ exports.Model = fbCastDB.model(
                     name: String,
                 }],
             },
+            timezone: String,
         },
         {
             timestamps: {
