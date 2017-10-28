@@ -28,9 +28,9 @@ router.route('/')
                 promotionId: req.body.promotionId,
                 campaignId: req.query.campaignId,
                 adsetId: req.body.adsetId,
-                creative: req.body.creative,
+                creatives: req.body.creatives,
             };
-            res.json(await adService.createAd(params));
+            res.json(await adService.createAds(params));
         } catch (err) {
             next(err);
         }

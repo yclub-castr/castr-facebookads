@@ -62,7 +62,39 @@ class AdService {
         }
     }
 
+    async createAds(parmas) {
+        const creatives = parmas.creatives;
+        const adCreatePromises = [];
+        logger.debug(`Generating ads from ${creatives.length} creatives...`);
+        try {
+            const project = await ProjectModel.findOne({ castrLocId: parmas.castrLocId });
+            for (let i = 0; i < creatives.length; i++) {
+                const adParams = {
+                    project: project,
+                    castrLocId: parmas.castrLocId,
+                    promotionId: parmas.promotionId,
+                    campaignId: parmas.campaignId,
+                    adsetId: parmas.adsetId,
+                    creative: parmas.creatives[i],
+                };
+                adCreatePromises.push(this.createAd(adParams));
+            }
+            const adResults = await Promise.all(adCreatePromises);
+            const createdAds = adResults.filter(adResult => adResult.success);
+            const msg = `${createdAds.length} ads created`;
+            logger.debug(msg);
+            return {
+                success: true,
+                message: msg,
+                data: adResults.map(adResult => adResult.data),
+            };
+        } catch (err) {
+            throw err;
+        }
+    }
+
     async createAd(params) {
+        let project = params.project;
         const castrLocId = params.castrLocId;
         const promotionId = params.promotionId;
         const campaignId = params.campaignId;
@@ -70,7 +102,7 @@ class AdService {
         const creative = params.creative;
         const name = `Ad [${creative.name.match(/\[(.*)\]/)[1]}]`;
         try {
-            const project = await ProjectModel.findOne({ castrLocId: castrLocId });
+            if (!project) project = await ProjectModel.findOne({ castrLocId: castrLocId });
             const accountId = project.accountId;
             const businessLabel = project.adLabels.businessLabel.toObject();
             const promotionLabels = project.adLabels.promotionLabels;
@@ -129,7 +161,13 @@ class AdService {
                 },
             };
         } catch (err) {
-            throw err;
+            const msg = err.message;
+            logger.error(msg);
+            return {
+                success: false,
+                message: msg,
+                data: err,
+            };
         }
     }
 
