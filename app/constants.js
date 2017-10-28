@@ -1,7 +1,9 @@
 
 const timezone = {
-    kr: 'ASIA/SEOUL',
-    us_east: '',
+    kr: 'Asia/Seoul',
+    79: 'Asia/Seoul',
+    us_east: 'America/New_York',
+    7: 'America/New_York',
     us_west: '',
     utc: 'UTC',
 };
@@ -13,7 +15,7 @@ const locale = {
 };
 
 exports.timezone = (tz) => {
-    if (!timezone[tz]) throw new Error('Invalid timezone: Suggested values are [\'utc\', \'us_east\', \'us_west\', \'kr\'');
+    if (!timezone[tz]) throw new Error('Invalid timezone');
     return timezone[tz];
 };
 exports.locale = (loc) => {
