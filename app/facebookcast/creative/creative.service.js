@@ -118,6 +118,13 @@ class CreativeService {
             const carouselAdSpec = adSpecs[1];
             const videoAdSpec = adSpecs[2];
             const slideshowAdSpec = adSpecs[3];
+            logger.debug('Creating adlabels for creatives...');
+            const labelPromises = [
+                fbRequest.post(accountId, 'adlabels', { name: linkAdSpec.name }),
+                fbRequest.post(accountId, 'adlabels', { name: carouselAdSpec.name }),
+                fbRequest.post(accountId, 'adlabels', { name: videoAdSpec.name }),
+                fbRequest.post(accountId, 'adlabels', { name: slideshowAdSpec.name })
+            ];
             logger.debug(`Creating creative for promotion (#${promotionId}) ...`);
             // const batches = [];
             // const requests = adSpecs.map((spec) => {
@@ -164,6 +171,7 @@ class CreativeService {
             }
             await Promise.all(updatePromises);
             logger.debug(`(#${creatives.length}) creative stored to DB`);
+            await Promise.all(labelPromises);
             return {
                 success: true,
                 message: msg,
@@ -322,7 +330,7 @@ class CreativeService {
                         name: 'Some Child Name',
                         description: 'SOME DESCRIPTION',
                         call_to_action: callToAction,
-                        caption: destinationUrl, // url at the end of video
+                        caption: destinationUrl,
                         // image_crops: {},
                         picture: 'https://thumbnailer.mixcloud.com/unsafe/128x128/profile/4/b/c/a/c04a-e2d9-4404-9004-4e62e5dc048b',
                         link: destinationUrl,
@@ -331,7 +339,7 @@ class CreativeService {
                         name: 'Some Child Name2',
                         description: 'SOME DESCRIPTION2',
                         call_to_action: callToAction,
-                        caption: destinationUrl, // url at the end of video
+                        caption: destinationUrl,
                         // image_crops: {},
                         picture: 'https://thumbnailer.mixcloud.com/unsafe/128x128/profile/4/b/c/a/c04a-e2d9-4404-9004-4e62e5dc048b',
                         link: destinationUrl,
