@@ -47,7 +47,7 @@ router.route('/')
         }
     });
 
-router.route('/findByCreativeIds')
+router.route('/byCreativeIds')
     .get(async (req, res, next) => {
         try {
             const params = {

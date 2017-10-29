@@ -6,6 +6,7 @@ const logger = require('../../utils').logger();
 const fbRequest = require('../fbapi');
 const Model = require('./ad.model');
 const ProjectModel = require('../project/project.model').Model;
+const CreativeModel = require('../creative/creative.model').Model;
 
 const AdModel = Model.Model;
 const AdStatus = Model.Status;
@@ -63,20 +64,80 @@ class AdService {
         }
     }
 
-    async createAds(parmas) {
-        const creatives = parmas.creatives;
+    async getAdsByCreativeIds(params) {
+        const castrLocId = params.castrLocId;
+        const promotionId = params.promotionId;
+        const creativeIds = params.creativeIds;
+        try {
+            const project = await ProjectModel.findOne({ castrLocId: castrLocId });
+            const accountId = project.accountId;
+            const adParams = { fields: readFields };
+            let ads;
+            if (creativeIds) {
+                logger.debug(`Fetching creatives for ids: ${creativeIds} ...`);
+                const creatives = await CreativeModel.find({ id: { $in: creativeIds.split(',') } });
+                const creativesNames = creatives.map(creative => `"${creative.name}"`);
+                logger.debug(`Fetching ads by creative ids (#${creativeIds}) ...`);
+                adParams.filtering = `[{"field":"adlabels","operator":"ANY","value":[${creativesNames.join()}]}]`;
+                ads = await fbRequest.get(accountId, 'ads', adParams);
+            } else if (promotionId) {
+                // TODO: implement paging-based GET
+                const promotionlabels = project.adLabels.promotionLabels;
+                for (let i = 0; i < promotionlabels.length; i++) {
+                    if (promotionlabels[i].name === promotionId) {
+                        logger.debug(`Fetching ads by promotion id (#${promotionId}) ...`);
+                        adParams.filtering = `[{"field":"adlabels","operator":"ANY","value":["${promotionId}"]}]`;
+                        ads = await fbRequest.get(accountId, 'ads', adParams);
+                        break;
+                    }
+                }
+            } else if (castrLocId) {
+                logger.debug(`Fetching ads by business id (#${castrLocId}) ...`);
+                adParams.filtering = `[{"field":"adlabels","operator":"ANY","value":["${castrLocId}"]}]`;
+                ads = await fbRequest.get(accountId, 'ads', adParams);
+            } else {
+                throw new Error('Missing params: must provide either `castrLocId`, `promotionId` or `creativeIds`');
+            }
+            if (!ads) { throw new Error('Could not find ad label to read ads'); }
+            const msg = `${ads.data.length} ads fetched`;
+            logger.debug(msg);
+            this.syncAds(ads.data, castrLocId, promotionId);
+            return {
+                success: true,
+                message: msg,
+                data: ads.data,
+            };
+        } catch (err) {
+            throw err;
+        }
+    }
+
+    async createAds(params) {
+        const castrLocId = params.castrLocId;
+        const promotionId = params.promotionId;
+        const creatives = params.creatives;
         const adCreatePromises = [];
         logger.debug(`Generating ads from ${creatives.length} creatives...`);
         try {
-            const project = await ProjectModel.findOne({ castrLocId: parmas.castrLocId });
+            const project = await ProjectModel.findOne({ castrLocId: castrLocId });
+            const businessLabel = project.adLabels.businessLabel.toObject();
+            const promotionLabels = project.adLabels.promotionLabels;
+            let promotionLabel;
+            for (let i = 0; i < promotionLabels.length; i++) {
+                if (promotionLabels[i].name === promotionId) {
+                    promotionLabel = promotionLabels[i].toObject();
+                }
+            }
             for (let i = 0; i < creatives.length; i++) {
                 const adParams = {
-                    project: project,
-                    castrLocId: parmas.castrLocId,
-                    promotionId: parmas.promotionId,
-                    campaignId: parmas.campaignId,
-                    adsetId: parmas.adsetId,
-                    creative: parmas.creatives[i],
+                    castrLocId: castrLocId,
+                    promotionId: promotionId,
+                    accountId: project.accountId,
+                    campaignId: params.campaignId,
+                    adsetId: params.adsetId,
+                    creative: creatives[i],
+                    businessLabel: businessLabel,
+                    promotionLabel: promotionLabel,
                 };
                 adCreatePromises.push(this.createAd(adParams));
             }
@@ -95,26 +156,18 @@ class AdService {
     }
 
     async createAd(params) {
-        let project = params.project;
         const castrLocId = params.castrLocId;
         const promotionId = params.promotionId;
+        const accountId = params.accountId;
         const campaignId = params.campaignId;
         const adsetId = params.adsetId;
         const creative = params.creative;
         const name = `Ad [${creative.name.match(/\[(.*)\]/)[1]}]`;
+        const businessLabel = params.businessLabel;
+        const promotionLabel = params.promotionLabel;
         try {
-            if (!project) project = await ProjectModel.findOne({ castrLocId: castrLocId });
-            const accountId = project.accountId;
-            const businessLabel = project.adLabels.businessLabel.toObject();
-            const promotionLabels = project.adLabels.promotionLabels;
-            let promotionLabel;
-            for (let i = 0; i < promotionLabels.length; i++) {
-                if (promotionLabels[i].name === promotionId) {
-                    promotionLabel = promotionLabels[i].toObject();
-                }
-            }
             const adParams = {
-                [AdField.adlabels]: [businessLabel, promotionLabel],
+                [AdField.adlabels]: [businessLabel, promotionLabel, { name: creative.name }],
                 [AdField.campaign_id]: campaignId,
                 [AdField.adset_id]: adsetId,
                 [AdField.creative]: { creative_id: creative.id },
