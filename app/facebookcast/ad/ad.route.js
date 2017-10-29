@@ -47,4 +47,18 @@ router.route('/')
         }
     });
 
+router.route('/findByCreativeIds')
+    .get(async (req, res, next) => {
+        try {
+            const params = {
+                castrLocId: req.query.castrLocId,
+                promotionId: req.query.promotionId,
+                creativeIds: req.query.creativeIds,
+            };
+            res.json(await adService.getAdsByCreativeIds(params));
+        } catch (err) {
+            next(err);
+        }
+    });
+
 module.exports = router;
