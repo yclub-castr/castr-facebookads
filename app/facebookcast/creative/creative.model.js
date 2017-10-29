@@ -31,6 +31,7 @@ exports.Model = fbCastDB.model(
             objectStorySpec: Object,
             objectType: String,
             previews: Object,
+            creativeLabel: Object,
         },
         {
             timestamps: {

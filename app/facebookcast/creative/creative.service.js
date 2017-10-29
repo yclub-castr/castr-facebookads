@@ -114,16 +114,12 @@ class CreativeService {
                 this.getSlideshowAdCreative(projectParams)
             ];
             const adSpecs = await Promise.all(adSpecPromises);
-            const linkAdSpec = adSpecs[0];
-            const carouselAdSpec = adSpecs[1];
-            const videoAdSpec = adSpecs[2];
-            const slideshowAdSpec = adSpecs[3];
             logger.debug('Creating adlabels for creatives...');
             const labelPromises = [
-                fbRequest.post(accountId, 'adlabels', { name: linkAdSpec.name }),
-                fbRequest.post(accountId, 'adlabels', { name: carouselAdSpec.name }),
-                fbRequest.post(accountId, 'adlabels', { name: videoAdSpec.name }),
-                fbRequest.post(accountId, 'adlabels', { name: slideshowAdSpec.name })
+                fbRequest.post(accountId, 'adlabels', { name: adSpecs[0].name }),
+                fbRequest.post(accountId, 'adlabels', { name: adSpecs[1].name }),
+                fbRequest.post(accountId, 'adlabels', { name: adSpecs[2].name }),
+                fbRequest.post(accountId, 'adlabels', { name: adSpecs[3].name })
             ];
             logger.debug(`Creating creative for promotion (#${promotionId}) ...`);
             // const batches = [];
@@ -137,12 +133,13 @@ class CreativeService {
             // });
             // const batchResponse = await fbRequest.batch(requests, true);
             const createPromises = [
-                fbRequest.post(accountId, 'adcreatives', linkAdSpec),
-                fbRequest.post(accountId, 'adcreatives', carouselAdSpec),
-                fbRequest.post(accountId, 'adcreatives', videoAdSpec),
-                fbRequest.post(accountId, 'adcreatives', slideshowAdSpec)
+                fbRequest.post(accountId, 'adcreatives', adSpecs[0]),
+                fbRequest.post(accountId, 'adcreatives', adSpecs[1]),
+                fbRequest.post(accountId, 'adcreatives', adSpecs[2]),
+                fbRequest.post(accountId, 'adcreatives', adSpecs[3])
             ];
             const creatives = await Promise.all(createPromises);
+            const creativeLabels = await Promise.all(labelPromises);
             const msg = `${creatives.length} creatives created`;
             logger.debug(msg);
             const responseData = [];
@@ -162,6 +159,7 @@ class CreativeService {
                     effectiveObjectStoryId: creative.effective_object_story_id,
                     objectStorySpec: creative.object_story_spec,
                     objectType: creative.object_type,
+                    creativeLabel: creativeLabels[i],
                 });
                 updatePromises.push(model.save());
                 responseData.push({
@@ -171,7 +169,6 @@ class CreativeService {
             }
             await Promise.all(updatePromises);
             logger.debug(`(#${creatives.length}) creative stored to DB`);
-            await Promise.all(labelPromises);
             return {
                 success: true,
                 message: msg,
@@ -192,22 +189,31 @@ class CreativeService {
                 creatives = await CreativeModel.find({
                     promotionId: promotionId,
                     [CreativeField.status]: { $ne: [CreativeStatus.deleted] },
-                }, 'id');
+                }, 'id creativeLabel');
             } else if (castrLocId) {
                 creatives = await CreativeModel.find({
                     castrLocId: castrLocId,
                     [CreativeField.status]: { $ne: [CreativeStatus.deleted] },
-                }, 'id');
+                }, 'id creativeLabel');
             } else {
                 throw new Error('Missing params: must provide either `castrLocId` or `promotionId`');
             }
             const creativeIds = creatives.map(creative => creative.id);
             const batches = [];
             let batchCompleted = false;
-            const requests = creativeIds.map(id => ({
-                method: 'DELETE',
-                relative_url: `${fbRequest.apiVersion}/${id}`,
-            }));
+            const requests = [];
+            for (let i = 0; i < creatives.length; i++) {
+                const id = creatives[i].id;
+                const creativeLabelId = creatives[i].creativeLabel.id;
+                requests.push({
+                    method: 'DELETE',
+                    relative_url: `${fbRequest.apiVersion}/${id}`,
+                });
+                requests.push({
+                    method: 'DELETE',
+                    relative_url: `${fbRequest.apiVersion}/${creativeLabelId}`,
+                });
+            }
             let attempts = 3;
             let batchResponses;
             do {
