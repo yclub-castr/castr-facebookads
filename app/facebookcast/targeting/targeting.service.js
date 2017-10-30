@@ -54,7 +54,7 @@ function korLocDecoder(params) {
     } else if (query.includes('제주도')) {
         transQuery = 'Jeju-do';
         locTypes = ['region'];
-    } 
+    }
     return {
         type: 'adgeolocation',
         q: transQuery || params.query,
@@ -103,7 +103,19 @@ class TargetingService {
             }
             const fbResponse = await fbRequest.get('search', null, searchParams);
             logger.debug(`${fbResponse.data.length} [${searchParams.location_types}] found for query (${searchParams.q})`);
-            return fbResponse.data;
+            const response = fbResponse.data.map((loc) => {
+                let name = loc.name;
+                if (loc.type === 'city') {
+                    name += `, ${loc.region}, ${loc.country_name}`;
+                } else if (loc.type === 'region') {
+                    name += `, ${loc.country_name}`;
+                }
+                return {
+                    key: loc.key,
+                    name: name,
+                };
+            });
+            return response;
         } catch (err) {
             throw err;
         }
