@@ -25,6 +25,7 @@ router.get('/location', async (req, res, next) => {
         const params = {
             query: req.query.q,
             locale: locale(req.query.locale),
+            type: req.query.type,
         };
         res.json(await targetingService.searchLocations(params));
     } catch (err) {

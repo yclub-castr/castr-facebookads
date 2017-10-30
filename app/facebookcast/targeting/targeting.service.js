@@ -10,7 +10,7 @@ function korLocDecoder(params) {
     const query = params.query;
     let transQuery;
     let locTypes;
-    if (query.includes('한국') || query.includes('대한민국')) {
+    if ((params.type !== 'RC_ONLY') && (query.includes('한국') || query.includes('대한민국'))) {
         transQuery = 'korea';
         locTypes = ['country'];
     } else if (query.includes('경기도')) {
@@ -49,7 +49,7 @@ function korLocDecoder(params) {
     } else if (query.includes('제주도')) {
         transQuery = 'Jeju-do';
         locTypes = ['region'];
-    } 
+    }
     return {
         type: 'adgeolocation',
         q: transQuery || params.query,
@@ -76,13 +76,22 @@ class TargetingService {
 
     async searchLocations(params) {
         let searchParams;
+        if (!['ALL', 'RC_ONLY'].includes(params.type)) {
+            throw new Error('Missing param \'type\': must either be \'ALL\' or \'RE_ONLY\'');
+        }
         if (params.locale === 'ko_KR') {
             searchParams = korLocDecoder(params);
         } else {
+            let loc_types;
+            if (params.type === 'ALL') {
+                loc_types = ['country', 'region', 'city'];
+            } else if (params.type === 'RC_ONLY') {
+                loc_types = ['region', 'city'];
+            }
             searchParams = {
                 type: 'adgeolocation',
                 q: params.query,
-                location_types: ['country', 'region', 'city'],
+                location_types: loc_types,
                 locale: params.locale,
             };
         }
@@ -112,7 +121,7 @@ class TargetingService {
             throw err;
         }
     }
-    
+
     // Not being used
     async searchCountries(params) {
         const searchParams = {
