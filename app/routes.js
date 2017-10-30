@@ -12,6 +12,10 @@ const pixelRouter = require('./facebookcast/pixel/pixel.route');
 const targetingRouter = require('./facebookcast/targeting/targeting.route');
 const previewRouter = require('./facebookcast/preview/preview.route');
 const insightRouter = require('./facebookcast/insight/insight.route');
+const adlabelRouter = require('./facebookcast/adlabel/adlabel.route');
+
+// Temporary routing
+// const masterRouter = require('./master/master.route');
 
 const router = express.Router();
 
@@ -28,5 +32,9 @@ router.use('/pixel', pixelRouter);
 router.use('/targeting', targetingRouter);
 router.use('/preview', previewRouter);
 router.use('/insight', insightRouter);
+router.use('/adlabel', adlabelRouter);
+
+// Temporary routing
+// router.use('/master', masterRouter);
 
 module.exports = router;
