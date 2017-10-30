@@ -12,6 +12,7 @@ router.route('/')
         try {
             const params = {
                 castrBizId: req.query.castrBizId,
+                castrLocId: req.query.castrLocId,
                 promotionId: req.query.promotionId,
                 campaignId: req.query.campaignId,
             };
@@ -24,16 +25,12 @@ router.route('/')
         try {
             const params = {
                 castrBizId: req.body.castrBizId,
+                castrLocId: req.query.castrLocId,
                 promotionId: req.body.promotionId,
                 campaignId: req.body.campaignId,
                 dailyBudget: req.body.dailyBudget,
                 billingEvent: req.body.billingEvent,
-                // name
-                // isAutoBid
-                // targeting
                 optimizationGoal: req.body.optimizationGoal,
-                // promotedObject
-
             };
             res.json(await adsetService.createAdSet(params));
         } catch (err) {
@@ -44,6 +41,7 @@ router.route('/')
         try {
             const params = {
                 castrBizId: req.body.castrBizId,
+                castrLocId: req.query.castrLocId,
                 promotionId: req.body.promotionId,
             };
             res.json(await adsetService.deleteAdSets(params));

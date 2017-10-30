@@ -12,6 +12,7 @@ router.get('/', async (req, res, next) => {
     try {
         const params = {
             castrBizId: req.query.castrBizId,
+            castrLocId: req.query.castrLocId,
             promotionId: req.query.promotionId,
             locale: locale(req.query.locale),
         };

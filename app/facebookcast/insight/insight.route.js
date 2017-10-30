@@ -11,6 +11,7 @@ router.get('/', async (req, res, next) => {
     try {
         const params = {
             castrBizId: req.query.castrBizId,
+            castrLocId: req.query.castrLocId,
             promotionIds: req.query.promotionIds,
             dateRange: req.query.dateRange,
         };

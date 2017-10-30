@@ -21,6 +21,7 @@ exports.Model = fbCastDB.model(
     new mongoose.Schema(
         {
             castrBizId: { type: String, required: false },
+            castrLocId: String,
             promotionId: { type: String, required: false },
             accountId: { type: String, required: false },
             campaignId: { type: String, required: false },

@@ -12,6 +12,7 @@ router.route('/')
         try {
             const params = {
                 castrBizId: req.query.castrBizId,
+                castrLocId: req.query.castrLocId,
                 promotionId: req.query.promotionId,
                 campaignId: req.query.campaignId,
                 adsetId: req.query.adsetId,
@@ -25,6 +26,7 @@ router.route('/')
         try {
             const params = {
                 castrBizId: req.body.castrBizId,
+                castrLocId: req.query.castrLocId,
                 promotionId: req.body.promotionId,
                 campaignId: req.query.campaignId,
                 adsetId: req.body.adsetId,
@@ -39,6 +41,7 @@ router.route('/')
         try {
             const params = {
                 castrBizId: req.body.castrBizId,
+                castrLocId: req.query.castrLocId,
                 promotionId: req.body.promotionId,
             };
             res.json(await adService.deleteAds(params));
@@ -52,6 +55,7 @@ router.route('/byCreativeIds')
         try {
             const params = {
                 castrBizId: req.query.castrBizId,
+                castrLocId: req.query.castrLocId,
                 promotionId: req.query.promotionId,
                 creativeIds: req.query.creativeIds,
             };
