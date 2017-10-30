@@ -11,7 +11,7 @@ router.route('/')
     .get(async (req, res, next) => {
         try {
             const params = {
-                castrLocId: req.query.castrLocId,
+                castrBizId: req.query.castrBizId,
                 promotionId: req.query.promotionId,
                 campaignId: req.query.campaignId,
             };
@@ -23,7 +23,7 @@ router.route('/')
     .post(async (req, res, next) => {
         try {
             const params = {
-                castrLocId: req.body.castrLocId,
+                castrBizId: req.body.castrBizId,
                 promotionId: req.body.promotionId,
                 campaignId: req.body.campaignId,
                 dailyBudget: req.body.dailyBudget,
@@ -43,7 +43,7 @@ router.route('/')
     .delete(async (req, res, next) => {
         try {
             const params = {
-                castrLocId: req.body.castrLocId,
+                castrBizId: req.body.castrBizId,
                 promotionId: req.body.promotionId,
             };
             res.json(await adsetService.deleteAdSets(params));

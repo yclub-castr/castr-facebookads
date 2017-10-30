@@ -23,10 +23,10 @@ const readFields = Object.values(AdField).filter(field => !excludedFields.includ
 
 class AdService {
     async getAds(params) {
-        const castrLocId = params.castrLocId;
+        const castrBizId = params.castrBizId;
         const promotionId = params.promotionId;
         try {
-            const project = await ProjectModel.findOne({ castrLocId: castrLocId });
+            const project = await ProjectModel.findOne({ castrBizId: castrBizId });
             const accountId = project.accountId;
             const adParams = { fields: readFields };
             let ads;
@@ -41,19 +41,19 @@ class AdService {
                         break;
                     }
                 }
-            } else if (castrLocId) {
-                logger.debug(`Fetching ads by business id (#${castrLocId}) ...`);
-                adParams.filtering = `[{"field":"adlabels","operator":"ANY","value":["${castrLocId}"]}]`;
+            } else if (castrBizId) {
+                logger.debug(`Fetching ads by business id (#${castrBizId}) ...`);
+                adParams.filtering = `[{"field":"adlabels","operator":"ANY","value":["${castrBizId}"]}]`;
                 ads = await fbRequest.get(accountId, 'ads', adParams);
             } else {
-                throw new Error('Missing params: must provide either `castrLocId` or `promotionId`');
+                throw new Error('Missing params: must provide either `castrBizId` or `promotionId`');
             }
             if (!ads) {
                 throw new Error('Could not find ad label to read ads');
             }
             const msg = `${ads.data.length} ads fetched`;
             logger.debug(msg);
-            this.syncAds(ads.data, castrLocId, promotionId);
+            this.syncAds(ads.data, castrBizId, promotionId);
             return {
                 success: true,
                 message: msg,
@@ -65,11 +65,11 @@ class AdService {
     }
 
     async getAdsByCreativeIds(params) {
-        const castrLocId = params.castrLocId;
+        const castrBizId = params.castrBizId;
         const promotionId = params.promotionId;
         const creativeIds = params.creativeIds;
         try {
-            const project = await ProjectModel.findOne({ castrLocId: castrLocId });
+            const project = await ProjectModel.findOne({ castrBizId: castrBizId });
             const accountId = project.accountId;
             const adParams = { fields: readFields };
             let ads;
@@ -91,17 +91,17 @@ class AdService {
                         break;
                     }
                 }
-            } else if (castrLocId) {
-                logger.debug(`Fetching ads by business id (#${castrLocId}) ...`);
-                adParams.filtering = `[{"field":"adlabels","operator":"ANY","value":["${castrLocId}"]}]`;
+            } else if (castrBizId) {
+                logger.debug(`Fetching ads by business id (#${castrBizId}) ...`);
+                adParams.filtering = `[{"field":"adlabels","operator":"ANY","value":["${castrBizId}"]}]`;
                 ads = await fbRequest.get(accountId, 'ads', adParams);
             } else {
-                throw new Error('Missing params: must provide either `castrLocId`, `promotionId` or `creativeIds`');
+                throw new Error('Missing params: must provide either `castrBizId`, `promotionId` or `creativeIds`');
             }
             if (!ads) { throw new Error('Could not find ad label to read ads'); }
             const msg = `${ads.data.length} ads fetched`;
             logger.debug(msg);
-            this.syncAds(ads.data, castrLocId, promotionId);
+            this.syncAds(ads.data, castrBizId, promotionId);
             return {
                 success: true,
                 message: msg,
@@ -113,13 +113,13 @@ class AdService {
     }
 
     async createAds(params) {
-        const castrLocId = params.castrLocId;
+        const castrBizId = params.castrBizId;
         const promotionId = params.promotionId;
         const creatives = params.creatives;
         const adCreatePromises = [];
         logger.debug(`Generating ads from ${creatives.length} creatives...`);
         try {
-            const project = await ProjectModel.findOne({ castrLocId: castrLocId });
+            const project = await ProjectModel.findOne({ castrBizId: castrBizId });
             const businessLabel = project.adLabels.businessLabel.toObject();
             const promotionLabels = project.adLabels.promotionLabels;
             let promotionLabel;
@@ -130,7 +130,7 @@ class AdService {
             }
             for (let i = 0; i < creatives.length; i++) {
                 const adParams = {
-                    castrLocId: castrLocId,
+                    castrBizId: castrBizId,
                     promotionId: promotionId,
                     accountId: project.accountId,
                     campaignId: params.campaignId,
@@ -156,7 +156,7 @@ class AdService {
     }
 
     async createAd(params) {
-        const castrLocId = params.castrLocId;
+        const castrBizId = params.castrBizId;
         const promotionId = params.promotionId;
         const accountId = params.accountId;
         const campaignId = params.campaignId;
@@ -192,7 +192,7 @@ class AdService {
             const msg = `Ad (#${ad.id}) created`;
             logger.debug(msg);
             const model = new AdModel({
-                castrLocId: castrLocId,
+                castrBizId: castrBizId,
                 promotionId: promotionId,
                 accountId: ad.account_id,
                 campaignId: ad.campaign_id,
@@ -226,7 +226,7 @@ class AdService {
     }
 
     async deleteAds(params) {
-        const castrLocId = params.castrLocId;
+        const castrBizId = params.castrBizId;
         const promotionId = params.promotionId;
         try {
             logger.debug('Fetching ads for deletion...');
@@ -236,13 +236,13 @@ class AdService {
                     promotionId: promotionId,
                     [AdField.status]: { $ne: [AdStatus.deleted] },
                 }, 'id');
-            } else if (castrLocId) {
+            } else if (castrBizId) {
                 ads = await AdModel.find({
-                    castrLocId: castrLocId,
+                    castrBizId: castrBizId,
                     [AdField.status]: { $ne: [AdStatus.deleted] },
                 }, 'id');
             } else {
-                throw new Error('Missing params: must provide either `castrLocId` or `promotionId`');
+                throw new Error('Missing params: must provide either `castrBizId` or `promotionId`');
             }
             const adIds = ads.map(ad => ad.id);
             const batches = [];
@@ -302,7 +302,7 @@ class AdService {
         }
     }
 
-    async syncAds(ads, castrLocId, promotionId) {
+    async syncAds(ads, castrBizId, promotionId) {
         const promises = [];
         ads.forEach((ad) => {
             const update = {
@@ -311,7 +311,7 @@ class AdService {
                 status: ad.status,
                 effectiveStatus: ad.effective_status,
             };
-            if (castrLocId) update.castrLocId = castrLocId;
+            if (castrBizId) update.castrBizId = castrBizId;
             if (promotionId) update.promotionId = promotionId;
             promises.push(AdModel.updateOne(
                 { id: ad.id },

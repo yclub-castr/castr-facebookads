@@ -11,7 +11,7 @@ router.route('/')
     .get(async (req, res, next) => {
         try {
             const params = {
-                castrLocId: req.query.castrLocId,
+                castrBizId: req.query.castrBizId,
                 promotionId: req.query.promotionId,
             };
             res.json(await campaignService.getCampaigns(params));
@@ -22,7 +22,7 @@ router.route('/')
     .post(async (req, res, next) => {
         try {
             const params = {
-                castrLocId: req.body.castrLocId,
+                castrBizId: req.body.castrBizId,
                 promotionId: req.body.promotionId,
                 objective: req.body.objective,
             };
@@ -34,7 +34,7 @@ router.route('/')
     .delete(async (req, res, next) => {
         try {
             const params = {
-                castrLocId: req.body.castrLocId,
+                castrBizId: req.body.castrBizId,
                 promotionId: req.body.promotionId,
             };
             res.json(await campaignService.deleteCampaigns(params));

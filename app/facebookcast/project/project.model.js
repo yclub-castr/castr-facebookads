@@ -15,7 +15,7 @@ exports.Model = fbCastDB.model(
     'Project',
     new mongoose.Schema(
         {
-            castrLocId: String,
+            castrBizId: String,
             accountId: String,
             accountName: String,
             accountStatus: { type: String, enum: Object.values(Status) },

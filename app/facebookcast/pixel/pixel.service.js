@@ -13,10 +13,10 @@ class PixelService {
     async getPixel(params) {
         let accountId = params.accountId;
         try {
-            if (!params.castrLocId) throw new Error('Missing param: must provide `castrLocId`');
-            const castrLocId = params.castrLocId;
+            if (!params.castrBizId) throw new Error('Missing param: must provide `castrBizId`');
+            const castrBizId = params.castrBizId;
             if (!accountId) {
-                const project = await ProjectModel.findOne({ castrLocId: castrLocId });
+                const project = await ProjectModel.findOne({ castrBizId: castrBizId });
                 accountId = project.accountId;
             }
             const fbResponse = await fbRequest.get(accountId, 'adspixels', { fields: readFields });
@@ -24,7 +24,7 @@ class PixelService {
             if (fbResponse.data) {
                 pixel = fbResponse.data[0];
             } else {
-                logger.debug(`No pixel found for Business (#${castrLocId}), creating new pixel...`);
+                logger.debug(`No pixel found for Business (#${castrBizId}), creating new pixel...`);
                 pixel = await this.createPixel(accountId);
             }
             const msg = `Pixel (${pixel.id}) fetched`;
@@ -42,13 +42,13 @@ class PixelService {
     async createPixel(project) {
         try {
             const accountId = project.accountId;
-            const name = `Castr pixel [biz#${project.castrLocId}]`;
+            const name = `Castr pixel [biz#${project.castrBizId}]`;
             const pixelParams = {
                 [Pixel.Field.name]: name,
                 fields: readFields,
             };
             const pixel = await fbRequest.post(accountId, 'adspixels', pixelParams);
-            logger.debug(`Pixel (#${pixel.id}) created for Business (${project.castrLocId})`);
+            logger.debug(`Pixel (#${pixel.id}) created for Business (${project.castrBizId})`);
             return pixel;
         } catch (err) {
             throw err;

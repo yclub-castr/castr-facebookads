@@ -24,10 +24,10 @@ const readFields = Object.values(AdSetField).filter(field => !excludedFields.inc
 
 class AdSetService {
     async getAdSets(params) {
-        const castrLocId = params.castrLocId;
+        const castrBizId = params.castrBizId;
         const promotionId = params.promotionId;
         try {
-            const project = await ProjectModel.findOne({ castrLocId: castrLocId });
+            const project = await ProjectModel.findOne({ castrBizId: castrBizId });
             const accountId = project.accountId;
             const adsetParams = { fields: readFields };
             let adsets;
@@ -42,19 +42,19 @@ class AdSetService {
                         break;
                     }
                 }
-            } else if (castrLocId) {
-                logger.debug(`Fetching adsets by business id (#${castrLocId}) ...`);
-                adsetParams.filtering = `[{"field":"adlabels","operator":"ANY","value":["${castrLocId}"]}]`;
+            } else if (castrBizId) {
+                logger.debug(`Fetching adsets by business id (#${castrBizId}) ...`);
+                adsetParams.filtering = `[{"field":"adlabels","operator":"ANY","value":["${castrBizId}"]}]`;
                 adsets = await fbRequest.get(accountId, 'adsets', adsetParams);
             } else {
-                throw new Error('Missing params: must provide either `castrLocId` or `promotionId`');
+                throw new Error('Missing params: must provide either `castrBizId` or `promotionId`');
             }
             if (!adsets) {
                 throw new Error('Could not find ad label to read adsets');
             }
             const msg = `${adsets.data.length} adsets fetched`;
             logger.debug(msg);
-            this.syncAdSets(adsets.data, castrLocId, promotionId);
+            this.syncAdSets(adsets.data, castrBizId, promotionId);
             return {
                 success: true,
                 message: msg,
@@ -66,7 +66,7 @@ class AdSetService {
     }
 
     async createAdSet(params) {
-        const castrLocId = params.castrLocId;
+        const castrBizId = params.castrBizId;
         const promotionId = params.promotionId;
         const campaignId = params.campaignId;
         const dailyBudget = params.dailyBudget;
@@ -79,7 +79,7 @@ class AdSetService {
         const optimizationGoal = params.optimizationGoal;
         const name = `AdSet [${optimizationGoal}]`;
         try {
-            const project = await ProjectModel.findOne({ castrLocId: castrLocId });
+            const project = await ProjectModel.findOne({ castrBizId: castrBizId });
             const accountId = project.accountId;
             const businessLabel = project.adLabels.businessLabel.toObject();
             const promotionLabels = project.adLabels.promotionLabels;
@@ -125,7 +125,7 @@ class AdSetService {
             const msg = `AdSet (#${adset.id}) created`;
             logger.debug(msg);
             const model = new AdSetModel({
-                castrLocId: castrLocId,
+                castrBizId: castrBizId,
                 promotionId: promotionId,
                 accountId: adset.account_id,
                 campaignId: adset.campaign_id,
@@ -157,7 +157,7 @@ class AdSetService {
     }
 
     async deleteAdSets(params) {
-        const castrLocId = params.castrLocId;
+        const castrBizId = params.castrBizId;
         const promotionId = params.promotionId;
         try {
             logger.debug('Fetching adsets for deletion...');
@@ -167,13 +167,13 @@ class AdSetService {
                     promotionId: promotionId,
                     [AdSetField.status]: { $ne: [AdSetStatus.deleted] },
                 }, 'id');
-            } else if (castrLocId) {
+            } else if (castrBizId) {
                 adsets = await AdSetModel.find({
-                    castrLocId: castrLocId,
+                    castrBizId: castrBizId,
                     [AdSetField.status]: { $ne: [AdSetStatus.deleted] },
                 }, 'id');
             } else {
-                throw new Error('Missing params: must provide either `castrLocId` or `promotionId`');
+                throw new Error('Missing params: must provide either `castrBizId` or `promotionId`');
             }
             const adsetIds = adsets.map(adset => adset.id);
             const batches = [];
@@ -233,7 +233,7 @@ class AdSetService {
         }
     }
 
-    async syncAdSets(adsets, castrLocId, promotionId) {
+    async syncAdSets(adsets, castrBizId, promotionId) {
         const promises = [];
         adsets.forEach((adset) => {
             const update = {
@@ -242,7 +242,7 @@ class AdSetService {
                 status: adset.status,
                 effectiveStatus: adset.effective_status,
             };
-            if (castrLocId) update.castrLocId = castrLocId;
+            if (castrBizId) update.castrBizId = castrBizId;
             if (promotionId) update.promotionId = promotionId;
             promises.push(AdSetModel.updateOne(
                 { id: adset.id },

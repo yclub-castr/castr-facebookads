@@ -16,10 +16,10 @@ const pageRoles = process.env.PAGE_ROLES.split(',');
 
 class ProjectService {
     async getProject(params) {
-        const castrLocId = params.castrLocId;
+        const castrBizId = params.castrBizId;
         try {
-            const project = await ProjectModel.findOne({ castrLocId: castrLocId });
-            const msg = `Business (#${castrLocId}) project fetched`;
+            const project = await ProjectModel.findOne({ castrBizId: castrBizId });
+            const msg = `Business (#${castrBizId}) project fetched`;
             logger.debug(msg);
             return {
                 success: true,
@@ -55,7 +55,7 @@ class ProjectService {
     }
 
     async integrateAccount(params) {
-        const castrLocId = params.castrLocId;
+        const castrBizId = params.castrBizId;
         const accountId = params.accountId;
         const accountName = params.accountName;
         const data = {
@@ -64,13 +64,13 @@ class ProjectService {
             permitted_roles: accountRoles,
         };
         try {
-            logger.debug(`Requesting access to adaccount (#${accountId}) owned by Business (#${castrLocId}) ...`);
+            logger.debug(`Requesting access to adaccount (#${accountId}) owned by Business (#${castrBizId}) ...`);
             const fbResponse = await fbRequest.post(process.env.CASTR_BUSINESS_ID, 'adaccounts', data);
-            logger.debug(`Adaccount request sent to Business (#${castrLocId})`);
+            logger.debug(`Adaccount request sent to Business (#${castrBizId})`);
             await ProjectModel.update(
-                { castrLocId: castrLocId },
+                { castrBizId: castrBizId },
                 {
-                    $setOnInsert: { castrLocId: castrLocId },
+                    $setOnInsert: { castrBizId: castrBizId },
                     $set: {
                         accountId: accountId,
                         accountName: accountName,
@@ -81,7 +81,7 @@ class ProjectService {
                 },
                 { upsert: true }
             );
-            logger.debug(`Pending status for business (#${castrLocId}) stored to DB`);
+            logger.debug(`Pending status for business (#${castrBizId}) stored to DB`);
             return {
                 success: true,
                 message: 'Account integration pending, request sent',
@@ -93,23 +93,23 @@ class ProjectService {
     }
 
     async disintegrateAccount(params) {
-        const castrLocId = params.castrLocId;
+        const castrBizId = params.castrBizId;
         let accountId;
         try {
             if (!params.accountId) {
                 logger.debug('AccountId not provided, fetching it from DB...');
-                const project = await ProjectModel.findOne({ castrLocId: castrLocId });
+                const project = await ProjectModel.findOne({ castrBizId: castrBizId });
                 accountId = project.accountId;
             } else {
                 accountId = params.accountId;
             }
             const data = { adaccount_id: accountId };
-            logger.debug(`Disintegrating adaccount owned by Business (#${castrLocId}) ...`);
+            logger.debug(`Disintegrating adaccount owned by Business (#${castrBizId}) ...`);
             const fbResponse = await fbRequest.delete(process.env.CASTR_BUSINESS_ID, 'adaccounts', data);
-            logger.debug(`Disintegrated Business (#${castrLocId}) adaccount`);
+            logger.debug(`Disintegrated Business (#${castrBizId}) adaccount`);
             await ProjectModel.update(
                 {
-                    castrLocId: castrLocId,
+                    castrBizId: castrBizId,
                     accountId: accountId,
                 },
                 {
@@ -120,7 +120,7 @@ class ProjectService {
                     },
                 }
             );
-            logger.debug(`Disintegrated status for business (#${castrLocId}) stored to DB`);
+            logger.debug(`Disintegrated status for business (#${castrBizId}) stored to DB`);
             return {
                 success: true,
                 message: 'Account disintegration successful',
@@ -132,12 +132,12 @@ class ProjectService {
     }
 
     async verifyAccount(params) {
-        const castrLocId = params.castrLocId;
+        const castrBizId = params.castrBizId;
         let accountId;
         try {
             if (!params.accountId) {
                 logger.debug('AccountId not provided, fetching it from DB...');
-                const project = await ProjectModel.findOne({ castrLocId: castrLocId });
+                const project = await ProjectModel.findOne({ castrBizId: castrBizId });
                 accountId = project.accountId;
             } else {
                 accountId = params.accountId;
@@ -147,21 +147,21 @@ class ProjectService {
                 user: process.env.ADMIN_SYS_USER_ID,
                 role: 'ADMIN',
             };
-            logger.debug(`Assigning system user to adaccount owned by Business (#${castrLocId}) ...`);
-            logger.debug(`Creating adlabel for adaccount owned by Business (#${castrLocId}) ...`);
+            logger.debug(`Assigning system user to adaccount owned by Business (#${castrBizId}) ...`);
+            logger.debug(`Creating adlabel for adaccount owned by Business (#${castrBizId}) ...`);
             const promises = [
                 fbRequest.post(accountId, 'userpermissions', data),
-                fbRequest.post(accountId, 'adlabels', { name: castrLocId }),
+                fbRequest.post(accountId, 'adlabels', { name: castrBizId }),
                 fbRequest.get(accountId, null, { fields: 'timezone_id' })
             ];
             const fbResponses = await Promise.all(promises);
             const adlabel = fbResponses[1];
             const momentTzId = timezone(fbResponses[2].timezone_id);
-            logger.debug(`System user assigned to Business (#${castrLocId}) adaccount`);
-            logger.debug(`Adlabel created for Business (#${castrLocId})`);
+            logger.debug(`System user assigned to Business (#${castrBizId}) adaccount`);
+            logger.debug(`Adlabel created for Business (#${castrBizId})`);
             await ProjectModel.update(
                 {
-                    castrLocId: castrLocId,
+                    castrBizId: castrBizId,
                     accountId: accountId,
                 },
                 {
@@ -173,7 +173,7 @@ class ProjectService {
                     },
                 }
             );
-            logger.debug(`Account approved status for business (#${castrLocId}) stored to DB`);
+            logger.debug(`Account approved status for business (#${castrBizId}) stored to DB`);
             return {
                 success: true,
                 message: 'Account verification successful',
@@ -208,7 +208,7 @@ class ProjectService {
     }
 
     async integratePage(params) {
-        const castrLocId = params.castrLocId;
+        const castrBizId = params.castrBizId;
         const pageId = params.pageId;
         const pageName = params.pageName;
         const data = {
@@ -217,13 +217,13 @@ class ProjectService {
             permitted_roles: pageRoles,
         };
         try {
-            logger.debug(`Requesting access to page (#${pageId}) owned by Business (#${castrLocId}) ...`);
+            logger.debug(`Requesting access to page (#${pageId}) owned by Business (#${castrBizId}) ...`);
             const fbResponse = await fbRequest.post(process.env.CASTR_BUSINESS_ID, 'pages', data);
-            logger.debug(`Page request sent to Business (#${castrLocId})`);
+            logger.debug(`Page request sent to Business (#${castrBizId})`);
             await ProjectModel.update(
-                { castrLocId: castrLocId },
+                { castrBizId: castrBizId },
                 {
-                    $setOnInsert: { castrLocId: castrLocId },
+                    $setOnInsert: { castrBizId: castrBizId },
                     $set: {
                         pageId: pageId,
                         pageName: pageName,
@@ -233,7 +233,7 @@ class ProjectService {
                 },
                 { upsert: true }
             );
-            logger.debug(`Pending status for business (#${castrLocId}) stored to DB`);
+            logger.debug(`Pending status for business (#${castrBizId}) stored to DB`);
             return {
                 success: true,
                 message: 'Page integration pending, request sent',
@@ -245,24 +245,24 @@ class ProjectService {
     }
 
     async disintegratePage(params) {
-        const castrLocId = params.castrLocId;
+        const castrBizId = params.castrBizId;
         let pageId;
         try {
             if (!params.pageId) {
                 logger.debug('PageId not provided, fetching it from DB...');
-                const project = await ProjectModel.findOne({ castrLocId: castrLocId });
+                const project = await ProjectModel.findOne({ castrBizId: castrBizId });
                 pageId = project.pageId;
             } else {
                 pageId = params.pageId;
             }
             if (pageId === process.env.CASTR_PRIMARY_PAGE_ID) throw new Error('Cannot disintegrate Castr primary page');
             const data = { page_id: pageId };
-            logger.debug(`Disintegrating page owned by Business (#${castrLocId}) ...`);
+            logger.debug(`Disintegrating page owned by Business (#${castrBizId}) ...`);
             const fbResponse = await fbRequest.delete(process.env.CASTR_BUSINESS_ID, 'pages', data);
-            logger.debug(`Disintegrated Business (#${castrLocId}) page`);
+            logger.debug(`Disintegrated Business (#${castrBizId}) page`);
             await ProjectModel.update(
                 {
-                    castrLocId: castrLocId,
+                    castrBizId: castrBizId,
                     pageId: pageId,
                 },
                 {
@@ -272,7 +272,7 @@ class ProjectService {
                     },
                 }
             );
-            logger.debug(`Disintegrated status for business (#${castrLocId}) stored to DB`);
+            logger.debug(`Disintegrated status for business (#${castrBizId}) stored to DB`);
             return {
                 success: true,
                 message: 'Page disintegration successful',
@@ -284,12 +284,12 @@ class ProjectService {
     }
 
     async verifyPage(params) {
-        const castrLocId = params.castrLocId;
+        const castrBizId = params.castrBizId;
         let pageId;
         try {
             if (!params.pageId) {
                 logger.debug('PageId not provided, fetching it from DB...');
-                const project = await ProjectModel.findOne({ castrLocId: castrLocId });
+                const project = await ProjectModel.findOne({ castrBizId: castrBizId });
                 pageId = project.pageId;
             } else {
                 pageId = params.pageId;
@@ -299,14 +299,14 @@ class ProjectService {
                 user: process.env.ADMIN_SYS_USER_ID,
                 role: 'MANAGER',
             };
-            logger.debug(`Assigning system user to page owned by Business (#${castrLocId}) ...`);
+            logger.debug(`Assigning system user to page owned by Business (#${castrBizId}) ...`);
             const fbResponse = await fbRequest.post(pageId, 'userpermissions', pageRequestData);
-            logger.debug(`System user assigned to Business (#${castrLocId}) page`);
+            logger.debug(`System user assigned to Business (#${castrBizId}) page`);
             const dbUpdate = {
                 pageStatus: ProjectStatus.Approved,
                 pageVerified: true,
             };
-            logger.debug(`Fetching Instagram account(s) belonging to Business (#${castrLocId}) page...`);
+            logger.debug(`Fetching Instagram account(s) belonging to Business (#${castrBizId}) page...`);
             const instagramRequestData = { fields: ['id', 'username'].toString() };
             const promises = [
                 fbRequest.get(pageId, 'instagram_accounts', instagramRequestData),
@@ -329,19 +329,19 @@ class ProjectService {
             if (!foundInstagramAccount) {
                 logger.debug('No Instagram account fetched, creating new PBIA...');
                 const instagram = await fbRequest.post(pageId, 'page_backed_instagram_accounts', instagramRequestData);
-                logger.debug(`New PBIA created for Business (#${castrLocId}) page`);
+                logger.debug(`New PBIA created for Business (#${castrBizId}) page`);
                 dbUpdate.instagramId = instagram.id;
                 dbUpdate.instagramName = instagram.username;
                 dbUpdate.isPBIA = true;
             }
             await ProjectModel.update(
                 {
-                    castrLocId: castrLocId,
+                    castrBizId: castrBizId,
                     pageId: pageId,
                 },
                 { $set: dbUpdate }
             );
-            logger.debug(`Page approved status for business (#${castrLocId}) stored to DB`);
+            logger.debug(`Page approved status for business (#${castrBizId}) stored to DB`);
             return {
                 success: true,
                 message: 'Page verification & Instagram setup successful',
@@ -396,36 +396,36 @@ class ProjectService {
     }
 
     async verifyPaymentMethod(params) {
-        const castrLocId = params.castrLocId;
+        const castrBizId = params.castrBizId;
         let accountId;
         try {
             if (!params.accountId) {
                 logger.debug('AccountId not provided, fetching it from DB...');
-                const project = await ProjectModel.findOne({ castrLocId: castrLocId });
+                const project = await ProjectModel.findOne({ castrBizId: castrBizId });
                 accountId = project.accountId;
             } else {
                 accountId = params.accountId;
             }
             const data = { fields: ['account_status', 'funding_source_details'].toString() };
-            logger.debug(`Fetching FB funding source for Business (#${castrLocId}) ...`);
+            logger.debug(`Fetching FB funding source for Business (#${castrBizId}) ...`);
             const fbResponse = await fbRequest.get(accountId, null, data);
             if (!('account_status' in fbResponse)) { throw new Error('Something wrong with this response, implement handler'); }
             const response = {};
             if (!('funding_source_details' in fbResponse)) {
                 response.success = false;
-                response.message = `No funding source found for the adaccount owned by Business (#${castrLocId})`;
+                response.message = `No funding source found for the adaccount owned by Business (#${castrBizId})`;
             } else if (fbResponse.account_status === 3) {
                 response.success = false;
-                response.message = `Unsettled adaccount owned by Business (#${castrLocId}), try another payment method`;
+                response.message = `Unsettled adaccount owned by Business (#${castrBizId}), try another payment method`;
             } else if (fbResponse.account_status !== 1) {
                 throw new Error(`Unexpected status_code (${fbResponse.account_status}), implement handler`);
             } else {
                 response.success = true;
-                response.message = `Funding source found for the adaccount owned by Business (#${castrLocId})`;
+                response.message = `Funding source found for the adaccount owned by Business (#${castrBizId})`;
             }
             await ProjectModel.update(
                 {
-                    castrLocId: castrLocId,
+                    castrBizId: castrBizId,
                     accountId: accountId,
                 },
                 {
@@ -445,20 +445,20 @@ class ProjectService {
     }
 
     async disintegrate(params) {
-        const castrLocId = params.castrLocId;
+        const castrBizId = params.castrBizId;
         try {
-            const project = await ProjectModel.findOne({ castrLocId: castrLocId });
+            const project = await ProjectModel.findOne({ castrBizId: castrBizId });
             const disintegrate_params = {
-                castrLocId: castrLocId,
+                castrBizId: castrBizId,
                 accountId: project.accountId,
                 pageId: project.pageId,
             };
             const promises = [];
-            logger.debug(`Disintegrating Business (#${castrLocId}) project`);
+            logger.debug(`Disintegrating Business (#${castrBizId}) project`);
             if (project.accountStatus !== ProjectStatus.Disintegrated) { promises.push(this.disintegrateAccount(disintegrate_params)); }
             if (project.pageStatus !== ProjectStatus.Disintegrated) { promises.push(this.disintegratePage(disintegrate_params)); }
             await Promise.all(promises);
-            const msg = `Business (#${castrLocId}) project disintegrated`;
+            const msg = `Business (#${castrBizId}) project disintegrated`;
             logger.debug(msg);
             return {
                 success: true,

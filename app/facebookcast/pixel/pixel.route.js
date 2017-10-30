@@ -10,7 +10,7 @@ const router = express.Router();
 router.route('/')
     .get(async (req, res, next) => {
         try {
-            const params = { castrLocId: req.query.castrLocId };
+            const params = { castrBizId: req.query.castrBizId };
             res.json(await pixelService.getPixel(params));
         } catch (err) {
             next(err);

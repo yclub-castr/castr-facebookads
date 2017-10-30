@@ -11,7 +11,7 @@ const router = express.Router();
 router.get('/', async (req, res, next) => {
     try {
         const params = {
-            castrLocId: req.query.castrLocId,
+            castrBizId: req.query.castrBizId,
             promotionId: req.query.promotionId,
             locale: locale(req.query.locale),
         };

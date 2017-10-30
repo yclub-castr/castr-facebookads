@@ -22,19 +22,29 @@ const ProjectModel = require('../project/project.model').Model;
 //     InsightField.,
 //     InsightField.,
 //     InsightField.,
-//     InsightField.,
-//     InsightField.,
+//     InsightField., actions action_values
+//     InsightField., spend
+// hourly_stats_aggregated_by_advertiser_time_zone
+// ].toString();region reach gender frequency age
 
-// ].toString();
+const ageGender = {
+    breakdown: `${InsightField.age},${InsightField.gender}`,
+    fields: [
+        // InsightField.age,
+        // InsightField.gender,
+        InsightField.impressions,
+        InsightField.clicks
+    ].toString(),
+};
 
 class InsightService {
-    async getInsights(params) {
-        const castrLocId = params.castrLocId;
-        let promotionIds = params.promotionIds;
-        let filtering;
+    async getPromotionInsights(params) {
+        const castrBizId = params.castrBizId;
+        let promotionIds = params.promotionIds.split(',').map(id => `"${id}"`);
         let dateRange = params.dateRange;
+        let filtering;
         try {
-            const project = await ProjectModel.findOne({ castrLocId: castrLocId });
+            const project = await ProjectModel.findOne({ castrBizId: castrBizId });
             const accountId = project.accountId;
             const accountTimezone = project.timezone;
             if (!dateRange) {
@@ -46,34 +56,23 @@ class InsightService {
                 until: moment.tz(dateRange[1], accountTimezone).format('YYYY-MM-DD'),
             };
             if (!promotionIds) {
-                promotionIds = project.adLabels.promotionLabels.map(label => label.id);
+                promotionIds = project.adLabels.promotionLabels.map(label => `"${label.name}"`);
             }
-            filtering = `[{"field": "adgroup.adlabel_ids",
-                "operator": "ANY",
-                "value": ["<AD_LABEL_ID>"]
-            }]`;
-            // adParams.filtering = `[{"field":"adlabels","operator":"ANY","value":["${promotionId}"]}]`;
-
+            filtering = `[ {"field": "campaign.adlabels","operator": "ANY","value": [${promotionIds.join()}] } ]`;
             // time_increment: 1
-            const ageGender = await fbRequest(accountId, 'insights', {});
+            const ageGenderReport = await fbRequest.get(accountId, 'insights', {
+                breakdown: ageGender.breakdown,
+                fields: ageGender.fields,
+                filtering: filtering,
+            });
 
-
-            // if (promotionId) {
-            //     logger.debug(`Fetching creatives by promotion id (#${promotionId}) ...`);
-            //     creatives = await CreativeModel.find({ promotionId: promotionId });
-            // } else if (castrLocId) {
-            //     logger.debug(`Fetching creatives by business id (#${castrLocId}) ...`);
-            //     creatives = await CreativeModel.find({ castrLocId: castrLocId });
-            // } else {
-            //     throw new Error('Missing params: must provide either `castrLocId` or `promotionId`');
-            // }
 
             const msg = `Preview sets fetched for ${null} creatives`;
             logger.debug(msg);
             return {
                 success: true,
                 message: msg,
-                data: null,
+                data: ageGenderReport,
             };
         } catch (err) {
             throw err;

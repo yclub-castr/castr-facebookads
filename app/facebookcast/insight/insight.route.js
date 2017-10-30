@@ -10,11 +10,11 @@ const router = express.Router();
 router.get('/', async (req, res, next) => {
     try {
         const params = {
-            castrLocId: req.query.castrLocId,
+            castrBizId: req.query.castrBizId,
             promotionIds: req.query.promotionIds,
             dateRange: req.query.dateRange,
         };
-        res.json(await insightService.getInsights(params));
+        res.json(await insightService.getPromotionInsights(params));
     } catch (err) {
         next(err);
     }

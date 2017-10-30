@@ -11,7 +11,7 @@ router.route('/')
     .get(async (req, res, next) => {
         try {
             const params = {
-                castrLocId: req.query.castrLocId,
+                castrBizId: req.query.castrBizId,
                 promotionId: req.query.promotionId,
             };
             res.json(await creativeService.getCreatives(params));
@@ -22,7 +22,7 @@ router.route('/')
     .post(async (req, res, next) => {
         try {
             const params = {
-                castrLocId: req.body.castrLocId,
+                castrBizId: req.body.castrBizId,
                 promotionId: req.body.promotionId,
             };
             res.json(await creativeService.createCreative(params));
@@ -33,7 +33,7 @@ router.route('/')
     .delete(async (req, res, next) => {
         try {
             const params = {
-                castrLocId: req.body.castrLocId,
+                castrBizId: req.body.castrBizId,
                 promotionId: req.body.promotionId,
             };
             res.json(await creativeService.deleteCreatives(params));

@@ -31,10 +31,10 @@ const tempDir = '../../temp/';
 
 class CreativeService {
     async getCreatives(params) {
-        const castrLocId = params.castrLocId;
+        const castrBizId = params.castrBizId;
         const promotionId = params.promotionId;
         try {
-            const project = await ProjectModel.findOne({ castrLocId: castrLocId });
+            const project = await ProjectModel.findOne({ castrBizId: castrBizId });
             const creativeParams = { fields: readFields };
             let creatives = [];
             let fbResponse;
@@ -51,8 +51,8 @@ class CreativeService {
                     const notDeleted = fbResponse.data.filter(creative => creative.status !== CreativeStatus.deleted);
                     creatives = creatives.concat(notDeleted);
                 } while (fbResponse.paging.next);
-            } else if (castrLocId) {
-                logger.debug(`Fetching creatives by business id (#${castrLocId}) ...`);
+            } else if (castrBizId) {
+                logger.debug(`Fetching creatives by business id (#${castrBizId}) ...`);
                 const businessLabel = project.adLabels.businessLabel;
                 do {
                     if (fbResponse) {
@@ -64,11 +64,11 @@ class CreativeService {
                     creatives = creatives.concat(notDeleted);
                 } while (fbResponse.paging.next);
             } else {
-                throw new Error('Missing params: must provide either `castrLocId` or `promotionId`');
+                throw new Error('Missing params: must provide either `castrBizId` or `promotionId`');
             }
             const msg = `${creatives.length} creatives fetched`;
             logger.debug(msg);
-            this.syncCreatives(creatives, castrLocId, promotionId);
+            this.syncCreatives(creatives, castrBizId, promotionId);
             return {
                 success: true,
                 message: msg,
@@ -80,10 +80,10 @@ class CreativeService {
     }
 
     async createCreative(params) {
-        const castrLocId = params.castrLocId;
+        const castrBizId = params.castrBizId;
         const promotionId = params.promotionId;
         try {
-            const project = await ProjectModel.findOne({ castrLocId: castrLocId });
+            const project = await ProjectModel.findOne({ castrBizId: castrBizId });
             const accountId = project.accountId;
             const businessLabel = project.adLabels.businessLabel.toObject();
             const promotionLabels = project.adLabels.promotionLabels;
@@ -147,7 +147,7 @@ class CreativeService {
             for (let i = 0; i < creatives.length; i++) {
                 const creative = creatives[i];
                 const model = new CreativeModel({
-                    castrLocId: castrLocId,
+                    castrBizId: castrBizId,
                     promotionId: promotionId,
                     accountId: creative.account_id,
                     id: creative.id,
@@ -180,7 +180,7 @@ class CreativeService {
     }
 
     async deleteCreatives(params) {
-        const castrLocId = params.castrLocId;
+        const castrBizId = params.castrBizId;
         const promotionId = params.promotionId;
         try {
             logger.debug('Fetching creatives for deletion...');
@@ -190,13 +190,13 @@ class CreativeService {
                     promotionId: promotionId,
                     [CreativeField.status]: { $ne: [CreativeStatus.deleted] },
                 }, 'id creativeLabel');
-            } else if (castrLocId) {
+            } else if (castrBizId) {
                 creatives = await CreativeModel.find({
-                    castrLocId: castrLocId,
+                    castrBizId: castrBizId,
                     [CreativeField.status]: { $ne: [CreativeStatus.deleted] },
                 }, 'id creativeLabel');
             } else {
-                throw new Error('Missing params: must provide either `castrLocId` or `promotionId`');
+                throw new Error('Missing params: must provide either `castrBizId` or `promotionId`');
             }
             const creativeIds = creatives.map(creative => creative.id);
             const batches = [];
@@ -260,7 +260,7 @@ class CreativeService {
         }
     }
 
-    async syncCreatives(creatives, castrLocId, promotionId) {
+    async syncCreatives(creatives, castrBizId, promotionId) {
         const promises = [];
         creatives.forEach((creative) => {
             const update = {
@@ -270,7 +270,7 @@ class CreativeService {
                 status: creative.status,
                 objectStorySpec: creative.object_story_spec,
             };
-            if (castrLocId) update.castrLocId = castrLocId;
+            if (castrBizId) update.castrBizId = castrBizId;
             if (promotionId) update.promotionId = promotionId;
             promises.push(CreativeModel.updateOne(
                 { id: creative.id },

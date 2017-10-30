@@ -22,7 +22,7 @@ router.route('/account')
     .post(async (req, res, next) => {
         try {
             const params = {
-                castrLocId: req.body.castrLocId,
+                castrBizId: req.body.castrBizId,
                 accountId: req.body.accountId,
                 accountName: req.body.accountName,
             };
@@ -34,7 +34,7 @@ router.route('/account')
     .delete(async (req, res, next) => {
         try {
             const params = {
-                castrLocId: req.body.castrLocId,
+                castrBizId: req.body.castrBizId,
                 accountId: req.body.accountId,
             };
             res.json(await projectService.disintegrateAccount(params));
@@ -46,7 +46,7 @@ router.route('/account')
 router.get('/account/verify', async (req, res, next) => {
     try {
         const params = {
-            castrLocId: req.query.castrLocId,
+            castrBizId: req.query.castrBizId,
             accountId: req.query.accountId,
         };
         res.json(await projectService.verifyAccount(params));
@@ -70,7 +70,7 @@ router.route('/page')
     .post(async (req, res, next) => {
         try {
             const params = {
-                castrLocId: req.body.castrLocId,
+                castrBizId: req.body.castrBizId,
                 pageId: req.body.pageId,
                 pageName: req.body.pageName,
             };
@@ -82,7 +82,7 @@ router.route('/page')
     .delete(async (req, res, next) => {
         try {
             const params = {
-                castrLocId: req.body.castrLocId,
+                castrBizId: req.body.castrBizId,
                 pageId: req.body.pageId,
             };
             res.json(await projectService.disintegratePage(params));
@@ -94,7 +94,7 @@ router.route('/page')
 router.get('/page/verify', async (req, res, next) => {
     try {
         const params = {
-            castrLocId: req.query.castrLocId,
+            castrBizId: req.query.castrBizId,
             pageId: req.query.pageId,
         };
         res.json(await projectService.verifyPage(params));
@@ -118,7 +118,7 @@ router.get('/instagram', async (req, res, next) => {
 router.get('/payment-method/verify', async (req, res, next) => {
     try {
         const params = {
-            castrLocId: req.query.castrLocId,
+            castrBizId: req.query.castrBizId,
             accountId: req.query.accountId,
         };
         res.json(await projectService.verifyPaymentMethod(params));
@@ -127,11 +127,11 @@ router.get('/payment-method/verify', async (req, res, next) => {
     }
 });
 
-router.route('/:castrLocId')
+router.route('/:castrBizId')
     .get(async (req, res, next) => {
         try {
             const params = {
-                castrLocId: req.params.castrLocId,
+                castrBizId: req.params.castrBizId,
             };
             res.json(await projectService.getProject(params));
         } catch (err) {
@@ -144,7 +144,7 @@ router.route('/:castrLocId')
     .delete(async (req, res, next) => {
         try {
             const params = {
-                castrLocId: req.params.castrLocId,
+                castrBizId: req.params.castrBizId,
             };
             res.json(await projectService.disintegrate(params));
         } catch (err) {
