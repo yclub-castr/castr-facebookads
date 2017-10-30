@@ -73,7 +73,18 @@ class TargetingService {
         try {
             const fbResponse = await fbRequest.get('search', null, searchParams);
             logger.debug(`${fbResponse.data.length} interests found for query (${params.query})`);
-            return fbResponse.data;
+            const response = fbResponse.data.map((interest) => {
+                let name = interest.name;
+                if (interest.disambiguation_category) {
+                    name += `, ${interest.disambiguation_category}`;
+                }
+                return {
+                    id: interest.id,
+                    name: name,
+                    audience_size: interest.audience_size,
+                };
+            });
+            return response;
         } catch (err) {
             throw err;
         }
