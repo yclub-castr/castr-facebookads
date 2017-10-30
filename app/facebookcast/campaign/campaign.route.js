@@ -37,7 +37,7 @@ router.route('/')
         try {
             const params = {
                 castrBizId: req.body.castrBizId,
-                castrLocId: req.bodyquery.castrLocId,
+                castrLocId: req.body.castrLocId,
                 promotionId: req.body.promotionId,
             };
             res.json(await campaignService.deleteCampaigns(params));
