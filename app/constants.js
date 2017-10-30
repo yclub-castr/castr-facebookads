@@ -8,7 +8,6 @@ const timezone = {
     utc: 'UTC',
 };
 
-
 const locale = {
     kr: 'ko_KR',
     us: 'en_US',
