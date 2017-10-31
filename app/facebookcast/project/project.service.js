@@ -151,7 +151,7 @@ class ProjectService {
             logger.debug(`Creating adlabel for adaccount owned by Business (#${castrBizId}) ...`);
             const promises = [
                 fbRequest.post(accountId, 'userpermissions', data),
-                fbRequest.post(accountId, 'adlabels', { name: castrBizId }),
+                fbRequest.post(accountId, 'adlabels', { name: castrBizId, fields: 'name' }),
                 fbRequest.get(accountId, null, { fields: 'timezone_id' })
             ];
             const fbResponses = await Promise.all(promises);
@@ -464,6 +464,74 @@ class ProjectService {
                 success: true,
                 message: msg,
                 data: {},
+            };
+        } catch (err) {
+            throw err;
+        }
+    }
+
+    async newPromotion(params) {
+        const castrBizId = params.castrBizId;
+        const castrLocIds = params.castrLocIds;
+        const promotionId = params.promotionId;
+        try {
+            const project = await ProjectModel.findOne({ castrBizId: castrBizId });
+            if ([ProjectStatus.Disintegrated, ProjectStatus.Pending].includes(project.accountStatus)) {
+                throw new Error(`Business (#${castrBizId}) does not have integration with Facebook`);
+            }
+            if (project.accountStatus !== ProjectStatus.Active) {
+                throw new Error(`Business (#${castrBizId}) has not verified payment method on Facebook`);
+            }
+            if (project.adLabels.promotionLabels.map(label => label.name).includes(promotionId)) {
+                throw new Error(`Duplicate promotionId [${promotionId}] requested for Business (#${castrBizId})`);
+            }
+            const accountId = project.accountId;
+            logger.debug('Creating new promotion & location adlabels...');
+            const locLabelPromises = castrLocIds.map(locId => fbRequest.post(accountId, 'adlabels', { name: locId, fields: 'name' }));
+            const promotionLabel = await fbRequest.post(accountId, 'adlabels', { name: promotionId, fields: 'name' });
+            project.adLabels.promotionLabels.push(promotionLabel);
+            const locationLabels = await Promise.all(locLabelPromises);
+            const existingLocs = project.adLabels.locationLabels.map(locLabel => locLabel.name);
+            for (let i = 0; i < locationLabels.length; i++) {
+                if (existingLocs.includes(locationLabels[i].name)) continue; // eslint-disable-line no-continue
+                project.adLabels.locationLabels.push(locationLabels[i]);
+            }
+            await project.save();
+            const msg = 'Promotion & locations adlabels created & stored in DB';
+            logger.debug(msg);
+            return {
+                success: true,
+                message: msg,
+                data: project.adLabels.toObject(),
+            };
+        } catch (err) {
+            throw err;
+        }
+    }
+
+    async removePromotion(params) {
+        const castrBizId = params.castrBizId;
+        const promotionId = params.promotionId;
+        try {
+            const project = await ProjectModel.findOne({ castrBizId: castrBizId });
+            const accountId = project.accountId;
+            const promotionLabel = project.adLabels.promotionLabels.filter(label => label.name === promotionId)[0];
+            logger.debug('Deleting promotion adlabel...');
+            const fbResponse = await fbRequest.delete(promotionLabel.id);
+            if (!fbResponse.success) {
+                throw new Error('Failed to delete promotion adlabel from Facebook');
+            }
+            await ProjectModel.updateOne(
+                { castrBizId: castrBizId },
+                { $pull: { 'adLabels.promotionLabels': { name: promotionId } } },
+                { multi: true }
+            );
+            const msg = `Promotion (#${promotionId}) adlabel deleted & removed from DB`;
+            logger.debug(msg);
+            return {
+                success: true,
+                message: msg,
+                data: null,
             };
         } catch (err) {
             throw err;

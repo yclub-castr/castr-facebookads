@@ -152,4 +152,34 @@ router.route('/:castrBizId')
         }
     });
 
+router.route('/:castrBizId/promotion')
+    .post(async (req, res, next) => {
+        try {
+            const params = {
+                castrBizId: req.params.castrBizId,
+                castrLocIds: req.body.castrLocIds,
+                promotionId: req.body.promotionId,
+            };
+            if (!params.castrBizId) throw new Error('Missing path variable: \'castrBizId\'');
+            if (!params.promotionId) throw new Error('Missing body parameter: \'castrLocIds\'');
+            if (!params.promotionId) throw new Error('Missing body parameter: \'promotionId\'');
+            res.json(await projectService.newPromotion(params));
+        } catch (err) {
+            next(err);
+        }
+    })
+    .delete(async (req, res, next) => {
+        try {
+            const params = {
+                castrBizId: req.params.castrBizId,
+                promotionId: req.body.promotionId,
+            };
+            if (!params.castrBizId) throw new Error('Missing path variable: \'castrBizId\'');
+            if (!params.promotionId) throw new Error('Missing body parameter: \'promotionId\'');
+            res.json(await projectService.removePromotion(params));
+        } catch (err) {
+            next(err);
+        }
+    });
+
 module.exports = router;

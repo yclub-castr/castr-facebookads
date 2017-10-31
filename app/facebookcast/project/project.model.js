@@ -29,15 +29,11 @@ exports.Model = fbCastDB.model(
             accountVerified: Boolean,
             pageVerified: Boolean,
             paymentMethodVerified: Boolean,
-            // adLabels: {
-            //     businessLabel: { id: String },
-            //     promotionLabels: [{
-            //         _id: false,
-            //         id: String,
-            //         name: String,
-            //     }],
-            // },
-            adLabels: Object,
+            adLabels: {
+                businessLabel: Object,
+                locationLabels: [],
+                promotionLabels: [],
+            },
             timezone: String,
         },
         {
