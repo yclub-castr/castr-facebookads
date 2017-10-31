@@ -14,7 +14,6 @@ class AdService {
             const requests = adLabelNames.map(name => ({
                 method: 'POST',
                 relative_url: `${fbRequest.apiVersion}/${accountId}/adlabels`,
-                // body: `{"name":"${name}"}`,
                 body: { name: name, fields: 'name' },
             }));
             let attempts = 3;
@@ -47,58 +46,35 @@ class AdService {
             return {
                 success: true,
                 message: msg,
-                data: successes.map(response => response.body),
+                data: successes.map(response => JSON.parse(response.body)),
             };
         } catch (err) {
             throw err;
         }
     }
 
-    async deleteAdLabels(accountId, adlabelIds) {
-        const castrBizId = params.castrBizId;
-        const promotionId = params.promotionId;
+    async deleteAdLabels(accountId, adLabelIds) {
+        logger.debug(`Deleting ad labels [${adLabelIds.toString()}] ...`);
         try {
-            logger.debug('Fetching ads for deletion...');
-            let ads;
-            if (promotionId) {
-                ads = await AdModel.find({
-                    promotionId: promotionId,
-                    [AdField.status]: { $ne: [AdStatus.deleted] },
-                }, 'id');
-            } else if (castrBizId) {
-                ads = await AdModel.find({
-                    castrBizId: castrBizId,
-                    [AdField.status]: { $ne: [AdStatus.deleted] },
-                }, 'id');
-            } else {
-                throw new Error('Missing params: must provide either `castrBizId` or `promotionId`');
-            }
-            const adIds = ads.map(adlabel => adlabel.id);
-            const batches = [];
+            if (adLabelIds.length > 50) throw new Error('Too many labels to delete. Maximum # labels to delete at once: 50');
             let batchCompleted = false;
-            const requests = adIds.map(id => ({
+            const requests = adLabelIds.map(id => ({
                 method: 'DELETE',
                 relative_url: `${fbRequest.apiVersion}/${id}`,
             }));
             let attempts = 3;
-            let batchResponses;
+            let fbResponses;
             do {
-                logger.debug(`Batching ${ads.length} delete adlabel requests...`);
-                for (let i = 0; i < Math.ceil(requests.length / 50); i++) {
-                    batches.push(fbRequest.batch(requests.slice(i * 50, (i * 50) + 50)));
-                }
-                batchResponses = await Promise.all(batches);
+                logger.debug(`Batching ${adLabelIds.length} delete ad label requests...`);
+                fbResponses = await fbRequest.batch(requests);
                 batchCompleted = true;
-                for (let i = 0; i < batchResponses.length; i++) {
-                    const fbResponses = batchResponses[i];
-                    for (let j = 0; j < fbResponses.length; j++) {
-                        if (fbResponses[i].code !== 200) {
-                            logger.debug('One of batch requests failed, trying again...');
-                            batchCompleted = false;
-                            break;
-                        }
-                        if (!batchCompleted) break;
+                for (let i = 0; i < fbResponses.length; i++) {
+                    if (fbResponses[i].code !== 200) {
+                        logger.debug('One of batch requests failed, trying again...');
+                        batchCompleted = false;
+                        break;
                     }
+                    if (!batchCompleted) break;
                 }
                 attempts -= 1;
             } while (!batchCompleted && attempts !== 0);
@@ -106,50 +82,21 @@ class AdService {
                 return {
                     success: false,
                     messasge: 'Batch requests failed 3 times',
-                    data: batchResponses,
+                    data: fbResponses,
                 };
             }
-            logger.debug('FB batch-delete successful');
-            const writeResult = await AdModel.updateMany(
-                { id: { $in: adIds } },
-                {
-                    $set: {
-                        status: AdStatus.deleted,
-                        effectiveStatus: AdStatus.deleted,
-                    },
-                }
-            );
-            const msg = `${writeResult.nModified} ads deleted`;
+            logger.debug('FB batch-create successful');
+            const successes = fbResponses.filter(response => response.code === 200);
+            const msg = `${successes.length} ad labels deleted`;
             logger.debug(msg);
             return {
                 success: true,
-                messasge: msg,
-                data: {},
+                message: msg,
+                data: successes.map(response => JSON.parse(response.body)),
             };
         } catch (err) {
             throw err;
         }
-    }
-
-    async syncAds(ads, castrBizId, promotionId) {
-        const promises = [];
-        ads.forEach((adlabel) => {
-            const update = {
-                campaignId: adlabel.campaign_id,
-                id: adlabel.id,
-                status: adlabel.status,
-                effectiveStatus: adlabel.effective_status,
-            };
-            if (castrBizId) update.castrBizId = castrBizId;
-            if (promotionId) update.promotionId = promotionId;
-            promises.push(AdModel.updateOne(
-                { id: adlabel.id },
-                { $set: update },
-                { upsert: true }
-            ));
-        });
-        await Promise.all(promises);
-        logger.debug(`Synchronized ${ads.length} ads`);
     }
 }
 
