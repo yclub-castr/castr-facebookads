@@ -83,7 +83,7 @@ const batch = async (batchParams, hasBody) => {
             const keys = Object.keys(body);
             let bodyString = '';
             for (let i = 0; i < keys.length; i++) {
-                if (bodyString !== '') bodyString += '&amp;';
+                if (bodyString !== '') bodyString += '&';
                 let value = body[keys[i]];
                 const valType = typeof body[keys[i]];
                 if (valType === 'object' || Array.isArray(value)) value = objToStr(body[keys[i]]);
