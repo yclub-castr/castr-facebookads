@@ -93,9 +93,6 @@ class TargetingService {
     async searchLocations(params) {
         let searchParams;
         try {
-            if (!['ALL', 'RC_ONLY'].includes(params.type)) {
-                throw new Error('Missing param \'type\': must either be \'ALL\' or \'RC_ONLY\'');
-            }
             if (params.locale === 'ko_KR') {
                 searchParams = korLocDecoder(params);
             } else {

@@ -27,6 +27,9 @@ router.get('/location', async (req, res, next) => {
             locale: locale(req.query.locale),
             type: req.query.type,
         };
+        if (!['ALL', 'RC_ONLY'].includes(params.type)) {
+            throw new Error('Missing param \'type\': must either be \'ALL\' or \'RC_ONLY\'');
+        }
         res.json(await targetingService.searchLocations(params));
     } catch (err) {
         next(err);
