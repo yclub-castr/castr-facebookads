@@ -120,6 +120,9 @@ class CampaignService {
                 success: true,
                 message: msg,
                 data: {
+                    castrBizId: castrBizId,
+                    castrLocId: castrLocId,
+                    promotionId: promotionId,
                     id: campaign.id,
                     recommendations: validation.recommendations,
                 },
@@ -145,7 +148,7 @@ class CampaignService {
                     castrBizId: castrBizId,
                     [CampaignField.status]: { $ne: [CampaignStatus.deleted] },
                 }, 'id');
-            } 
+            }
             const campaignIds = campaigns.map(campaign => campaign.id);
             const batches = [];
             let batchCompleted = false;
