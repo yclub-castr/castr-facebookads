@@ -17,6 +17,10 @@ router.route('/')
                 campaignId: req.query.campaignId,
                 adsetId: req.query.adsetId,
             };
+            if (!params.castrBizId && !params.promotionId) {
+                // TODO: Find by castrLocId
+                throw new Error('Missing query params: must provide either `castrBizId` or `promotionId`');
+            }
             res.json(await adService.getAds(params));
         } catch (err) {
             next(err);
@@ -32,6 +36,9 @@ router.route('/')
                 adsetId: req.body.adsetId,
                 creatives: req.body.creatives,
             };
+            if (!params.castrBizId) throw new Error('Missing body parameter: \'castrBizId\'');
+            if (!params.castrLocId) throw new Error('Missing body parameter: \'castrLocId\'');
+            if (!params.promotionId) throw new Error('Missing body parameter: \'promotionId\'');
             res.json(await adService.createAds(params));
         } catch (err) {
             next(err);
@@ -44,6 +51,9 @@ router.route('/')
                 castrLocId: req.body.castrLocId,
                 promotionId: req.body.promotionId,
             };
+            if (!params.castrBizId && !params.promotionId) {
+                throw new Error('Missing body params: must provide either `castrBizId` or `promotionId`');
+            }
             res.json(await adService.deleteAds(params));
         } catch (err) {
             next(err);
