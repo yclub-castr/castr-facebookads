@@ -15,6 +15,10 @@ router.route('/')
                 castrLocId: req.query.castrLocId,
                 promotionId: req.query.promotionId,
             };
+            if (!params.castrBizId && !params.promotionId) {
+                // TODO: Find by castrLocId
+                throw new Error('Missing query params: must provide either `castrBizId` or `promotionId`');
+            }
             res.json(await creativeService.getCreatives(params));
         } catch (err) {
             next(err);
@@ -27,6 +31,9 @@ router.route('/')
                 castrLocId: req.body.castrLocId,
                 promotionId: req.body.promotionId,
             };
+            if (!params.castrBizId) throw new Error('Missing body parameter: \'castrBizId\'');
+            if (!params.castrLocId) throw new Error('Missing body parameter: \'castrLocId\'');
+            if (!params.promotionId) throw new Error('Missing body parameter: \'promotionId\'');
             res.json(await creativeService.createCreative(params));
         } catch (err) {
             next(err);
@@ -36,9 +43,12 @@ router.route('/')
         try {
             const params = {
                 castrBizId: req.body.castrBizId,
-                castrLocId: req.body.castrLocId,
+                // castrLocId: req.body.castrLocId,
                 promotionId: req.body.promotionId,
             };
+            if (!params.castrBizId && !params.promotionId) {
+                throw new Error('Missing body params: must provide either `castrBizId` or `promotionId`');
+            }
             res.json(await creativeService.deleteCreatives(params));
         } catch (err) {
             next(err);
