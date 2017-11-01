@@ -22,6 +22,7 @@ class CampaignService {
         const promotionId = params.promotionId;
         try {
             const project = await ProjectModel.findOne({ castrBizId: castrBizId });
+            if (!project) throw new Error(`No such Business (#${castrBizId})`);
             const accountId = project.accountId;
             const campaignParams = { fields: `${CampaignField.status},${CampaignField.effective_status}` };
             let campaigns;
@@ -65,6 +66,7 @@ class CampaignService {
         const name = `Campaign [${objective}]`;
         try {
             const project = await ProjectModel.findOne({ castrBizId: castrBizId });
+            if (!project) throw new Error(`No such Business (#${castrBizId})`);
             const accountId = project.accountId;
             const businessLabel = project.adLabels.businessLabel;
             const locationLabel = project.adLabels.locationLabels.filter(label => label.name === castrLocId)[0];

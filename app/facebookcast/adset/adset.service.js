@@ -31,6 +31,7 @@ class AdSetService {
         const promotionId = params.promotionId;
         try {
             const project = await ProjectModel.findOne({ castrBizId: castrBizId });
+            if (!project) throw new Error(`No such Business (#${castrBizId})`);
             const accountId = project.accountId;
             const adsetParams = { fields: readFields };
             let adsets;
@@ -82,6 +83,7 @@ class AdSetService {
         const name = `AdSet [${optimizationGoal}]`;
         try {
             const project = await ProjectModel.findOne({ castrBizId: castrBizId });
+            if (!project) throw new Error(`No such Business (#${castrBizId})`);
             const accountId = project.accountId;
             const businessLabel = project.adLabels.businessLabel;
             const locationLabel = project.adLabels.locationLabels.filter(label => label.name === castrLocId)[0];

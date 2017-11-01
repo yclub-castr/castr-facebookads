@@ -19,6 +19,7 @@ class ProjectService {
         const castrBizId = params.castrBizId;
         try {
             const project = await ProjectModel.findOne({ castrBizId: castrBizId });
+            if (!project) throw new Error(`No such Business (#${castrBizId})`);
             const msg = `Business (#${castrBizId}) project fetched`;
             logger.debug(msg);
             return {
@@ -99,6 +100,7 @@ class ProjectService {
             if (!params.accountId) {
                 logger.debug('AccountId not provided, fetching it from DB...');
                 const project = await ProjectModel.findOne({ castrBizId: castrBizId });
+                if (!project) throw new Error(`No such Business (#${castrBizId})`);
                 accountId = project.accountId;
             } else {
                 accountId = params.accountId;
@@ -138,6 +140,7 @@ class ProjectService {
             if (!params.accountId) {
                 logger.debug('AccountId not provided, fetching it from DB...');
                 const project = await ProjectModel.findOne({ castrBizId: castrBizId });
+                if (!project) throw new Error(`No such Business (#${castrBizId})`);
                 accountId = project.accountId;
             } else {
                 accountId = params.accountId;
@@ -251,6 +254,7 @@ class ProjectService {
             if (!params.pageId) {
                 logger.debug('PageId not provided, fetching it from DB...');
                 const project = await ProjectModel.findOne({ castrBizId: castrBizId });
+                if (!project) throw new Error(`No such Business (#${castrBizId})`);
                 pageId = project.pageId;
             } else {
                 pageId = params.pageId;
@@ -290,6 +294,7 @@ class ProjectService {
             if (!params.pageId) {
                 logger.debug('PageId not provided, fetching it from DB...');
                 const project = await ProjectModel.findOne({ castrBizId: castrBizId });
+                if (!project) throw new Error(`No such Business (#${castrBizId})`);
                 pageId = project.pageId;
             } else {
                 pageId = params.pageId;
@@ -402,6 +407,7 @@ class ProjectService {
             if (!params.accountId) {
                 logger.debug('AccountId not provided, fetching it from DB...');
                 const project = await ProjectModel.findOne({ castrBizId: castrBizId });
+                if (!project) throw new Error(`No such Business (#${castrBizId})`);
                 accountId = project.accountId;
             } else {
                 accountId = params.accountId;
@@ -448,6 +454,7 @@ class ProjectService {
         const castrBizId = params.castrBizId;
         try {
             const project = await ProjectModel.findOne({ castrBizId: castrBizId });
+            if (!project) throw new Error(`No such Business (#${castrBizId})`);
             const disintegrate_params = {
                 castrBizId: castrBizId,
                 accountId: project.accountId,
@@ -476,6 +483,7 @@ class ProjectService {
         const promotionId = params.promotionId;
         try {
             const project = await ProjectModel.findOne({ castrBizId: castrBizId });
+            if (!project) throw new Error(`No such Business (#${castrBizId})`);
             if ([ProjectStatus.Disintegrated, ProjectStatus.Pending].includes(project.accountStatus)) {
                 throw new Error(`Business (#${castrBizId}) does not have integration with Facebook`);
             }
@@ -514,6 +522,7 @@ class ProjectService {
         const promotionId = params.promotionId;
         try {
             const project = await ProjectModel.findOne({ castrBizId: castrBizId });
+            if (!project) throw new Error(`No such Business (#${castrBizId})`);
             const promotionLabel = project.adLabels.promotionLabels.filter(label => label.name === promotionId)[0];
             logger.debug('Deleting promotion adlabel...');
             if (!promotionLabel) {

@@ -17,6 +17,7 @@ class PixelService {
             const castrBizId = params.castrBizId;
             if (!accountId) {
                 const project = await ProjectModel.findOne({ castrBizId: castrBizId });
+                if (!project) throw new Error(`No such Business (#${castrBizId})`);
                 accountId = project.accountId;
             }
             const fbResponse = await fbRequest.get(accountId, 'adspixels', { fields: readFields });
