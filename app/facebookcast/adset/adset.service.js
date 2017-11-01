@@ -123,6 +123,7 @@ class AdSetService {
             logger.debug(msg);
             const model = new AdSetModel({
                 castrBizId: castrBizId,
+                castrLocId: castrLocId,
                 promotionId: promotionId,
                 accountId: adset.account_id,
                 campaignId: adset.campaign_id,
