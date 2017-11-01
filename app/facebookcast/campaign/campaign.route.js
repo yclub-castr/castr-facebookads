@@ -28,6 +28,9 @@ router.route('/')
                 promotionId: req.body.promotionId,
                 objective: req.body.objective,
             };
+            if (!params.castrBizId) throw new Error('Missing path variable: \'castrBizId\'');
+            if (!params.castrLocId) throw new Error('Missing body parameter: \'castrLocId\'');
+            if (!params.promotionId) throw new Error('Missing body parameter: \'promotionId\'');
             res.json(await campaignService.createCampaign(params));
         } catch (err) {
             next(err);
@@ -37,7 +40,7 @@ router.route('/')
         try {
             const params = {
                 castrBizId: req.body.castrBizId,
-                castrLocId: req.body.castrLocId,
+                // castrLocId: req.body.castrLocId,
                 promotionId: req.body.promotionId,
             };
             res.json(await campaignService.deleteCampaigns(params));
