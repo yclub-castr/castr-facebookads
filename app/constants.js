@@ -18,6 +18,6 @@ exports.timezone = (tz) => {
     return timezone[tz];
 };
 exports.locale = (loc) => {
-    if (!locale[loc]) throw new Error('Invalid locale: Use either \'us\' or \'kr\'');
+    if (!locale[loc]) throw new Error('Invalid locale: Use either \'us\' or \'kr\' (eg. ?locale=us)');
     return locale[loc];
 };
