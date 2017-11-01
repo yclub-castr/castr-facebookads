@@ -12,6 +12,8 @@ const ProjectModel = require('../project/project.model').Model;
 const AdSetModel = Model.Model;
 const AdSetStatus = Model.Status;
 const AdSetField = Model.Field;
+const BillingEvent = Model.BillingEvent;
+const OptimizationGoal = Model.OptimizationGoal;
 
 const excludedFields = [
     AdSetField.adlabels,
@@ -25,6 +27,7 @@ const readFields = Object.values(AdSetField).filter(field => !excludedFields.inc
 class AdSetService {
     async getAdSets(params) {
         const castrBizId = params.castrBizId;
+        const castrLocId = params.castrLocId;
         const promotionId = params.promotionId;
         try {
             const project = await ProjectModel.findOne({ castrBizId: castrBizId });
@@ -46,8 +49,6 @@ class AdSetService {
                 logger.debug(`Fetching adsets by business id (#${castrBizId}) ...`);
                 adsetParams.filtering = `[{"field":"adlabels","operator":"ANY","value":["${castrBizId}"]}]`;
                 adsets = await fbRequest.get(accountId, 'adsets', adsetParams);
-            } else {
-                throw new Error('Missing params: must provide either `castrBizId` or `promotionId`');
             }
             if (!adsets) {
                 throw new Error('Could not find ad label to read adsets');
@@ -70,13 +71,13 @@ class AdSetService {
         const promotionId = params.promotionId;
         const campaignId = params.campaignId;
         const dailyBudget = params.dailyBudget;
-        const billingEvent = params.billingEvent;
+        const billingEvent = params.billingEvent || BillingEvent.impressions;
+        const optimizationGoal = params.optimizationGoal || OptimizationGoal.link_clicks;
         const isAutoBid = true;
         const targeting = {
             geo_locations: { countries: ['KR'] },
             // TODO: publisher_platforms : ['facebook', 'audience_network', 'instagram']
         };
-        const optimizationGoal = params.optimizationGoal;
         const name = `AdSet [${optimizationGoal}]`;
         try {
             const project = await ProjectModel.findOne({ castrBizId: castrBizId });
@@ -172,8 +173,6 @@ class AdSetService {
                     castrBizId: castrBizId,
                     [AdSetField.status]: { $ne: [AdSetStatus.deleted] },
                 }, 'id');
-            } else {
-                throw new Error('Missing params: must provide either `castrBizId` or `promotionId`');
             }
             const adsetIds = adsets.map(adset => adset.id);
             const batches = [];
