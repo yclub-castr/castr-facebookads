@@ -23,19 +23,6 @@ class PreviewService {
                 promotionId: { $in: promotionIds },
                 status: { $ne: CreativeStatus.deleted },
             });
-            // if (promotionId) {
-            //     logger.debug(`Fetching creatives by promotion id (#${promotionId}) ...`);
-            //     creatives = await CreativeModel.find({
-            //         promotionId: promotionId,
-            //         castrLocId: { $in: castrLocIds },
-            //     });
-            // } else if (castrBizId) {
-            //     logger.debug(`Fetching creatives by business id (#${castrBizId}) ...`);
-            //     creatives = await CreativeModel.find({ 
-            //         castrBizId: castrBizId,
-            //         castrLocId: { $in: castrLocIds },
-            //     });
-            // }
             const previewPromises = creatives.map((creative) => {
                 return new Promise(async (resolve, reject) => {
                     try {
