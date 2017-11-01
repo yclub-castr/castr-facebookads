@@ -36,19 +36,19 @@ function korLocDecoder(params) {
     } else if (query.includes('경상도')) {
         transQuery = '경상';
         // locTypes = ['region']; // Allow city search
-    } else if (query.includes('경상남도') || query.includes('경북')) {
+    } else if (query.includes('경상남도') || query.includes('경남')) {
         transQuery = 'Gyeongsangnam-do';
         locTypes = ['region'];
-    } else if (query.includes('경상북도') || query.includes('경남')) {
+    } else if (query.includes('경상북도') || query.includes('경북')) {
         transQuery = 'Gyeongsangbuk-do';
         locTypes = ['region'];
     } else if (query.includes('전라도')) {
         transQuery = '전라';
         // locTypes = ['region']; // Allow city search
-    } else if (query.includes('전라남도') || query.includes('전북')) {
+    } else if (query.includes('전라남도') || query.includes('전남')) {
         transQuery = 'Jeollanam-do';
         locTypes = ['region'];
-    } else if (query.includes('전라북도') || query.includes('전남')) {
+    } else if (query.includes('전라북도') || query.includes('전북')) {
         transQuery = 'Jeollabuk-do';
         locTypes = ['region'];
     } else if (query.includes('제주도')) {
@@ -124,6 +124,7 @@ class TargetingService {
                 return {
                     key: loc.key,
                     name: name,
+                    type: loc.type,
                 };
             });
             return response;
