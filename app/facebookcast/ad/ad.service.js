@@ -195,6 +195,7 @@ class AdService {
             logger.debug(msg);
             const model = new AdModel({
                 castrBizId: castrBizId,
+                castrLocId: castrLocId,
                 promotionId: promotionId,
                 accountId: ad.account_id,
                 campaignId: ad.campaign_id,
