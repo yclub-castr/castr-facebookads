@@ -10,23 +10,28 @@ class PreviewService {
     async getPreviews(params) {
         const castrBizId = params.castrBizId;
         const castrLocIds = params.castrLocIds;
-        const promotionId = params.promotionId;
+        const promotionIds = params.promotionIds;
         const locale = params.locale;
         try {
-            let creatives;
-            if (promotionId) {
-                logger.debug(`Fetching creatives by promotion id (#${promotionId}) ...`);
-                creatives = await CreativeModel.find({
-                    promotionId: promotionId,
-                    castrLocId: { $in: castrLocIds },
-                });
-            } else if (castrBizId) {
-                logger.debug(`Fetching creatives by business id (#${castrBizId}) ...`);
-                creatives = await CreativeModel.find({ 
-                    castrBizId: castrBizId,
-                    castrLocId: { $in: castrLocIds },
-                });
-            }
+            logger.debug(`Fetching creatives for Business (#${castrBizId}) ...`);
+            const creatives = await CreativeModel.find({
+                castrBizId: castrBizId,
+                castrLocId: { $in: castrLocIds },
+                promotionId: { $in: promotionIds },
+            });
+            // if (promotionId) {
+            //     logger.debug(`Fetching creatives by promotion id (#${promotionId}) ...`);
+            //     creatives = await CreativeModel.find({
+            //         promotionId: promotionId,
+            //         castrLocId: { $in: castrLocIds },
+            //     });
+            // } else if (castrBizId) {
+            //     logger.debug(`Fetching creatives by business id (#${castrBizId}) ...`);
+            //     creatives = await CreativeModel.find({ 
+            //         castrBizId: castrBizId,
+            //         castrLocId: { $in: castrLocIds },
+            //     });
+            // }
             const previewPromises = creatives.map((creative) => {
                 return new Promise(async (resolve, reject) => {
                     try {
@@ -39,24 +44,25 @@ class PreviewService {
                         ]);
                         resolve({
                             promotionId: creative.promotionId,
-                            id: creative.id,
+                            castrLocId: creative.castrLocId,
+                            // id: creative.id,
                             type: creative.name.match(/\[(.*)\]/)[1],
                             previews: [
                                 {
                                     type: 'DESKTOP_FEED_STANDARD',
-                                    data: fbResponses[0].data[0],
+                                    iframe: fbResponses[0].data[0].body,
                                 },
                                 {
                                     type: 'MOBILE_FEED_STANDARD',
-                                    data: fbResponses[1].data[0],
+                                    iframe: fbResponses[1].data[0].body,
                                 },
                                 {
                                     type: 'INSTAGRAM_STANDARD',
-                                    data: fbResponses[2].data[0],
+                                    iframe: fbResponses[2].data[0].body,
                                 },
                                 {
                                     type: 'MOBILE_NATIVE',
-                                    data: fbResponses[3].data[0],
+                                    iframe: fbResponses[3].data[0].body,
                                 }
                             ],
                         });
@@ -66,12 +72,30 @@ class PreviewService {
                 });
             });
             const previews = await Promise.all(previewPromises);
-            const msg = `Preview sets fetched for ${previews.length} creatives`;
+            logger.debug(`${previews.length} fetched, formatting response...`);
+            const formattedResponse = {};
+            previews.forEach((preview) => {
+                const data = {
+                    type: preview.type,
+                    previews: preview.previews,
+                };
+                if (formattedResponse.hasOwnProperty(preview.castrLocId)) {
+                    const locGroup = formattedResponse[preview.castrLocId];
+                    if (locGroup.hasOwnProperty(preview.promotionId)) {
+                        locGroup[preview.promotionId].push(data);
+                    } else {
+                        locGroup[preview.promotionId] = [data];
+                    }
+                } else {
+                    formattedResponse[preview.castrLocId] = { [preview.promotionId]: [data] };
+                }
+            });
+            const msg = `Preview sets fetched for Business (${castrBizId}), Locations [${castrLocIds}] & Promotions [${promotionIds}]`;
             logger.debug(msg);
             return {
                 success: true,
                 message: msg,
-                data: previews,
+                data: formattedResponse,
             };
         } catch (err) {
             throw err;
