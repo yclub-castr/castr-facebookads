@@ -32,6 +32,7 @@ const tempDir = '../../temp/';
 class CreativeService {
     async getCreatives(params) {
         const castrBizId = params.castrBizId;
+        const castrLocId = params.castrLocId;
         const promotionId = params.promotionId;
         try {
             const project = await ProjectModel.findOne({ castrBizId: castrBizId });
