@@ -4,8 +4,8 @@
 
 const logger = require('../../utils').logger();
 const fbRequest = require('../fbapi');
-
 const Creative = require('../creative/creative.model');
+
 const CreativeModel = Creative.Model;
 const CreativeStatus = Creative.Status;
 
@@ -23,7 +23,7 @@ class PreviewService {
                 promotionId: { $in: promotionIds },
                 status: { $ne: CreativeStatus.deleted },
             });
-            const previewPromises = creatives.map((creative) => {
+            const previewPromises = creatives.map((creative) => { // eslint-disable-line arrow-body-style
                 return new Promise(async (resolve, reject) => {
                     try {
                         logger.debug(`Fetching previews for creative (#${creative.id}) ...`);

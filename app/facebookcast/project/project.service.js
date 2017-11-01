@@ -514,7 +514,6 @@ class ProjectService {
         const promotionId = params.promotionId;
         try {
             const project = await ProjectModel.findOne({ castrBizId: castrBizId });
-            const accountId = project.accountId;
             const promotionLabel = project.adLabels.promotionLabels.filter(label => label.name === promotionId)[0];
             logger.debug('Deleting promotion adlabel...');
             if (!promotionLabel) {

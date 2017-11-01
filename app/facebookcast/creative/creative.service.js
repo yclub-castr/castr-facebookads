@@ -92,7 +92,7 @@ class CreativeService {
                 accountId: accountId,
                 pageId: project.pageId,
                 instagramId: project.instagramId,
-                adLabels: [businessLabel, locationLabel, promotionLabel]
+                adLabels: [businessLabel, locationLabel, promotionLabel],
             };
             const adSpecPromises = [
                 this.getLinkAdCreative(projectParams),
