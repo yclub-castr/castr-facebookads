@@ -24,6 +24,7 @@ const readFields = Object.values(AdField).filter(field => !excludedFields.includ
 class AdService {
     async getAds(params) {
         const castrBizId = params.castrBizId;
+        const castrLocId = params.castrLocId;
         const promotionId = params.promotionId;
         try {
             const project = await ProjectModel.findOne({ castrBizId: castrBizId });
@@ -45,8 +46,6 @@ class AdService {
                 logger.debug(`Fetching ads by business id (#${castrBizId}) ...`);
                 adParams.filtering = `[{"field":"adlabels","operator":"ANY","value":["${castrBizId}"]}]`;
                 ads = await fbRequest.get(accountId, 'ads', adParams);
-            } else {
-                throw new Error('Missing params: must provide either `castrBizId` or `promotionId`');
             }
             if (!ads) {
                 throw new Error('Could not find ad label to read ads');
@@ -95,8 +94,6 @@ class AdService {
                 logger.debug(`Fetching ads by business id (#${castrBizId}) ...`);
                 adParams.filtering = `[{"field":"adlabels","operator":"ANY","value":["${castrBizId}"]}]`;
                 ads = await fbRequest.get(accountId, 'ads', adParams);
-            } else {
-                throw new Error('Missing params: must provide either `castrBizId`, `promotionId` or `creativeIds`');
             }
             if (!ads) { throw new Error('Could not find ad label to read ads'); }
             const msg = `${ads.data.length} ads fetched`;
@@ -114,29 +111,27 @@ class AdService {
 
     async createAds(params) {
         const castrBizId = params.castrBizId;
+        const castrLocId = params.castrLocId;
         const promotionId = params.promotionId;
         const creatives = params.creatives;
         const adCreatePromises = [];
         logger.debug(`Generating ads from ${creatives.length} creatives...`);
         try {
             const project = await ProjectModel.findOne({ castrBizId: castrBizId });
-            const businessLabel = project.adLabels.businessLabel.toObject();
-            const promotionLabels = project.adLabels.promotionLabels;
-            let promotionLabel;
-            for (let i = 0; i < promotionLabels.length; i++) {
-                if (promotionLabels[i].name === promotionId) {
-                    promotionLabel = promotionLabels[i].toObject();
-                }
-            }
+            const businessLabel = project.adLabels.businessLabel;
+            const locationLabel = project.adLabels.locationLabels.filter(label => label.name === castrLocId)[0];
+            const promotionLabel = project.adLabels.promotionLabels.filter(label => label.name === promotionId)[0];
             for (let i = 0; i < creatives.length; i++) {
                 const adParams = {
                     castrBizId: castrBizId,
+                    castrLocId: castrLocId,
                     promotionId: promotionId,
                     accountId: project.accountId,
                     campaignId: params.campaignId,
                     adsetId: params.adsetId,
                     creative: creatives[i],
                     businessLabel: businessLabel,
+                    locationLabel: locationLabel,
                     promotionLabel: promotionLabel,
                 };
                 adCreatePromises.push(this.createAd(adParams));
@@ -148,7 +143,12 @@ class AdService {
             return {
                 success: true,
                 message: msg,
-                data: adResults.map(adResult => adResult.data),
+                data: {
+                    castrBizId: castrBizId,
+                    castrLocId: castrLocId,
+                    promotionId: promotionId,
+                    ads: adResults.map(adResult => adResult.data),
+                },
             };
         } catch (err) {
             throw err;
@@ -157,6 +157,7 @@ class AdService {
 
     async createAd(params) {
         const castrBizId = params.castrBizId;
+        const castrLocId = params.castrLocId;
         const promotionId = params.promotionId;
         const accountId = params.accountId;
         const campaignId = params.campaignId;
@@ -164,10 +165,11 @@ class AdService {
         const creative = params.creative;
         const name = `Ad [${creative.name.match(/\[(.*)\]/)[1]}]`;
         const businessLabel = params.businessLabel;
+        const locationLabel = params.locationLabel;
         const promotionLabel = params.promotionLabel;
         try {
             const adParams = {
-                [AdField.adlabels]: [businessLabel, promotionLabel, { name: creative.name }],
+                [AdField.adlabels]: [businessLabel, locationLabel, promotionLabel, { name: creative.name }],
                 [AdField.campaign_id]: campaignId,
                 [AdField.adset_id]: adsetId,
                 [AdField.creative]: { creative_id: creative.id },
@@ -241,8 +243,6 @@ class AdService {
                     castrBizId: castrBizId,
                     [AdField.status]: { $ne: [AdStatus.deleted] },
                 }, 'id');
-            } else {
-                throw new Error('Missing params: must provide either `castrBizId` or `promotionId`');
             }
             const adIds = ads.map(ad => ad.id);
             const batches = [];
