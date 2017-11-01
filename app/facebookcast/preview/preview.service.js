@@ -9,18 +9,23 @@ const CreativeModel = require('../creative/creative.model').Model;
 class PreviewService {
     async getPreviews(params) {
         const castrBizId = params.castrBizId;
+        const castrLocIds = params.castrLocIds;
         const promotionId = params.promotionId;
         const locale = params.locale;
         try {
             let creatives;
             if (promotionId) {
                 logger.debug(`Fetching creatives by promotion id (#${promotionId}) ...`);
-                creatives = await CreativeModel.find({ promotionId: promotionId });
+                creatives = await CreativeModel.find({
+                    promotionId: promotionId,
+                    castrLocId: { $in: castrLocIds },
+                });
             } else if (castrBizId) {
                 logger.debug(`Fetching creatives by business id (#${castrBizId}) ...`);
-                creatives = await CreativeModel.find({ castrBizId: castrBizId });
-            } else {
-                throw new Error('Missing params: must provide either `castrBizId` or `promotionId`');
+                creatives = await CreativeModel.find({ 
+                    castrBizId: castrBizId,
+                    castrLocId: { $in: castrLocIds },
+                });
             }
             const previewPromises = creatives.map((creative) => {
                 return new Promise(async (resolve, reject) => {
