@@ -69,6 +69,9 @@ router.route('/byCreativeIds')
                 promotionId: req.query.promotionId,
                 creativeIds: req.query.creativeIds,
             };
+            if (!params.castrBizId && !params.promotionId && !params.creativeIds) {
+                throw new Error('Missing params: must provide either `castrBizId`, `promotionId` or `creativeIds`');
+            }
             res.json(await adService.getAdsByCreativeIds(params));
         } catch (err) {
             next(err);
