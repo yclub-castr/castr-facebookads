@@ -68,6 +68,7 @@ class AdSetService {
 
     async createAdSet(params) {
         const castrBizId = params.castrBizId;
+        const castrLocId = params.castrLocId;
         const promotionId = params.promotionId;
         const campaignId = params.campaignId;
         const dailyBudget = params.dailyBudget;
@@ -82,21 +83,16 @@ class AdSetService {
         try {
             const project = await ProjectModel.findOne({ castrBizId: castrBizId });
             const accountId = project.accountId;
-            const businessLabel = project.adLabels.businessLabel.toObject();
-            const promotionLabels = project.adLabels.promotionLabels;
-            let promotionLabel;
-            for (let i = 0; i < promotionLabels.length; i++) {
-                if (promotionLabels[i].name === promotionId) {
-                    promotionLabel = promotionLabels[i].toObject();
-                }
-            }
+            const businessLabel = project.adLabels.businessLabel;
+            const locationLabel = project.adLabels.locationLabels.filter(label => label.name === castrLocId)[0];
+            const promotionLabel = project.adLabels.promotionLabels.filter(label => label.name === promotionId)[0];
             const promotedObject = {
                 pixel_id: (await PixelService.getPixel(project)).data.id,
                 custom_event_type: 'PURCHASE',
             };
             const adsetParams = {
                 [AdSetField.campaign_id]: campaignId,
-                [AdSetField.adlabels]: [businessLabel, promotionLabel],
+                [AdSetField.adlabels]: [businessLabel, promotionLabel, locationLabel],
                 [AdSetField.name]: name,
                 [AdSetField.optimization_goal]: optimizationGoal,
                 [AdSetField.targeting]: targeting,
@@ -148,6 +144,9 @@ class AdSetService {
                 success: true,
                 message: msg,
                 data: {
+                    castrBizId: castrBizId,
+                    castrLocId: castrLocId,
+                    promotionId: promotionId,
                     id: adset.id,
                     recommendations: validation.recommendations,
                 },
@@ -206,7 +205,7 @@ class AdSetService {
             if (!batchCompleted) {
                 return {
                     success: false,
-                    messasge: 'Batch requests failed 3 times',
+                    message: 'Batch requests failed 3 times',
                     data: batchResponses,
                 };
             }
@@ -224,7 +223,7 @@ class AdSetService {
             logger.debug(msg);
             return {
                 success: true,
-                messasge: msg,
+                message: msg,
                 data: {},
             };
         } catch (err) {
