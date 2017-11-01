@@ -120,6 +120,9 @@ class CampaignService {
                 success: true,
                 message: msg,
                 data: {
+                    castrBizId: castrBizId,
+                    castrLocId: castrLocId,
+                    promotionId: promotionId,
                     id: campaign.id,
                     recommendations: validation.recommendations,
                 },
