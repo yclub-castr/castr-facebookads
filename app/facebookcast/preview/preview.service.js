@@ -4,7 +4,10 @@
 
 const logger = require('../../utils').logger();
 const fbRequest = require('../fbapi');
-const CreativeModel = require('../creative/creative.model').Model;
+
+const Creative = require('../creative/creative.model');
+const CreativeModel = Creative.Model;
+const CreativeStatus = Creative.Status;
 
 class PreviewService {
     async getPreviews(params) {
@@ -18,6 +21,7 @@ class PreviewService {
                 castrBizId: castrBizId,
                 castrLocId: { $in: castrLocIds },
                 promotionId: { $in: promotionIds },
+                status: { $ne: CreativeStatus.deleted },
             });
             // if (promotionId) {
             //     logger.debug(`Fetching creatives by promotion id (#${promotionId}) ...`);
