@@ -18,15 +18,15 @@ const readFields = Object.values(CampaignField).filter(field => !excludedFields.
 class CampaignService {
     async getCampaigns(params) {
         const castrBizId = params.castrBizId;
-        const castrLocIds = params.castrLocIds;
+        const castrLocId = params.castrLocId;
         const promotionId = params.promotionId;
         try {
-            if (!castrBizId && !promotionId) throw new Error('Missing params: must provide either `castrBizId` or `promotionId`');
             const project = await ProjectModel.findOne({ castrBizId: castrBizId });
             const accountId = project.accountId;
             const campaignParams = { fields: `${CampaignField.status},${CampaignField.effective_status}` };
             let campaigns;
             if (promotionId) {
+                // TODO: implement paging-based GET
                 const promotionlabels = project.adLabels.promotionLabels;
                 for (let i = 0; i < promotionlabels.length; i++) {
                     if (promotionlabels[i].name === promotionId) {
@@ -145,9 +145,7 @@ class CampaignService {
                     castrBizId: castrBizId,
                     [CampaignField.status]: { $ne: [CampaignStatus.deleted] },
                 }, 'id');
-            } else {
-                throw new Error('Missing params: must provide either `castrBizId` or `promotionId`');
-            }
+            } 
             const campaignIds = campaigns.map(campaign => campaign.id);
             const batches = [];
             let batchCompleted = false;
