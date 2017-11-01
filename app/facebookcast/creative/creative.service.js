@@ -63,8 +63,6 @@ class CreativeService {
                     const notDeleted = fbResponse.data.filter(creative => creative.status !== CreativeStatus.deleted);
                     creatives = creatives.concat(notDeleted);
                 } while (fbResponse.paging.next);
-            } else {
-                throw new Error('Missing params: must provide either `castrBizId` or `promotionId`');
             }
             const msg = `${creatives.length} creatives fetched`;
             logger.debug(msg);
@@ -92,13 +90,6 @@ class CreativeService {
                 if (promotionLabels[i].name === promotionId) {
                     promotionLabel = promotionLabels[i].toObject();
                 }
-            }
-            if (!promotionLabel) {
-                logger.debug('Promotion adlabel not found, creating new adlabel...');
-                promotionLabel = await fbRequest.post(accountId, 'adlabels', { name: promotionId });
-                logger.debug('Promotion adlabels created, storing in DB...');
-                promotionLabels.push({ id: promotionLabel.id, name: promotionId });
-                project.save();
             }
             const projectParams = {
                 accountId: accountId,
@@ -140,6 +131,7 @@ class CreativeService {
             ];
             const creatives = await Promise.all(createPromises);
             const creativeLabels = await Promise.all(labelPromises);
+            // TODO: handle errors
             const msg = `${creatives.length} creatives created`;
             logger.debug(msg);
             const responseData = [];
@@ -195,8 +187,6 @@ class CreativeService {
                     castrBizId: castrBizId,
                     [CreativeField.status]: { $ne: [CreativeStatus.deleted] },
                 }, 'id creativeLabel');
-            } else {
-                throw new Error('Missing params: must provide either `castrBizId` or `promotionId`');
             }
             const creativeIds = creatives.map(creative => creative.id);
             const batches = [];
