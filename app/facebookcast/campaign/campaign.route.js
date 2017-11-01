@@ -15,6 +15,10 @@ router.route('/')
                 castrLocId: req.query.castrLocId,
                 promotionId: req.query.promotionId,
             };
+            if (!params.castrBizId && !params.promotionId) {
+                // TODO: Find by castrLocId
+                throw new Error('Missing query params: must provide either `castrBizId` or `promotionId`');
+            }
             res.json(await campaignService.getCampaigns(params));
         } catch (err) {
             next(err);
@@ -28,9 +32,9 @@ router.route('/')
                 promotionId: req.body.promotionId,
                 objective: req.body.objective,
             };
-            if (!params.castrBizId) throw new Error('Missing path variable: \'castrBizId\'');
-            if (!params.castrLocId) throw new Error('Missing body parameter: \'castrLocId\'');
-            if (!params.promotionId) throw new Error('Missing body parameter: \'promotionId\'');
+            if (!params.castrBizId) throw new Error('Missing body param: \'castrBizId\'');
+            if (!params.castrLocId) throw new Error('Missing body param: \'castrLocId\'');
+            if (!params.promotionId) throw new Error('Missing body param: \'promotionId\'');
             res.json(await campaignService.createCampaign(params));
         } catch (err) {
             next(err);
@@ -43,6 +47,9 @@ router.route('/')
                 // castrLocId: req.body.castrLocId,
                 promotionId: req.body.promotionId,
             };
+            if (!params.castrBizId && !params.promotionId) {
+                throw new Error('Missing body params: must provide either `castrBizId` or `promotionId`');
+            }
             res.json(await campaignService.deleteCampaigns(params));
         } catch (err) {
             next(err);
