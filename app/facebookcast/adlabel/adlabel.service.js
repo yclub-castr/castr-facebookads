@@ -35,7 +35,7 @@ class AdService {
             if (!batchCompleted) {
                 return {
                     success: false,
-                    messasge: 'Batch requests failed 3 times',
+                    message: 'Batch requests failed 3 times',
                     data: fbResponses,
                 };
             }
@@ -81,7 +81,7 @@ class AdService {
             if (!batchCompleted) {
                 return {
                     success: false,
-                    messasge: 'Batch requests failed 3 times',
+                    message: 'Batch requests failed 3 times',
                     data: fbResponses,
                 };
             }

@@ -181,7 +181,7 @@ class CampaignService {
             if (!batchCompleted) {
                 return {
                     success: false,
-                    messasge: 'Batch requests failed 3 times',
+                    message: 'Batch requests failed 3 times',
                     data: batchResponses,
                 };
             }
@@ -199,7 +199,7 @@ class CampaignService {
             logger.debug(msg);
             return {
                 success: true,
-                messasge: msg,
+                message: msg,
                 data: {},
             };
         } catch (err) {
