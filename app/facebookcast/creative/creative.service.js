@@ -79,24 +79,19 @@ class CreativeService {
 
     async createCreative(params) {
         const castrBizId = params.castrBizId;
+        const castrLocId = params.castrLocId;
         const promotionId = params.promotionId;
         try {
             const project = await ProjectModel.findOne({ castrBizId: castrBizId });
             const accountId = project.accountId;
-            const businessLabel = project.adLabels.businessLabel.toObject();
-            const promotionLabels = project.adLabels.promotionLabels;
-            let promotionLabel;
-            for (let i = 0; i < promotionLabels.length; i++) {
-                if (promotionLabels[i].name === promotionId) {
-                    promotionLabel = promotionLabels[i].toObject();
-                }
-            }
+            const businessLabel = project.adLabels.businessLabel;
+            const locationLabel = project.adLabels.locationLabels.filter(label => label.name === castrLocId)[0];
+            const promotionLabel = project.adLabels.promotionLabels.filter(label => label.name === promotionId)[0];
             const projectParams = {
                 accountId: accountId,
                 pageId: project.pageId,
                 instagramId: project.instagramId,
-                businessLabel: businessLabel,
-                promotionLabel: promotionLabel,
+                adLabels: [businessLabel, locationLabel, promotionLabel]
             };
             const adSpecPromises = [
                 this.getLinkAdCreative(projectParams),
@@ -140,6 +135,7 @@ class CreativeService {
                 const creative = creatives[i];
                 const model = new CreativeModel({
                     castrBizId: castrBizId,
+                    castrLocId: castrLocId,
                     promotionId: promotionId,
                     accountId: creative.account_id,
                     id: creative.id,
@@ -164,7 +160,12 @@ class CreativeService {
             return {
                 success: true,
                 message: msg,
-                data: responseData,
+                data: {
+                    castrBizId: castrBizId,
+                    castrLocId: castrLocId,
+                    promotionId: promotionId,
+                    creatives: responseData,
+                },
             };
         } catch (err) {
             throw err;
@@ -300,7 +301,7 @@ class CreativeService {
         };
         return {
             name: name,
-            [CreativeField.adlabels]: [projectParams.businessLabel, projectParams.promotionLabel],
+            [CreativeField.adlabels]: projectParams.adLabels,
             object_story_spec: objectStorySpec,
             fields: readFields,
         };
@@ -353,7 +354,7 @@ class CreativeService {
         };
         return {
             name: name,
-            [CreativeField.adlabels]: [projectParams.businessLabel, projectParams.promotionLabel],
+            [CreativeField.adlabels]: projectParams.adLabels,
             object_story_spec: objectStorySpec,
             fields: readFields,
         };
@@ -388,7 +389,7 @@ class CreativeService {
             };
             return {
                 name: name,
-                [CreativeField.adlabels]: [projectParams.businessLabel, projectParams.promotionLabel],
+                [CreativeField.adlabels]: projectParams.adLabels,
                 object_story_spec: objectStorySpec,
                 fields: readFields,
             };
@@ -431,7 +432,7 @@ class CreativeService {
             };
             return {
                 name: name,
-                [CreativeField.adlabels]: [projectParams.businessLabel, projectParams.promotionLabel],
+                [CreativeField.adlabels]: projectParams.adLabels,
                 object_story_spec: objectStorySpec,
                 fields: readFields,
             };
