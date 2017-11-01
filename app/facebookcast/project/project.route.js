@@ -161,7 +161,7 @@ router.route('/:castrBizId/promotion')
                 promotionId: req.body.promotionId,
             };
             if (!params.castrBizId) throw new Error('Missing path variable: \'castrBizId\'');
-            if (!params.promotionId) throw new Error('Missing body parameter: \'castrLocIds\'');
+            if (!params.castrLocIds) throw new Error('Missing body parameter: \'castrLocIds\'');
             if (!params.promotionId) throw new Error('Missing body parameter: \'promotionId\'');
             res.json(await projectService.newPromotion(params));
         } catch (err) {

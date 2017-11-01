@@ -517,6 +517,9 @@ class ProjectService {
             const accountId = project.accountId;
             const promotionLabel = project.adLabels.promotionLabels.filter(label => label.name === promotionId)[0];
             logger.debug('Deleting promotion adlabel...');
+            if (!promotionLabel) {
+                throw new Error(`No such Promotion (#${promotionId}) exists`);
+            }
             const fbResponse = await fbRequest.delete(promotionLabel.id);
             if (!fbResponse.success) {
                 throw new Error('Failed to delete promotion adlabel from Facebook');
