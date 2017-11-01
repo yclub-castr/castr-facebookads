@@ -10,6 +10,7 @@ const ProjectModel = require('../project/project.model').Model;
 const CampaignModel = Model.Model;
 const CampaignStatus = Model.Status;
 const CampaignField = Model.Field;
+const CampaignObjective = Model.Objective;
 
 const excludedFields = [CampaignField.execution_options];
 const readFields = Object.values(CampaignField).filter(field => !excludedFields.includes(field)).toString();
@@ -17,8 +18,10 @@ const readFields = Object.values(CampaignField).filter(field => !excludedFields.
 class CampaignService {
     async getCampaigns(params) {
         const castrBizId = params.castrBizId;
+        const castrLocIds = params.castrLocIds;
         const promotionId = params.promotionId;
         try {
+            if (!castrBizId && !promotionId) throw new Error('Missing params: must provide either `castrBizId` or `promotionId`');
             const project = await ProjectModel.findOne({ castrBizId: castrBizId });
             const accountId = project.accountId;
             const campaignParams = { fields: `${CampaignField.status},${CampaignField.effective_status}` };
@@ -37,8 +40,6 @@ class CampaignService {
                 logger.debug(`Fetching campaigns by business id (#${castrBizId}) ...`);
                 campaignParams.filtering = `[{"field":"adlabels","operator":"ANY","value":["${castrBizId}"]}]`;
                 campaigns = await fbRequest.get(accountId, 'campaigns', campaignParams);
-            } else {
-                throw new Error('Missing params: must provide either `castrBizId` or `promotionId`');
             }
             if (!campaigns) {
                 throw new Error('Could not find ad label to read campaigns');
@@ -58,29 +59,25 @@ class CampaignService {
 
     async createCampaign(params) {
         const castrBizId = params.castrBizId;
+        const castrLocId = params.castrLocId;
         const promotionId = params.promotionId;
-        const objective = params.objective;
+        const objective = params.objective || CampaignObjective.link_clicks;
         const name = `Campaign [${objective}]`;
         try {
             const project = await ProjectModel.findOne({ castrBizId: castrBizId });
             const accountId = project.accountId;
-            const businessLabel = project.adLabels.businessLabel.toObject();
-            const promotionLabels = project.adLabels.promotionLabels;
-            let promotionLabel;
-            for (let i = 0; i < promotionLabels.length; i++) {
-                if (promotionLabels[i].name === promotionId) {
-                    promotionLabel = promotionLabels[i].toObject();
-                }
-            }
-            if (!promotionLabel) {
-                logger.debug('Promotion adlabel not found, creating new adlabel...');
-                promotionLabel = await fbRequest.post(accountId, 'adlabels', { name: promotionId });
-                logger.debug('Promotion adlabels created, storing in DB...');
-                promotionLabels.push({ id: promotionLabel.id, name: promotionId });
-                project.save();
-            }
+            const businessLabel = project.adLabels.businessLabel;
+            const locationLabel = project.adLabels.locationLabels.filter(label => label.name === castrLocId)[0];
+            const promotionLabel = project.adLabels.promotionLabels.filter(label => label.name === promotionId)[0];
+            // if (!promotionLabel) {
+            //     logger.debug('Promotion adlabel not found, creating new adlabel...');
+            //     promotionLabel = await fbRequest.post(accountId, 'adlabels', { name: promotionId });
+            //     logger.debug('Promotion adlabels created, storing in DB...');
+            //     promotionLabels.push({ id: promotionLabel.id, name: promotionId });
+            //     project.save();
+            // }
             const campaignParams = {
-                [CampaignField.adlabels]: [businessLabel, promotionLabel],
+                [CampaignField.adlabels]: [businessLabel, locationLabel, promotionLabel],
                 [CampaignField.name]: name,
                 [CampaignField.objective]: objective,
                 [CampaignField.budget_rebalance_flag]: true,
@@ -104,6 +101,7 @@ class CampaignService {
             logger.debug(msg);
             const model = new CampaignModel({
                 castrBizId: castrBizId,
+                castrLocId: castrLocId,
                 promotionId: promotionId,
                 accountId: campaign.account_id,
                 id: campaign.id,
@@ -169,7 +167,7 @@ class CampaignService {
                 for (let i = 0; i < batchResponses.length; i++) {
                     const fbResponses = batchResponses[i];
                     for (let j = 0; j < fbResponses.length; j++) {
-                        if (fbResponses[i].code !== 200) {
+                        if (fbResponses[j].code !== 200) {
                             logger.debug('One of batch requests failed, trying again...');
                             batchCompleted = false;
                             break;
