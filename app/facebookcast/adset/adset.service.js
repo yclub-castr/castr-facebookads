@@ -73,8 +73,8 @@ class AdSetService {
         const promotionId = params.promotionId;
         const campaignId = params.campaignId;
         const dailyBudget = params.dailyBudget;
-        const billingEvent = params.billingEvent || BillingEvent.impressions;
-        const optimizationGoal = params.optimizationGoal || OptimizationGoal.link_clicks;
+        const billingEvent = params.billingEvent;
+        const optimizationGoal = params.optimizationGoal;
         const isAutoBid = true;
         const targeting = {
             geo_locations: { countries: ['KR'] },

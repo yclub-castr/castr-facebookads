@@ -41,6 +41,8 @@ router.route('/')
             if (!params.promotionId) throw new Error('Missing body parameter: \'promotionId\'');
             if (!params.campaignId) throw new Error('Missing body parameter: \'campaignId\'');
             if (!params.dailyBudget) throw new Error('Missing body parameter: \'dailyBudget\'');
+            if (!params.billingEvent) throw new Error('Missing body parameter: \'billingEvent\'');
+            if (!params.optimizationGoal) throw new Error('Missing body parameter: \'optimizationGoal\'');
             res.json(await adsetService.createAdSet(params));
         } catch (err) {
             next(err);
