@@ -224,11 +224,64 @@ class TargetingService {
             max4WkBudget: 10000,
         };
         const locationDetail = {
-            industryType: '',
-            businessType: '',
-            keywords: '',
-            competitors: '',
-
+            industryType: { id: '6003269553527', name: '스포츠' },
+            businessType: [
+                {
+                    id: '6003510075864',
+                    name: '골프',
+                }
+            ],
+            keywords: [
+                {
+                    id: '6003605498820',
+                    name: '골프공',
+                }
+            ],
+            competitors: [
+                {
+                    id: '6003344120039',
+                    name: 'Titleist, 스포츠 및 레크리에이션',
+                },
+                {
+                    id: '6003108439790',
+                    name: 'Srixon, 아웃도어 및 스포츠 용품 회사',
+                }
+            ],
+            targetGender: ['MALE', 'FEMALE'],
+            targetAge: {
+                min: 20,
+                max: 60,
+            },
+            targetLocation: {
+                useRadius: false,
+                radius: {
+                    value: '5',
+                    unit: 'kilometer', // or 'mile'
+                },
+                include: [
+                    {
+                        key: 'JP',
+                        name: 'Japan',
+                        type: 'country',
+                    },
+                    {
+                        key: 'KR',
+                        name: 'South Korea',
+                        type: 'country',
+                    }
+                ],
+                exclude: [
+                    {
+                        key: '1268621',
+                        name: 'Gwangju, Gwangju, South Korea',
+                        type: 'city',
+                    }
+                ],
+            },
+        };
+        return {
+            locationBasic: locationBasic,
+            locationDetail: locationDetail,
         };
     }
 

@@ -96,4 +96,12 @@ router.get('/city', async (req, res, next) => {
     }
 });
 
+router.get('/location-sample', async (req, res, next) => {
+    try {
+        res.json(await targetingService.generateTargetingSpec());
+    } catch (err) {
+        next(err);
+    }
+});
+
 module.exports = router;
