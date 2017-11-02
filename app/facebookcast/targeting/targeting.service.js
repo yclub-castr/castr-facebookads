@@ -297,14 +297,49 @@ class TargetingService {
         };
     }
 
-    async getPredefinedInterests() {
+    async getPredefinedInterests(params) {
+        const type = params.type;
+        const industryId = params.industryId;
+        const businessIds = params.businessIds;
         try {
             const dir = path.join(__dirname, 'interests');
-            const industryTypes = [];
-            fs.readdirSync(dir).forEach((file) => {
-                industryTypes.push(require(path.join(dir, file)));
-            });
-            return industryTypes;
+            let responseBucket = [];
+            const files = fs.readdirSync(dir);
+            for (let i = 0; i < files.length; i++) {
+                const industry = Object.assign({}, require(path.join(dir, files[i])));
+                if (type === 'INDUSTRY') {
+                    delete industry.businessType;
+                    responseBucket.push(industry);
+                } else if (type === 'BUSINESS') {
+                    if (industry.id === industryId) {
+                        responseBucket = industry.businessType;
+                        break;
+                    }
+                } else if (type === 'DETAIL') {
+                    if (industry.id === industryId) {
+                        const businessTypes = industry.businessType;
+                        const flagged = [];
+                        for (let j = 0; j < businessTypes.length; j++) {
+                            const businessType = businessTypes[j];
+                            if (businessIds.includes(businessType.id)) {
+                                const keywords = businessType.keywords;
+                                for (let k = 0; k < keywords.length; k++) {
+                                    if (!flagged.includes(keywords[k].id)) {
+                                        responseBucket.push(keywords[k]);
+                                        flagged.push(keywords[k].id);
+                                    }
+                                }
+                            }
+                        }
+                        break;
+                    }
+                }
+            }
+            return {
+                success: true,
+                message: `Fetched ${responseBucket.length} ${type} options`,
+                data: responseBucket,
+            };
         } catch (err) {
             throw err;
         }

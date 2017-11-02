@@ -10,7 +10,24 @@ const router = express.Router();
 
 router.get('/predefined-interests', async (req, res, next) => {
     try {
-        res.json(await targetingService.getPredefinedInterests());
+        const params = {
+            type: req.query.type,
+            industryId: req.query.industryId,
+            businessIds: req.query.businessIds,
+        };
+        if (!params.type || !['INDUSTRY', 'BUSINESS', 'DETAIL'].includes(params.type)) {
+            throw new Error('Missing query param: \'type\' must be provided and equal to either \'INDUSTRY\', \'BUSINESS\' or \'DETAIL\'');
+        }
+        if (params.type === 'BUSINESS' && !params.industryId) {
+            throw new Error('Missing query param: \'industryId\' must be provided for (\'type\' == \'BUSINESS\')');
+        }
+        if (params.type === 'DETAIL') {
+            if (!(params.industryId && params.businessIds)) {
+                throw new Error('Missing query params: \'industryId\' and \'businessIds\' must be provided for (\'type\' == \'DETAIL\')');
+            }
+            params.businessIds = params.businessIds.split(',');
+        }
+        res.json(await targetingService.getPredefinedInterests(params));
     } catch (err) {
         next(err);
     }

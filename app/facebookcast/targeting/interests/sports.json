@@ -2,7 +2,7 @@
     "id": "6003269553527",
     "name": "Sports",
     "name_kr": "스포츠",
-    "businesType": [
+    "businessType": [
         {
             "id": "6003384248805",
             "name": "Fitness and wellness",
