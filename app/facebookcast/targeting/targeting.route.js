@@ -115,7 +115,7 @@ router.get('/city', async (req, res, next) => {
 
 router.get('/location-sample', async (req, res, next) => {
     try {
-        res.json(await targetingService.locationSample());
+        res.json(await targetingService.locationSample(req.body.castrLocId));
     } catch (err) {
         next(err);
     }
