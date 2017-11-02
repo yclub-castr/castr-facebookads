@@ -256,42 +256,44 @@ class TargetingService {
                     name: 'Srixon, 아웃도어 및 스포츠 용품 회사',
                 }
             ],
-            targetGender: ['MALE', 'FEMALE'],
-            targetAge: {
-                min: 20,
-                max: 60,
-            },
-            targetLocation: {
-                useRadius: false,
-                radius: {
-                    value: '5',
-                    unit: 'kilometer', // or 'mile'
+            targeting: {
+                gender: ['MALE', 'FEMALE'],
+                age: {
+                    min: 20,
+                    max: 60,
                 },
-                include: [
-                    {
-                        key: 'JP',
-                        name: 'Japan',
-                        type: 'country',
+                geolocation: {
+                    useRadius: false,
+                    radius: {
+                        value: 5,
+                        unit: 'kilometer', // or 'mile'
                     },
-                    {
-                        key: 'KR',
-                        name: 'South Korea',
-                        type: 'country',
-                    }
-                ],
-                exclude: [
-                    {
-                        key: '1268621',
-                        name: 'Gwangju, Gwangju, South Korea',
-                        type: 'city',
-                    }
-                ],
+                    included: [
+                        {
+                            key: 'JP',
+                            name: 'Japan',
+                            type: 'country',
+                        },
+                        {
+                            key: 'KR',
+                            name: 'South Korea',
+                            type: 'country',
+                        }
+                    ],
+                    excluded: [
+                        {
+                            key: '1268621',
+                            name: 'Gwangju, Gwangju, South Korea',
+                            type: 'city',
+                        }
+                    ],
+                },
             },
         };
         return {
-            id: 'some_loc_id',
-            businessId: 'some_biz_id',
-            promotionIds: ['some_id_1', 'some_id_2', 'some_id_3'],
+            id: 'TEST_LOC_ID_1',
+            businessId: 'TEST_BIZ_ID',
+            promotionIds: ['TEST_PROMO_ID_1', 'TEST_PROMO_ID_2', 'TEST_PROMO_ID_3'],
             basic: locationBasic,
             detail: locationDetail,
         };
@@ -306,7 +308,7 @@ class TargetingService {
             let responseBucket = [];
             const files = fs.readdirSync(dir);
             for (let i = 0; i < files.length; i++) {
-                const industry = Object.assign({}, require(path.join(dir, files[i])));
+                const industry = Object.assign({}, require(path.join(dir, files[i]))); // eslint-disable-line
                 if (type === 'INDUSTRY') {
                     delete industry.businessType;
                     responseBucket.push(industry);
