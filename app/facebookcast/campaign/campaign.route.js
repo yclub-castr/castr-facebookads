@@ -35,6 +35,7 @@ router.route('/')
             if (!params.castrBizId) throw new Error('Missing body param: \'castrBizId\'');
             if (!params.castrLocId) throw new Error('Missing body param: \'castrLocId\'');
             if (!params.promotionId) throw new Error('Missing body param: \'promotionId\'');
+            if (!params.objective) throw new Error('Missing body param: \'objective\'');
             res.json(await campaignService.createCampaign(params));
         } catch (err) {
             next(err);

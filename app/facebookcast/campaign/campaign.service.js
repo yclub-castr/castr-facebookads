@@ -62,7 +62,7 @@ class CampaignService {
         const castrBizId = params.castrBizId;
         const castrLocId = params.castrLocId;
         const promotionId = params.promotionId;
-        const objective = params.objective || CampaignObjective.link_clicks;
+        const objective = params.objective;
         const name = `Campaign [${objective}]`;
         try {
             const project = await ProjectModel.findOne({ castrBizId: castrBizId });
