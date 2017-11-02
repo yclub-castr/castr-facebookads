@@ -204,6 +204,15 @@ class TargetingService {
     }
 
     async generateTargetingSpec(castrLocid) {
+        try {
+            const i = 1;
+            return (i > 2) ? null : null;
+        } catch (err) {
+            throw err;
+        }
+    }
+
+    async locationSample() {
         const locationBasic = {
             businessName: 'Kruger\'s Mind Palace',
             displayName: 'KMP',
@@ -280,8 +289,11 @@ class TargetingService {
             },
         };
         return {
-            locationBasic: locationBasic,
-            locationDetail: locationDetail,
+            id: 'some_loc_id',
+            businessId: 'some_biz_id',
+            promotionIds: ['some_id_1', 'some_id_2', 'some_id_3'],
+            basic: locationBasic,
+            detail: locationDetail,
         };
     }
 
