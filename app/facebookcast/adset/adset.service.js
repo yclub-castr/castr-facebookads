@@ -78,7 +78,7 @@ class AdSetService {
         const isAutoBid = true;
         const targeting = {
             geo_locations: { countries: ['KR'] },
-            // TODO: publisher_platforms : ['facebook', 'audience_network', 'instagram']
+            publisher_platforms: ['facebook', 'audience_network', 'instagram'],
         };
         const name = `AdSet [${optimizationGoal}]`;
         try {
