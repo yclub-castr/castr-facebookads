@@ -3,6 +3,7 @@
 'use strict';
 
 const fs = require('fs');
+const path = require('path');
 const logger = require('../../utils').logger();
 const fbRequest = require('../fbapi');
 
@@ -233,10 +234,10 @@ class TargetingService {
 
     async getPredefinedInterests() {
         try {
-            const dir = `${__dirname}\\interests`;
+            const dir = path.join(__dirname, 'interests');
             const industryTypes = [];
             fs.readdirSync(dir).forEach((file) => {
-                industryTypes.push(require(`${dir}\\${file}`));
+                industryTypes.push(require(path.join(dir, file)));
             });
             return industryTypes;
         } catch (err) {
