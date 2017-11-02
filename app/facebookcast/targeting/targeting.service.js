@@ -292,7 +292,7 @@ class TargetingService {
         };
         return {
             id: castrLocId || 'TEST_LOC_ID',
-            businessId: 'TEST_BIZ_ID',
+            castrBizId: 'TEST_BIZ_ID',
             promotionIds: ['TEST_PROMO_ID_1', 'TEST_PROMO_ID_2', 'TEST_PROMO_ID_3'],
             basic: locationBasic,
             detail: locationDetail,
