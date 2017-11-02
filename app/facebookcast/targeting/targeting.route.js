@@ -8,6 +8,14 @@ const targetingService = require('./targeting.service');
 
 const router = express.Router();
 
+router.get('/predefined-interests', async (req, res, next) => {
+    try {
+        res.json(await targetingService.getPredefinedInterests());
+    } catch (err) {
+        next(err);
+    }
+});
+
 router.get('/interest', async (req, res, next) => {
     try {
         const params = {

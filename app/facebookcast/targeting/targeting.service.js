@@ -2,9 +2,9 @@
 
 'use strict';
 
+const fs = require('fs');
 const logger = require('../../utils').logger();
 const fbRequest = require('../fbapi');
-
 
 function korLocDecoder(params) {
     const query = params.query;
@@ -60,6 +60,7 @@ function korLocDecoder(params) {
         q: transQuery || params.query,
         location_types: locTypes,
         locale: params.locale,
+        limit: 10,
     };
 }
 
@@ -69,6 +70,7 @@ class TargetingService {
             type: 'adinterest',
             q: params.query,
             locale: params.locale,
+            limit: 20,
         };
         try {
             const fbResponse = await fbRequest.get('search', null, searchParams);
@@ -81,10 +83,10 @@ class TargetingService {
                 return {
                     id: interest.id,
                     name: name,
-                    audience_size: interest.audience_size,
+                    audienceSize: interest.audience_size,
                 };
             });
-            return response;
+            return response.sort((a, b) => parseInt(b.audienceSize, 10) - parseInt(a.audienceSize, 10));
         } catch (err) {
             throw err;
         }
@@ -107,6 +109,7 @@ class TargetingService {
                     q: params.query,
                     location_types: locTypes,
                     locale: params.locale,
+                    limit: 10,
                 };
             }
             const fbResponse = await fbRequest.get('search', null, searchParams);
@@ -194,6 +197,48 @@ class TargetingService {
             const fbResponse = await fbRequest.get('search', null, searchParams);
             logger.debug(`${fbResponse.data.length} cities found for query (${params.query})`);
             return fbResponse.data;
+        } catch (err) {
+            throw err;
+        }
+    }
+
+    async generateTargetingSpec(castrLocid) {
+        const locationBasic = {
+            businessName: 'Kruger\'s Mind Palace',
+            displayName: 'KMP',
+            shortDesc: 'Where thought happens...',
+            longDesc: 'This is where Kruger does most of his thinking...',
+            message: 'No loitering!',
+            website: 'www.krugersmindpalace.com',
+            address: {
+                street: '31 Sector B',
+                street2: 'Unit 58',
+                city: 'Frontal Lobe',
+                state: 'Brain',
+                country: 'Kruger',
+                lat: '25',
+                long: '-71',
+            },
+            budgetOptimized: true,
+            max4WkBudget: 10000,
+        };
+        const locationDetail = {
+            industryType: '',
+            businessType: '',
+            keywords: '',
+            competitors: '',
+
+        };
+    }
+
+    async getPredefinedInterests() {
+        try {
+            const dir = `${__dirname}\\interests`;
+            const industryTypes = [];
+            fs.readdirSync(dir).forEach((file) => {
+                industryTypes.push(require(`${dir}\\${file}`));
+            });
+            return industryTypes;
         } catch (err) {
             throw err;
         }
