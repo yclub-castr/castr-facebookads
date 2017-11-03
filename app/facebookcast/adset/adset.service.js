@@ -3,7 +3,6 @@
 'use strict';
 
 const logger = require('../../utils').logger();
-const moment = require('moment');
 const fbRequest = require('../fbapi');
 const PixelService = require('../pixel/pixel.service');
 const Model = require('./adset.model');
@@ -75,6 +74,8 @@ class AdSetService {
         const dailyBudget = params.dailyBudget;
         const billingEvent = params.billingEvent;
         const optimizationGoal = params.optimizationGoal;
+        const startDate = params.startDate;
+        const endDate = params.endDate;
         const isAutoBid = true;
         const targeting = {
             geo_locations: { countries: ['KR'] },
@@ -103,8 +104,8 @@ class AdSetService {
                 [AdSetField.is_autobid]: isAutoBid,
                 [AdSetField.promoted_object]: promotedObject,
                 [AdSetField.status]: AdSetStatus.active,
-                [AdSetField.start_time]: moment().toDate(),
-                [AdSetField.end_time]: moment().add(1, 'week').toDate(),
+                [AdSetField.start_time]: startDate,
+                [AdSetField.end_time]: endDate,
                 [AdSetField.execution_options]: ['validate_only', 'include_recommendations'],
                 [AdSetField.redownload]: true,
             };

@@ -35,6 +35,8 @@ router.route('/')
                 dailyBudget: req.body.dailyBudget,
                 billingEvent: req.body.billingEvent,
                 optimizationGoal: req.body.optimizationGoal,
+                startDate: req.body.startDate,
+                endDate: req.body.endDate,
             };
             if (!params.castrBizId) throw new Error('Missing body parameter: \'castrBizId\'');
             if (!params.castrLocId) throw new Error('Missing body parameter: \'castrLocId\'');
@@ -43,6 +45,8 @@ router.route('/')
             if (!params.dailyBudget) throw new Error('Missing body parameter: \'dailyBudget\'');
             if (!params.billingEvent) throw new Error('Missing body parameter: \'billingEvent\'');
             if (!params.optimizationGoal) throw new Error('Missing body parameter: \'optimizationGoal\'');
+            if (!params.startDate) throw new Error('Missing body parameter: \'startDate\'');
+            if (!params.endDate) throw new Error('Missing body parameter: \'endDate\'');
             res.json(await adsetService.createAdSet(params));
         } catch (err) {
             next(err);
