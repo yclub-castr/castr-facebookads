@@ -35,6 +35,7 @@ router.route('/')
                 dailyBudget: req.body.dailyBudget,
                 billingEvent: req.body.billingEvent,
                 optimizationGoal: req.body.optimizationGoal,
+                targeting: req.body.targeting,
                 startDate: req.body.startDate,
                 endDate: req.body.endDate,
             };
@@ -45,6 +46,7 @@ router.route('/')
             if (!params.dailyBudget) throw new Error('Missing body parameter: \'dailyBudget\'');
             if (!params.billingEvent) throw new Error('Missing body parameter: \'billingEvent\'');
             if (!params.optimizationGoal) throw new Error('Missing body parameter: \'optimizationGoal\'');
+            if (!params.targeting) throw new Error('Missing body parameter: \'targeting\'');
             if (!params.startDate) throw new Error('Missing body parameter: \'startDate\'');
             if (!params.endDate) throw new Error('Missing body parameter: \'endDate\'');
             res.json(await adsetService.createAdSet(params));

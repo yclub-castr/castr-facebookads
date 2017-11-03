@@ -77,10 +77,7 @@ class AdSetService {
         const startDate = params.startDate;
         const endDate = params.endDate;
         const isAutoBid = true;
-        const targeting = {
-            geo_locations: { countries: ['KR'] },
-            publisher_platforms: ['facebook', 'audience_network', 'instagram'],
-        };
+        const targeting = params.targeting;
         const name = `AdSet [${optimizationGoal}]`;
         try {
             const project = await ProjectModel.findOne({ castrBizId: castrBizId });
