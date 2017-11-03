@@ -10,13 +10,20 @@ const userAgent = `${appName}/${appVersion}`;
 const host = 'https://graph.facebook.com/';
 const apiVersion = 'v2.10';
 
+const fbErrCodes = {
+    RATE_LIMITED: '613',
+};
+
+const fbErrSubcodes = {
+    ACCOUNT_RATE_LIMITED: '1487742',
+};
+
 const getUri = (node, edge) => {
     let uri = `${host}${apiVersion}`;
     if (node) uri += `/${node}`;
     if (edge) uri += `/${edge}`;
     return uri;
 };
-
 
 function objToStr(obj) {
     if (Array.isArray(obj)) {
@@ -58,7 +65,7 @@ const get = (node, edge, params) => {
     }
 };
 
-const post = async (node, edge, params, method) => {
+const post = async (node, edge, params, method, attempts) => {
     if (params) params.access_token = params.access_token || process.env.ADMIN_SYS_USER_TOKEN;
     else params = { access_token: process.env.ADMIN_SYS_USER_TOKEN }; // eslint-disable-line no-param-reassign
     const options = {
@@ -68,8 +75,32 @@ const post = async (node, edge, params, method) => {
         json: true,
     };
     try {
-        return rp(options);
+        const response = await rp(options);
+        return response;
     } catch (err) {
+        const attempt = attempts || 3;
+        if (attempt !== 0) {
+            const error = (err.error) ? err.error.error || err.error : err;
+            let throttle = 5;
+            if (error.code === fbErrCodes.RATE_LIMITED && error.error_subcode === fbErrSubcodes.ACCOUNT_RATE_LIMITED) {
+                logger.error(error);
+                throttle = 300;
+            } else {
+                logger.error(error);
+            }
+            logger.debug(`Unfortunate API failure, retrying in ${throttle} seconds...\n${options.method} ${options.uri}\n${JSON.stringify(options.body, null, 2)}`);
+            return new Promise((resolve, reject) => {
+                setTimeout(async () => {
+                    logger.debug(`Retrying attempt (${4 - attempt}/3) ...`);
+                    try {
+                        const response = await post(node, edge, params, method, attempt - 1);
+                        resolve(response);
+                    } catch (errr) {
+                        reject(errr);
+                    }
+                }, throttle * 1000);
+            });
+        }
         throw err;
     }
 };
