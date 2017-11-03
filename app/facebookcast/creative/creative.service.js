@@ -142,7 +142,7 @@ class CreativeService {
                     promotionId: promotionId,
                     accountId: creative.account_id,
                     id: creative.id,
-                    name: creative.name,
+                    name: adSpecs[i].name,
                     status: creative.status,
                     body: creative.body,
                     title: creative.title,
@@ -155,7 +155,7 @@ class CreativeService {
                 updatePromises.push(model.save());
                 responseData.push({
                     id: creative.id,
-                    name: creative.name,
+                    name: adSpecs[i].name,
                 });
             }
             await Promise.all(updatePromises);
@@ -278,7 +278,7 @@ class CreativeService {
 
     async getLinkAdCreative(projectParams) {
         logger.debug('Creating Single-Image ad creative...');
-        const name = 'Creative [SINGLE_IMAGE]';
+        const name = '[SINGLE_IMAGE]';
         const destinationUrl = 'https://www.mixcloud.com/dondiablo/';
         const callToAction = {
             type: CallToActionType.learn_more,
@@ -312,7 +312,7 @@ class CreativeService {
 
     async getCarouselAdCreative(projectParams) {
         logger.debug('Creating Carousel ad creative...');
-        const name = 'Creative [CAROUSEL]';
+        const name = '[CAROUSEL]';
         const destinationUrl = 'https://www.mixcloud.com/dondiablo/';
         const destinationUrl2 = 'https://plnkr.co';
         const callToAction = {
@@ -368,7 +368,7 @@ class CreativeService {
         try {
             const videoUrl = 'https://s3-us-west-1.amazonaws.com/castr-images/videos/1505555120860.mp4';
             const video = await this.uploadVideo(projectParams.accountId, videoUrl);
-            const name = 'Creative [SINGLE_VIDEO]';
+            const name = '[SINGLE_VIDEO]';
             const destinationUrl = 'https://www.mixcloud.com/dondiablo/';
             const callToAction = {
                 type: CallToActionType.learn_more,
@@ -411,7 +411,7 @@ class CreativeService {
                 'http://cdn2.arkive.org/media/C4/C47A0B8A-6458-41B4-A657-3442AECBD887/Presentation.Large/Brown-bears-mating-Alaskan-population.jpg'
             ];
             const video = await this.uploadSlideshow(projectParams.accountId, imageUrls);
-            const name = 'Creative [SLIDESHOW]';
+            const name = '[SLIDESHOW]';
             const destinationUrl = 'https://www.mixcloud.com/dondiablo/';
             const callToAction = {
                 type: CallToActionType.learn_more,
