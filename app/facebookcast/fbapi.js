@@ -88,7 +88,7 @@ const post = async (node, edge, params, method, attempts) => {
             } else {
                 logger.error(error);
             }
-            throttle *= attempts;
+            throttle *= attempt;
             logger.debug(`Unfortunate API failure, retrying in ${throttle} seconds...\n${options.method} ${options.uri}\n${JSON.stringify(options.body, null, 2)}`);
             return new Promise((resolve, reject) => {
                 setTimeout(async () => {
