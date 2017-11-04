@@ -11,11 +11,11 @@ const host = 'https://graph.facebook.com/';
 const apiVersion = 'v2.10';
 
 const fbErrCodes = {
-    RATE_LIMITED: '613',
+    RATE_LIMITED: 613,
 };
 
 const fbErrSubcodes = {
-    ACCOUNT_RATE_LIMITED: '1487742',
+    ACCOUNT_RATE_LIMITED: 1487742,
 };
 
 const getUri = (node, edge) => {
@@ -78,8 +78,8 @@ const post = async (node, edge, params, method, attempts) => {
         const response = await rp(options);
         return response;
     } catch (err) {
-        const attempt = attempts || 3;
-        if (attempt !== 0) {
+        const attempt = attempts || 1;
+        if (attempt <= 3) {
             const error = (err.error) ? err.error.error || err.error : err;
             let throttle = 5;
             if (error.code === fbErrCodes.RATE_LIMITED && error.error_subcode === fbErrSubcodes.ACCOUNT_RATE_LIMITED) {
@@ -88,12 +88,13 @@ const post = async (node, edge, params, method, attempts) => {
             } else {
                 logger.error(error);
             }
+            throttle *= attempts;
             logger.debug(`Unfortunate API failure, retrying in ${throttle} seconds...\n${options.method} ${options.uri}\n${JSON.stringify(options.body, null, 2)}`);
             return new Promise((resolve, reject) => {
                 setTimeout(async () => {
-                    logger.debug(`Retrying attempt (${4 - attempt}/3) ...`);
+                    logger.debug(`Retrying attempt (${attempt}/3) ...`);
                     try {
-                        const response = await post(node, edge, params, method, attempt - 1);
+                        const response = await post(node, edge, params, method, attempt + 1);
                         resolve(response);
                     } catch (errr) {
                         reject(errr);
