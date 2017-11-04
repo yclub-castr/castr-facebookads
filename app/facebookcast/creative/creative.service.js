@@ -41,9 +41,9 @@ class CreativeService {
             let creatives = [];
             let fbResponse;
             if (promotionId) {
-                // TODO: implement paging-based GET
                 logger.debug(`Fetching creatives by promotion id (#${promotionId}) ...`);
                 const promotionLabel = project.adLabels.promotionLabels.filter(label => label.name === promotionId)[0];
+                if (!promotionLabel) throw new Error(`No such Promotion (#${promotionId})`);
                 do {
                     if (fbResponse) {
                         fbResponse = await request.get(fbResponse.paging.next, { json: true });
