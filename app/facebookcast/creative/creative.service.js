@@ -83,6 +83,7 @@ class CreativeService {
         const castrBizId = params.castrBizId;
         const castrLocId = params.castrLocId;
         const promotionId = params.promotionId;
+        const creativeParams = params.params;
         try {
             const project = await ProjectModel.findOne({ castrBizId: castrBizId });
             if (!project) throw new Error(`No such Business (#${castrBizId})`);
@@ -97,19 +98,14 @@ class CreativeService {
                 adLabels: [businessLabel, locationLabel, promotionLabel],
             };
             const adSpecPromises = [
-                this.getLinkAdCreative(projectParams),
-                this.getCarouselAdCreative(projectParams),
-                this.getVideoAdCreative(projectParams),
-                this.getSlideshowAdCreative(projectParams)
+                this.getCarouselAdCreative(projectParams, creativeParams),
+                this.getVideoAdCreative(projectParams, creativeParams),
+                this.getSlideshowAdCreative(projectParams, creativeParams)
             ];
-            const adSpecs = await Promise.all(adSpecPromises);
+            let adSpecs = await Promise.all(adSpecPromises);
+            adSpecs = adSpecs.concat(await this.getLinkAdCreative(projectParams, creativeParams));
             logger.debug('Creating adlabels for creatives...');
-            const labelPromises = [
-                fbRequest.post(accountId, 'adlabels', { name: adSpecs[0].name }),
-                fbRequest.post(accountId, 'adlabels', { name: adSpecs[1].name }),
-                fbRequest.post(accountId, 'adlabels', { name: adSpecs[2].name }),
-                fbRequest.post(accountId, 'adlabels', { name: adSpecs[3].name })
-            ];
+            const labelPromises = adSpecs.map(spec => fbRequest.post(accountId, 'adlabels', { name: spec.name }));
             logger.debug(`Creating creative for promotion (#${promotionId}) ...`);
             // const batches = [];
             // const requests = adSpecs.map((spec) => {
@@ -121,12 +117,7 @@ class CreativeService {
             //     };
             // });
             // const batchResponse = await fbRequest.batch(requests, true);
-            const createPromises = [
-                fbRequest.post(accountId, 'adcreatives', adSpecs[0]),
-                fbRequest.post(accountId, 'adcreatives', adSpecs[1]),
-                fbRequest.post(accountId, 'adcreatives', adSpecs[2]),
-                fbRequest.post(accountId, 'adcreatives', adSpecs[3])
-            ];
+            const createPromises = adSpecs.map(spec => fbRequest.post(accountId, 'adcreatives', spec));
             const creatives = await Promise.all(createPromises);
             const creativeLabels = await Promise.all(labelPromises);
             // TODO: handle errors
@@ -276,10 +267,15 @@ class CreativeService {
         logger.debug(`Synchronized ${creatives.length} creatives`);
     }
 
-    async getLinkAdCreative(projectParams) {
+    async getLinkAdCreative(projectParams, creativeParams) {
         logger.debug('Creating Single-Image ad creative...');
         const name = '[SINGLE_IMAGE]';
-        const destinationUrl = 'https://www.mixcloud.com/dondiablo/';
+        const postText = creativeParams.promoDesc;
+        const attchTitle = creativeParams.locName;
+        const attchDesc = creativeParams.locDescShort;
+        const imageUrls = creativeParams.promoImages.map(img => img['1x1.91']);
+        const destinationUrl = creativeParams.link;
+        // const welcomeMsg = 'WELCOME';
         const callToAction = {
             type: CallToActionType.learn_more,
             value: {
@@ -287,74 +283,84 @@ class CreativeService {
                 link_caption: destinationUrl,
             },
         };
-        const objectStorySpec = {
-            link_data: {
-                message: 'try it out', // post text
-                name: 'Some Name', // attachment name
-                description: 'SOME DESCRIPTION', // attachment description
-                caption: destinationUrl, // displayed url
-                call_to_action: callToAction, // CTA button
-                // image_crops: {},
-                picture: 'https://thumbnailer.mixcloud.com/unsafe/128x128/profile/4/b/c/a/c04a-e2d9-4404-9004-4e62e5dc048b',
-                link: destinationUrl,
-                page_welcome_message: 'WELCOME', // for messenger
-            },
-            page_id: projectParams.pageId,
-            instagram_actor_id: projectParams.instagramId,
+        const photoData = {
+            caption: postText, // post text
+            url: imageUrls[0],
+            // page_welcome_message: welcomeMsg, // for messenger
         };
-        return {
-            name: name,
-            [CreativeField.adlabels]: projectParams.adLabels,
-            object_story_spec: objectStorySpec,
-            fields: readFields,
-        };
+        const linkAdCreativeParams = imageUrls.map((imageUrl) => {
+            const objectStorySpec = {
+                link_data: {
+                    message: postText, // post text
+                    name: attchTitle, // attachment name
+                    description: attchDesc, // attachment description
+                    caption: destinationUrl, // displayed url
+                    call_to_action: callToAction, // CTA button
+                    // image_crops: {},
+                    picture: imageUrl,
+                    link: destinationUrl,
+                    // page_welcome_message: welcomeMsg, // for messenger
+                },
+                page_id: projectParams.pageId,
+                instagram_actor_id: projectParams.instagramId,
+            };
+            return {
+                name: name,
+                [CreativeField.adlabels]: projectParams.adLabels,
+                object_story_spec: objectStorySpec,
+                fields: readFields,
+            };
+        });
+        return linkAdCreativeParams;
     }
 
-    async getCarouselAdCreative(projectParams) {
+    async getCarouselAdCreative(projectParams, creativeParams) {
         logger.debug('Creating Carousel ad creative...');
         const name = '[CAROUSEL]';
-        const destinationUrl = 'https://www.mixcloud.com/dondiablo/';
-        const destinationUrl2 = 'https://plnkr.co';
-        const callToAction = {
-            type: CallToActionType.learn_more,
-            value: {
-                link: destinationUrl,
-                link_caption: destinationUrl,
-            },
-        };
+        const postText = creativeParams.promoDesc;
+        const attchTitles = [];
+        const attchDescs = [];
+        const destinationUrls = [];
+        const imageUrls = creativeParams.promoImages.map(img => img['1x1.91']);
+        const callToActions = [];
+        for (let i = 0; i < imageUrls.length; i++) {
+            attchTitles.push(creativeParams.locName);
+            attchDescs.push(creativeParams.promoTitle);
+            destinationUrls.push(creativeParams.link);
+            callToActions.push({
+                type: CallToActionType.learn_more,
+                value: {
+                    link: creativeParams.link,
+                    link_caption: creativeParams.link,
+                },
+            });
+        }
+        // const welcomeMsg = 'WELCOME';
+        // const endCardUrl = 'https://plnkr.co';
         const objectStorySpec = {
             link_data: {
-                message: 'try it out', // post text
-                child_attachments: [
-                    {
-                        name: 'Some Child Name',
-                        description: 'SOME DESCRIPTION',
-                        call_to_action: callToAction,
-                        caption: destinationUrl,
-                        // image_crops: {},
-                        picture: 'https://thumbnailer.mixcloud.com/unsafe/128x128/profile/4/b/c/a/c04a-e2d9-4404-9004-4e62e5dc048b',
-                        link: destinationUrl,
-                    },
-                    {
-                        name: 'Some Child Name2',
-                        description: 'SOME DESCRIPTION2',
-                        call_to_action: callToAction,
-                        caption: destinationUrl,
-                        // image_crops: {},
-                        picture: 'https://thumbnailer.mixcloud.com/unsafe/128x128/profile/4/b/c/a/c04a-e2d9-4404-9004-4e62e5dc048b',
-                        link: destinationUrl,
-                    }
-                ],
-                caption: destinationUrl2, // end card display url
-                link: destinationUrl2, // end card destination url
-                page_welcome_message: 'WELCOME', // for messenger
-                multi_share_end_card: true,
+                message: postText, // post text
+                child_attachments: [],
+                // page_welcome_message: welcomeMsg, // for messenger
+                // caption: endCardUrl, // end card display url
+                link: creativeParams.link, // end card destination url
+                multi_share_end_card: false,
                 multi_share_optimized: true,
-
             },
             page_id: projectParams.pageId,
             instagram_actor_id: projectParams.instagramId,
         };
+        for (let i = 0; i < imageUrls.length; i++) {
+            objectStorySpec.link_data.child_attachments.push({
+                name: attchTitles[i],
+                description: attchDescs[i],
+                call_to_action: callToActions[i],
+                caption: destinationUrls[i],
+                // image_crops: {},
+                picture: imageUrls[i],
+                link: destinationUrls[i],
+            });
+        }
         return {
             name: name,
             [CreativeField.adlabels]: projectParams.adLabels,
@@ -363,13 +369,17 @@ class CreativeService {
         };
     }
 
-    async getVideoAdCreative(projectParams) {
+    async getVideoAdCreative(projectParams, creativeParams) {
         logger.debug('Creating Single-Video ad creative...');
         try {
-            const videoUrl = 'https://s3-us-west-1.amazonaws.com/castr-images/videos/1505555120860.mp4';
-            const video = await this.uploadVideo(projectParams.accountId, videoUrl);
             const name = '[SINGLE_VIDEO]';
-            const destinationUrl = 'https://www.mixcloud.com/dondiablo/';
+            const postText = creativeParams.promoDesc;
+            const attchTitle = creativeParams.promoTitle;
+            const attchDesc = creativeParams.locDescShort;
+            const videoUrl = creativeParams.promoVideo.url;
+            const thumbnail = creativeParams.promoVideo.thumbnail;
+            const destinationUrl = creativeParams.link;
+            // const welcomeMsg = 'WELCOME';
             const callToAction = {
                 type: CallToActionType.learn_more,
                 value: {
@@ -377,15 +387,16 @@ class CreativeService {
                     link_caption: destinationUrl, // display URL
                 },
             };
+            const video = await this.uploadVideo(projectParams.accountId, videoUrl);
             const objectStorySpec = {
                 video_data: {
-                    message: 'try it out', // post text
-                    title: 'VIDEO TITLE', // attachment name
+                    message: postText, // post text
+                    title: attchTitle, // attachment name
+                    link_description: attchDesc, // attachment description
                     video_id: video.id,
+                    image_url: thumbnail, // thumbnail
                     call_to_action: callToAction, // CTA button
-                    image_url: 'https://thumbnailer.mixcloud.com/unsafe/128x128/profile/4/b/c/a/c04a-e2d9-4404-9004-4e62e5dc048b', // thumbnail
-                    link_description: 'LINK DESCRIPTION', // attachment description
-                    page_welcome_message: 'WELCOME', // for messenger
+                    // page_welcome_message: welcomeMsg, // for messenger
                 },
                 page_id: projectParams.pageId,
                 instagram_actor_id: projectParams.instagramId,
@@ -402,17 +413,17 @@ class CreativeService {
         }
     }
 
-    async getSlideshowAdCreative(projectParams) {
+    async getSlideshowAdCreative(projectParams, creativeParams) {
         logger.debug('Creating Slideshow ad creative...');
         try {
-            const imageUrls = [
-                'https://i.ytimg.com/vi/y4-ZXUotFlA/maxresdefault.jpg',
-                'http://channel.nationalgeographic.com/exposure/content/photo/photo/2095189_the-largest-carnivore-in-the-world_uensu6q222ogkowxa262qcibd3ggiqn63zkcn5eeuqux54zcfvtq_757x567.jpg',
-                'http://cdn2.arkive.org/media/C4/C47A0B8A-6458-41B4-A657-3442AECBD887/Presentation.Large/Brown-bears-mating-Alaskan-population.jpg'
-            ];
-            const video = await this.uploadSlideshow(projectParams.accountId, imageUrls);
             const name = '[SLIDESHOW]';
-            const destinationUrl = 'https://www.mixcloud.com/dondiablo/';
+            const postText = creativeParams.promoDesc;
+            const attchTitle = creativeParams.promoTitle;
+            const attchDesc = creativeParams.locDescShort;
+            const imageUrls = creativeParams.promoImages.map(img => img['1x1.91']);
+            const thumbnail = imageUrls[0];
+            const destinationUrl = creativeParams.link;
+            // const welcomeMsg = 'WELCOME';
             const callToAction = {
                 type: CallToActionType.learn_more,
                 value: {
@@ -420,15 +431,16 @@ class CreativeService {
                     link_caption: destinationUrl, // display URL
                 },
             };
+            const video = await this.uploadSlideshow(projectParams.accountId, imageUrls);
             const objectStorySpec = {
                 video_data: {
-                    message: 'try it out', // post text
-                    title: 'SLIDESHOW TITLE', // attachment name
+                    message: postText, // post text
+                    title: attchTitle, // attachment name
+                    link_description: attchDesc, // attachment description
                     video_id: video.id,
+                    image_url: thumbnail, // thumbnail
                     call_to_action: callToAction, // CTA button
-                    image_url: 'https://thumbnailer.mixcloud.com/unsafe/128x128/profile/4/b/c/a/c04a-e2d9-4404-9004-4e62e5dc048b', // thumbnail
-                    link_description: 'LINK DESCRIPTION', // attachment description
-                    page_welcome_message: 'WELCOME', // for messenger
+                    // page_welcome_message: welcomeMsg, // for messenger
                 },
                 page_id: projectParams.pageId,
                 instagram_actor_id: projectParams.instagramId,
@@ -515,6 +527,7 @@ class CreativeService {
         }
     }
 
+    // Unused
     async chunkUploadVideo(accountId, videoUrl) {
         const response = await request.head(videoUrl);
         const fileSize = parseInt(response['content-length']);
@@ -565,6 +578,7 @@ class CreativeService {
         throw new Error('Video upload failed');
     }
 
+    // Unused
     async download(url) {
         const file = fs.createWriteStream(tempDir);
         try {
@@ -578,34 +592,6 @@ class CreativeService {
             fs.unlink(tempDir); // Delete the file async. (But we don't check the result)
             throw err;
         }
-    }
-
-    // slideshow_spec:{
-    //     image_urls: [],
-    //     duration_ms: int,
-    //     transition_ms: int,
-    // } // for slideshow
-
-    async getPreview() {
-        // curl -G \
-        // --data-urlencode 'creative={ 
-        //   'object_story_spec': { 
-        //     'link_data': { 
-        //       'call_to_action': {'type':'USE_APP','value':{'link':'<URL>'}}, 
-        //       'description': 'Description', 
-        //       'link': '<URL>', 
-        //       'message': 'Message', 
-        //       'name': 'Name', 
-        //       'picture': '<IMAGE_URL>' 
-        //     }, 
-        //     'page_id': '<PAGE_ID>' 
-        //   } 
-        // }' \
-        // -d 'ad_format=MOBILE_FEED_STANDARD' \
-        // -d 'access_token=<ACCESS_TOKEN>' \
-        // https://graph.facebook.com/v2.10/act_<AD_ACCOUNT_ID>/generatepreviews
-
-        // https://graph.facebook.com/<API_VERSION>/<AD_CREATIVE_ID>/previews
     }
 }
 
