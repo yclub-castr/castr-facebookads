@@ -214,12 +214,12 @@ class TargetingService {
 
     async locationSample(castrLocId) {
         const locationBasic = {
-            businessName: 'Kruger\'s Mind Palace',
-            displayName: 'KMP',
-            shortDesc: 'Where thought happens...',
-            longDesc: 'This is where Kruger does most of his thinking...',
-            message: 'No loitering!',
-            website: 'www.krugersmindpalace.com',
+            businessName: 'Business Name',
+            displayName: 'Display Name',
+            shortDesc: 'Location short description',
+            longDesc: 'Location long description',
+            message: 'Location message to customers',
+            website: 'https://www.mixcloud.com/dondiablo/',
             address: {
                 street: '31 Sector B',
                 street2: 'Unit 58',
