@@ -14,6 +14,7 @@ const fbErrCodes = {
     RATE_LIMITED: 613,
     INVALID_PARAM: 100,
     PERMISSIONS_ERROR: 200,
+    NONEXISTENT_ENDPOINT: 803,
 };
 
 const fbErrSubcodes = {
@@ -91,6 +92,9 @@ const post = async (node, edge, params, method, attempts) => {
                 logger.error(error);
                 throttle = 300;
             } else if (error.code === fbErrCodes.PERMISSIONS_ERROR || error.code === fbErrCodes.INVALID_PARAM) {
+                logger.error(error);
+                throw err;
+            } else if (error.code === fbErrCodes.NONEXISTENT_ENDPOINT) {
                 logger.error(error);
                 throw err;
             } else {
