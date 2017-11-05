@@ -50,13 +50,14 @@ function objToStr(obj) {
 }
 
 const get = async (node, edge, params) => {
-    if (params) params.access_token = params.access_token || process.env.ADMIN_SYS_USER_TOKEN;
-    else params = { access_token: process.env.ADMIN_SYS_USER_TOKEN }; // eslint-disable-line no-param-reassign
+    // if (params) params.access_token = params.access_token || process.env.ADMIN_SYS_USER_TOKEN;
+    // else params = { access_token: process.env.ADMIN_SYS_USER_TOKEN }; // eslint-disable-line no-param-reassign
     const options = {
         uri: getUri(node, edge),
         qs: params,
         headers: {
             'User-Agent': userAgent,
+            Authorization: `OAuth ${process.env.ADMIN_SYS_USER_TOKEN}`,
         },
         json: true,
     };
@@ -65,18 +66,21 @@ const get = async (node, edge, params) => {
         return response;
     } catch (err) {
         const error = (err.error) ? err.error.error || err.error : err;
-        logger.error(error);
         throw err;
     }
 };
 
 const post = async (node, edge, params, method, attempts) => {
-    if (params) params.access_token = params.access_token || process.env.ADMIN_SYS_USER_TOKEN;
-    else params = { access_token: process.env.ADMIN_SYS_USER_TOKEN }; // eslint-disable-line no-param-reassign
+    // if (params) params.access_token = params.access_token || process.env.ADMIN_SYS_USER_TOKEN;
+    // else params = { access_token: process.env.ADMIN_SYS_USER_TOKEN }; // eslint-disable-line no-param-reassign
     const options = {
         method: method,
         uri: getUri(node, edge),
         body: params,
+        headers: {
+            'User-Agent': userAgent,
+            Authorization: `OAuth ${process.env.ADMIN_SYS_USER_TOKEN}`,
+        },
         json: true,
     };
     try {
@@ -137,8 +141,12 @@ const batch = async (batchParams, hasBody) => {
         method: 'POST',
         uri: host,
         body: {
-            access_token: process.env.ADMIN_SYS_USER_TOKEN,
+            // access_token: process.env.ADMIN_SYS_USER_TOKEN,
             batch: batchParams,
+        },
+        headers: {
+            'User-Agent': userAgent,
+            Authorization: `OAuth ${process.env.ADMIN_SYS_USER_TOKEN}`,
         },
         json: true,
     };
