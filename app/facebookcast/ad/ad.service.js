@@ -6,8 +6,12 @@ const logger = require('../../utils').logger();
 const fbRequest = require('../fbapi');
 const Model = require('./ad.model');
 const ProjectModel = require('../project/project.model').Model;
+const Campaign = require('../campaign/campaign.model');
 const CreativeModel = require('../creative/creative.model').Model;
+const PixelService = require('../pixel/pixel.service');
 
+const CampaignModel = Campaign.Model;
+const CampaignObjective = Campaign.Objective;
 const AdModel = Model.Model;
 const AdStatus = Model.Status;
 const AdField = Model.Field;
@@ -121,6 +125,8 @@ class AdService {
         try {
             const project = await ProjectModel.findOne({ castrBizId: castrBizId });
             if (!project) throw new Error(`No such Business (#${castrBizId})`);
+            const campaign = await CampaignModel.findOne({ id: params.campaignId }, 'objective');
+            const objective = campaign.objective;
             const businessLabel = project.adLabels.businessLabel;
             const locationLabel = project.adLabels.locationLabels.filter(label => label.name === castrLocId)[0];
             const promotionLabel = project.adLabels.promotionLabels.filter(label => label.name === promotionId)[0];
@@ -137,6 +143,9 @@ class AdService {
                     locationLabel: locationLabel,
                     promotionLabel: promotionLabel,
                 };
+                if (objective !== CampaignObjective.conversions) {
+                    adParams.pixelId = (await PixelService.getPixel(project)).data.id;
+                }
                 adCreatePromises.push(this.createAd(adParams));
             }
             const adResults = await Promise.all(adCreatePromises);
@@ -166,6 +175,7 @@ class AdService {
         const campaignId = params.campaignId;
         const adsetId = params.adsetId;
         const creative = params.creative;
+        const pixelId = params.pixelId;
         const name = `Ad [${creative.name.match(/\[(.*)\]/)[1]}]`;
         const businessLabel = params.businessLabel;
         const locationLabel = params.locationLabel;
@@ -181,6 +191,9 @@ class AdService {
                 [AdField.execution_options]: ['validate_only', 'include_recommendations', 'synchronous_ad_review'],
                 [AdField.redownload]: true,
             };
+            if (pixelId) {
+                adParams[AdField.tracking_specs] = { 'action.type': ['offsite_conversion'], fb_pixel: [pixelId] };
+            }
             logger.debug(`Creating ad for promotion (#${promotionId}) ...`);
             const validation = await fbRequest.post(accountId, 'ads', adParams);
             if (!validation.success) {
@@ -217,6 +230,7 @@ class AdService {
                 message: msg,
                 data: {
                     id: ad.id,
+                    name: ad.name,
                     recommendations: validation.recommendations,
                 },
             };
