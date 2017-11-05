@@ -50,8 +50,6 @@ function objToStr(obj) {
 }
 
 const get = async (node, edge, params) => {
-    // if (params) params.access_token = params.access_token || process.env.ADMIN_SYS_USER_TOKEN;
-    // else params = { access_token: process.env.ADMIN_SYS_USER_TOKEN }; // eslint-disable-line no-param-reassign
     const options = {
         uri: getUri(node, edge),
         qs: params,
@@ -71,8 +69,6 @@ const get = async (node, edge, params) => {
 };
 
 const post = async (node, edge, params, method, attempts) => {
-    // if (params) params.access_token = params.access_token || process.env.ADMIN_SYS_USER_TOKEN;
-    // else params = { access_token: process.env.ADMIN_SYS_USER_TOKEN }; // eslint-disable-line no-param-reassign
     const options = {
         method: method,
         uri: getUri(node, edge),
