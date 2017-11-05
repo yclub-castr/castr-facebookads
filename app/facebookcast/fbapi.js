@@ -12,6 +12,8 @@ const apiVersion = 'v2.10';
 
 const fbErrCodes = {
     RATE_LIMITED: 613,
+    INVALID_PARAM: 100,
+    PERMISSIONS_ERROR: 200,
 };
 
 const fbErrSubcodes = {
@@ -47,7 +49,7 @@ function objToStr(obj) {
     return `"${obj}"`;
 }
 
-const get = (node, edge, params) => {
+const get = async (node, edge, params) => {
     if (params) params.access_token = params.access_token || process.env.ADMIN_SYS_USER_TOKEN;
     else params = { access_token: process.env.ADMIN_SYS_USER_TOKEN }; // eslint-disable-line no-param-reassign
     const options = {
@@ -59,8 +61,11 @@ const get = (node, edge, params) => {
         json: true,
     };
     try {
-        return rp(options);
+        const response = await rp(options);
+        return response;
     } catch (err) {
+        const error = (err.error) ? err.error.error || err.error : err;
+        logger.error(error);
         throw err;
     }
 };
@@ -85,6 +90,9 @@ const post = async (node, edge, params, method, attempts) => {
             if (error.code === fbErrCodes.RATE_LIMITED && error.error_subcode === fbErrSubcodes.ACCOUNT_RATE_LIMITED) {
                 logger.error(error);
                 throttle = 300;
+            } else if (error.code === fbErrCodes.PERMISSIONS_ERROR || error.code === fbErrCodes.INVALID_PARAM) {
+                logger.error(error);
+                throw err;
             } else {
                 logger.error(error);
             }
