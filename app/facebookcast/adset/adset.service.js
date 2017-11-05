@@ -7,7 +7,10 @@ const fbRequest = require('../fbapi');
 const PixelService = require('../pixel/pixel.service');
 const Model = require('./adset.model');
 const ProjectModel = require('../project/project.model').Model;
+const Campaign = require('../campaign/campaign.model');
 
+const CampaignModel = Campaign.Model;
+const CampaignObjective = Campaign.Objective;
 const AdSetModel = Model.Model;
 const AdSetStatus = Model.Status;
 const AdSetField = Model.Field;
@@ -78,18 +81,27 @@ class AdSetService {
         const endDate = params.endDate;
         const isAutoBid = true;
         const targeting = params.targeting;
-        const name = `AdSet [${optimizationGoal}]`;
         try {
             const project = await ProjectModel.findOne({ castrBizId: castrBizId });
             if (!project) throw new Error(`No such Business (#${castrBizId})`);
             const accountId = project.accountId;
+            const campaign = await CampaignModel.findOne({ id: campaignId }, 'objective');
+            const objective = campaign.objective;
+            const name = `AdSet [${objective},${optimizationGoal}]`;
             const businessLabel = project.adLabels.businessLabel;
             const locationLabel = project.adLabels.locationLabels.filter(label => label.name === castrLocId)[0];
             const promotionLabel = project.adLabels.promotionLabels.filter(label => label.name === promotionId)[0];
-            const promotedObject = {
-                pixel_id: (await PixelService.getPixel(project)).data.id,
-                custom_event_type: 'PURCHASE',
-            };
+            let promotedObject;
+            if (objective === CampaignObjective.conversions) {
+                promotedObject = {
+                    pixel_id: (await PixelService.getPixel(project)).data.id,
+                    custom_event_type: 'PURCHASE',
+                };
+            } else {
+                promotedObject = {
+                    page_id: project.pageId,
+                };
+            }
             const adsetParams = {
                 [AdSetField.campaign_id]: campaignId,
                 [AdSetField.adlabels]: [businessLabel, promotionLabel, locationLabel],
@@ -149,6 +161,7 @@ class AdSetService {
                     castrLocId: castrLocId,
                     promotionId: promotionId,
                     id: adset.id,
+                    name: adset.name,
                     recommendations: validation.recommendations,
                 },
             };
