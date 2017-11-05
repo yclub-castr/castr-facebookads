@@ -71,13 +71,6 @@ class CampaignService {
             const businessLabel = project.adLabels.businessLabel;
             const locationLabel = project.adLabels.locationLabels.filter(label => label.name === castrLocId)[0];
             const promotionLabel = project.adLabels.promotionLabels.filter(label => label.name === promotionId)[0];
-            // if (!promotionLabel) {
-            //     logger.debug('Promotion adlabel not found, creating new adlabel...');
-            //     promotionLabel = await fbRequest.post(accountId, 'adlabels', { name: promotionId });
-            //     logger.debug('Promotion adlabels created, storing in DB...');
-            //     promotionLabels.push({ id: promotionLabel.id, name: promotionId });
-            //     project.save();
-            // }
             const campaignParams = {
                 [CampaignField.adlabels]: [businessLabel, locationLabel, promotionLabel],
                 [CampaignField.name]: name,
