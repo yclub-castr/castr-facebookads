@@ -22,11 +22,14 @@ class PixelService {
             }
             const fbResponse = await fbRequest.get(accountId, 'adspixels', { fields: readFields });
             let pixel;
-            if (fbResponse.data) {
+            if (fbResponse.data.length !== 0) {
                 pixel = fbResponse.data[0];
             } else {
                 logger.debug(`No pixel found for Business (#${castrBizId}), creating new pixel...`);
-                pixel = await this.createPixel(accountId);
+                pixel = await this.createPixel({
+                    castrBizId: castrBizId,
+                    accountId: accountId,
+                });
             }
             const msg = `Pixel (${pixel.id}) fetched`;
             logger.debug(msg);
