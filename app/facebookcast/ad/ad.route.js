@@ -50,6 +50,7 @@ router.route('/')
                 castrBizId: req.body.castrBizId,
                 castrLocId: req.body.castrLocId,
                 promotionId: req.body.promotionId,
+                parentsDeleted: req.body.parentsDeleted,
             };
             if (!params.castrBizId && !params.promotionId) {
                 throw new Error('Missing body params: must provide either `castrBizId` or `promotionId`');
