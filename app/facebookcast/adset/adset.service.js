@@ -86,6 +86,7 @@ class AdSetService {
             if (!project) throw new Error(`No such Business (#${castrBizId})`);
             const accountId = project.accountId;
             const campaign = await CampaignModel.findOne({ id: campaignId }, 'objective');
+            if (!campaign) throw new Error(`No such Campaign (#${campaignId})`);
             const objective = campaign.objective;
             const name = `AdSet [${objective},${optimizationGoal}]`;
             const businessLabel = project.adLabels.businessLabel;
