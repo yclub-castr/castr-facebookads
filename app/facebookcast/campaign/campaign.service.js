@@ -119,6 +119,8 @@ class CampaignService {
                     castrLocId: castrLocId,
                     promotionId: promotionId,
                     id: campaign.id,
+                    name: campaign.name,
+                    objective: campaign.objective,
                     recommendations: validation.recommendations,
                 },
             };
