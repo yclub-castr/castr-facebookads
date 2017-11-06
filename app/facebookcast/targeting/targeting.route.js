@@ -14,6 +14,7 @@ router.get('/predefined-interests', async (req, res, next) => {
             type: req.query.type,
             industryId: req.query.industryId,
             businessIds: req.query.businessIds,
+            locale: req.query.locale,
         };
         if (!params.type || !['INDUSTRY', 'BUSINESS', 'DETAIL'].includes(params.type)) {
             throw new Error('Missing query param: \'type\' must be provided and equal to either \'INDUSTRY\', \'BUSINESS\' or \'DETAIL\'');
@@ -27,6 +28,7 @@ router.get('/predefined-interests', async (req, res, next) => {
             }
             params.businessIds = params.businessIds.split(',');
         }
+        locale(params.locale); // Test validity of locale param
         res.json(await targetingService.getPredefinedInterests(params));
     } catch (err) {
         next(err);

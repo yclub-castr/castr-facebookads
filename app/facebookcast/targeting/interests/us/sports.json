@@ -1,396 +1,326 @@
 {
     "id": "6003269553527",
     "name": "Sports",
-    "name_kr": "스포츠",
     "businessType": [
         {
             "id": "6003384248805",
             "name": "Fitness and wellness",
-            "name_kr": "피트니스 및 웰빙",
             "keywords": [
                 {
                     "id": "6003647000838",
-                    "name": "Personal Training",
-                    "name_kr": "개인 트레이너"
+                    "name": "Personal Training"
                 },
                 {
                     "id": "6003327856180",
-                    "name": "Diet",
-                    "name_kr": "다이어트"
+                    "name": "Diet"
                 }
             ]
         },
         {
             "id": "6003159020675",
             "name": "Pilates",
-            "name_kr": "필라테스",
             "keywords": [
                 {
                     "id": "6003647000838",
-                    "name": "Personal Training",
-                    "name_kr": "개인 트레이너"
+                    "name": "Personal Training"
                 },
                 {
                     "id": "6003327856180",
-                    "name": "Diet",
-                    "name_kr": "다이어트"
+                    "name": "Diet"
                 }
             ]
         },
         {
             "id": "6003092532417",
             "name": "CrossFit",
-            "name_kr": "크로스핏",
             "keywords": [
                 {
                     "id": "6003647000838",
-                    "name": "Personal Training",
-                    "name_kr": "개인 트레이너"
+                    "name": "Personal Training"
                 },
                 {
                     "id": "6003327856180",
-                    "name": "Diet",
-                    "name_kr": "다이어트"
+                    "name": "Diet"
                 }
             ]
         },
         {
             "id": "6003369240775",
             "name": "Basketball",
-            "name_kr": "농구",
             "keywords": [
                 {
                     "id": "6003647000838",
-                    "name": "Personal Training",
-                    "name_kr": "개인 트레이너"
+                    "name": "Personal Training"
                 },
                 {
                     "id": "6003327856180",
-                    "name": "Diet",
-                    "name_kr": "다이어트"
+                    "name": "Diet"
                 }
             ]
         },
         {
             "id": "6003074390281",
             "name": "Acrobatics",
-            "name_kr": "곡예",
             "keywords": [
                 {
                     "id": "6003647000838",
-                    "name": "Personal Training",
-                    "name_kr": "개인 트레이너"
+                    "name": "Personal Training"
                 },
                 {
                     "id": "6003327856180",
-                    "name": "Diet",
-                    "name_kr": "다이어트"
+                    "name": "Diet"
                 }
             ]
         },
         {
             "id": "6003195886298",
             "name": "Climbing",
-            "name_kr": "등반",
             "keywords": [
                 {
                     "id": "6003647000838",
-                    "name": "Personal Training",
-                    "name_kr": "개인 트레이너"
+                    "name": "Personal Training"
                 },
                 {
                     "id": "6003327856180",
-                    "name": "Diet",
-                    "name_kr": "다이어트"
+                    "name": "Diet"
                 }
             ]
         },
         {
             "id": "6003402532547",
             "name": "Cycling",
-            "name_kr": "사이클링",
             "keywords": [
                 {
                     "id": "6003647000838",
-                    "name": "Personal Training",
-                    "name_kr": "개인 트레이너"
+                    "name": "Personal Training"
                 },
                 {
                     "id": "6003327856180",
-                    "name": "Diet",
-                    "name_kr": "다이어트"
+                    "name": "Diet"
                 }
             ]
         },
         {
             "id": "6002979499920",
             "name": "Fishing",
-            "name_kr": "낚시",
             "keywords": [
                 {
                     "id": "6003647000838",
-                    "name": "Personal Training",
-                    "name_kr": "개인 트레이너"
+                    "name": "Personal Training"
                 },
                 {
                     "id": "6003327856180",
-                    "name": "Diet",
-                    "name_kr": "다이어트"
+                    "name": "Diet"
                 }
             ]
         },
         {
             "id": "6003510075864",
             "name": "Golf",
-            "name_kr": "골프",
             "keywords": [
                 {
                     "id": "6003647000838",
-                    "name": "Personal Training",
-                    "name_kr": "개인 트레이너"
+                    "name": "Personal Training"
                 },
                 {
                     "id": "6003327856180",
-                    "name": "Diet",
-                    "name_kr": "다이어트"
+                    "name": "Diet"
                 }
             ]
         },
         {
             "id": "6003470278964",
             "name": "Gymnastics",
-            "name_kr": "체조",
             "keywords": [
                 {
                     "id": "6003647000838",
-                    "name": "Personal Training",
-                    "name_kr": "개인 트레이너"
+                    "name": "Personal Training"
                 },
                 {
                     "id": "6003327856180",
-                    "name": "Diet",
-                    "name_kr": "다이어트"
+                    "name": "Diet"
                 }
             ]
         },
         {
             "id": "6003106813190",
             "name": "Hunting",
-            "name_kr": "사냥",
             "keywords": [
                 {
                     "id": "6003647000838",
-                    "name": "Personal Training",
-                    "name_kr": "개인 트레이너"
+                    "name": "Personal Training"
                 },
                 {
                     "id": "6003327856180",
-                    "name": "Diet",
-                    "name_kr": "다이어트"
+                    "name": "Diet"
                 }
             ]
         },
         {
             "id": "6003324287371",
             "name": "Skiing",
-            "name_kr": "스키",
             "keywords": [
                 {
                     "id": "6003647000838",
-                    "name": "Personal Training",
-                    "name_kr": "개인 트레이너"
+                    "name": "Personal Training"
                 },
                 {
                     "id": "6003327856180",
-                    "name": "Diet",
-                    "name_kr": "다이어트"
+                    "name": "Diet"
                 }
             ]
         },
         {
             "id": "6002992423594",
             "name": "Sailing",
-            "name_kr": "항해",
             "keywords": [
                 {
                     "id": "6003647000838",
-                    "name": "Personal Training",
-                    "name_kr": "개인 트레이너"
+                    "name": "Personal Training"
                 },
                 {
                     "id": "6003327856180",
-                    "name": "Diet",
-                    "name_kr": "다이어트"
+                    "name": "Diet"
                 }
             ]
         },
         {
             "id": "6003133111339",
             "name": "Canoe",
-            "name_kr": "카누",
             "keywords": [
                 {
                     "id": "6003647000838",
-                    "name": "Personal Training",
-                    "name_kr": "개인 트레이너"
+                    "name": "Personal Training"
                 },
                 {
                     "id": "6003327856180",
-                    "name": "Diet",
-                    "name_kr": "다이어트"
+                    "name": "Diet"
                 }
             ]
         },
         {
             "id": "6003333948951",
             "name": "Kayak",
-            "name_kr": "카약",
             "keywords": [
                 {
                     "id": "6003647000838",
-                    "name": "Personal Training",
-                    "name_kr": "개인 트레이너"
+                    "name": "Personal Training"
                 },
                 {
                     "id": "6003327856180",
-                    "name": "Diet",
-                    "name_kr": "다이어트"
+                    "name": "Diet"
                 }
             ]
         },
         {
             "id": "6003281015423",
             "name": "Rafting",
-            "name_kr": "래프팅",
             "keywords": [
                 {
                     "id": "6003647000838",
-                    "name": "Personal Training",
-                    "name_kr": "개인 트레이너"
+                    "name": "Personal Training"
                 },
                 {
                     "id": "6003327856180",
-                    "name": "Diet",
-                    "name_kr": "다이어트"
+                    "name": "Diet"
                 }
             ]
         },
         {
             "id": "6003473077165",
             "name": "Weight training",
-            "name_kr": "웨이트 트레이닝",
             "keywords": [
                 {
                     "id": "6003647000838",
-                    "name": "Personal Training",
-                    "name_kr": "개인 트레이너"
+                    "name": "Personal Training"
                 },
                 {
                     "id": "6003327856180",
-                    "name": "Diet",
-                    "name_kr": "다이어트"
+                    "name": "Diet"
                 }
             ]
         },
         {
             "id": "6003531090263",
             "name": "Boxing",
-            "name_kr": "권투",
             "keywords": [
                 {
                     "id": "6003647000838",
-                    "name": "Personal Training",
-                    "name_kr": "개인 트레이너"
+                    "name": "Personal Training"
                 },
                 {
                     "id": "6003327856180",
-                    "name": "Diet",
-                    "name_kr": "다이어트"
+                    "name": "Diet"
                 }
             ]
         },
         {
             "id": "6002929380259",
             "name": "Volleyball",
-            "name_kr": "배구",
             "keywords": [
                 {
                     "id": "6003647000838",
-                    "name": "Personal Training",
-                    "name_kr": "개인 트레이너"
+                    "name": "Personal Training"
                 },
                 {
                     "id": "6003327856180",
-                    "name": "Diet",
-                    "name_kr": "다이어트"
+                    "name": "Diet"
                 }
             ]
         },
         {
             "id": "6003228100899",
             "name": "Judo",
-            "name_kr": "유도",
             "keywords": [
                 {
                     "id": "6003647000838",
-                    "name": "Personal Training",
-                    "name_kr": "개인 트레이너"
+                    "name": "Personal Training"
                 },
                 {
                     "id": "6003327856180",
-                    "name": "Diet",
-                    "name_kr": "다이어트"
+                    "name": "Diet"
                 }
             ]
         },
         {
             "id": "6003397561547",
             "name": "Karate",
-            "name_kr": "공수도",
             "keywords": [
                 {
                     "id": "6003647000838",
-                    "name": "Personal Training",
-                    "name_kr": "개인 트레이너"
+                    "name": "Personal Training"
                 },
                 {
                     "id": "6003327856180",
-                    "name": "Diet",
-                    "name_kr": "다이어트"
+                    "name": "Diet"
                 }
             ]
         },
         {
             "id": "6003246360601",
             "name": "Shooting",
-            "name_kr": "사격경기",
             "keywords": [
                 {
                     "id": "6003647000838",
-                    "name": "Personal Training",
-                    "name_kr": "개인 트레이너"
+                    "name": "Personal Training"
                 },
                 {
                     "id": "6003327856180",
-                    "name": "Diet",
-                    "name_kr": "다이어트"
+                    "name": "Diet"
                 }
             ]
         },
         {
             "id": "6002984573619",
             "name": "Surfing",
-            "name_kr": "서핑",
             "keywords": [
                 {
                     "id": "6003647000838",
-                    "name": "Personal Training",
-                    "name_kr": "개인 트레이너"
+                    "name": "Personal Training"
                 },
                 {
                     "id": "6003327856180",
-                    "name": "Diet",
-                    "name_kr": "다이어트"
+                    "name": "Diet"
                 }
             ]
         }

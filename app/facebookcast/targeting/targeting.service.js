@@ -303,8 +303,9 @@ class TargetingService {
         const type = params.type;
         const industryId = params.industryId;
         const businessIds = params.businessIds;
+        const locale = params.locale;
         try {
-            const dir = path.join(__dirname, 'interests');
+            const dir = path.join(__dirname, 'interests', locale);
             let responseBucket = [];
             const files = fs.readdirSync(dir);
             for (let i = 0; i < files.length; i++) {
