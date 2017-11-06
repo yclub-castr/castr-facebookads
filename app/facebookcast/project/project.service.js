@@ -155,11 +155,12 @@ class ProjectService {
             const promises = [
                 fbRequest.post(accountId, 'userpermissions', data),
                 fbRequest.post(accountId, 'adlabels', { name: castrBizId, fields: 'name' }),
-                fbRequest.get(accountId, null, { fields: 'timezone_id' })
+                fbRequest.get(accountId, null, { fields: 'timezone_id, currency' })
             ];
             const fbResponses = await Promise.all(promises);
             const adlabel = fbResponses[1];
             const momentTzId = timezone(fbResponses[2].timezone_id);
+            const currency = fbResponses[2].currency;
             logger.debug(`System user assigned to Business (#${castrBizId}) adaccount`);
             logger.debug(`Adlabel created for Business (#${castrBizId})`);
             await ProjectModel.update(
@@ -173,6 +174,7 @@ class ProjectService {
                         accountVerified: true,
                         'adLabels.businessLabel': adlabel,
                         timezone: momentTzId,
+                        currency: currency,
                     },
                 }
             );
