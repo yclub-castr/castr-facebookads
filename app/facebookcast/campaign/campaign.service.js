@@ -15,6 +15,8 @@ const CampaignObjective = Model.Objective;
 const excludedFields = [CampaignField.execution_options];
 const readFields = Object.values(CampaignField).filter(field => !excludedFields.includes(field)).toString();
 
+const BATCH = false;
+
 class CampaignService {
     async getCampaigns(params) {
         const castrBizId = params.castrBizId;
@@ -148,41 +150,46 @@ class CampaignService {
                 }, 'id');
             }
             const campaignIds = campaigns.map(campaign => campaign.id);
-            let batchCompleted = false;
-            const requests = campaignIds.map(id => ({
-                method: 'DELETE',
-                relative_url: `${fbRequest.apiVersion}/${id}`,
-            }));
-            let attempts = 3;
-            let batchResponses;
-            do {
-                const batches = [];
-                logger.debug(`Batching ${campaigns.length} delete campaign requests...`);
-                for (let i = 0; i < Math.ceil(requests.length / 50); i++) {
-                    batches.push(fbRequest.batch(requests.slice(i * 50, (i * 50) + 50)));
-                }
-                batchResponses = await Promise.all(batches);
-                batchCompleted = true;
-                for (let i = 0; i < batchResponses.length; i++) {
-                    const fbResponses = batchResponses[i];
-                    for (let j = 0; j < fbResponses.length; j++) {
-                        if (fbResponses[j].code !== 200) {
-                            logger.debug('One of batch requests failed, trying again...');
-                            batchCompleted = false;
-                            break;
+            if (BATCH) {
+                let batchCompleted = false;
+                const requests = campaignIds.map(id => ({
+                    method: 'DELETE',
+                    relative_url: `${fbRequest.apiVersion}/${id}`,
+                }));
+                let attempts = 3;
+                let batchResponses;
+                do {
+                    const batches = [];
+                    logger.debug(`Batching ${campaigns.length} delete campaign requests...`);
+                    for (let i = 0; i < Math.ceil(requests.length / 50); i++) {
+                        batches.push(fbRequest.batch(requests.slice(i * 50, (i * 50) + 50)));
+                    }
+                    batchResponses = await Promise.all(batches);
+                    batchCompleted = true;
+                    for (let i = 0; i < batchResponses.length; i++) {
+                        const fbResponses = batchResponses[i];
+                        for (let j = 0; j < fbResponses.length; j++) {
+                            if (fbResponses[j].code !== 200) {
+                                logger.debug('One of batch requests failed, trying again...');
+                                batchCompleted = false;
+                                break;
+                            }
                         }
                     }
+                    attempts -= 1;
+                } while (!batchCompleted && attempts !== 0);
+                if (!batchCompleted) {
+                    return {
+                        success: false,
+                        message: 'Batch requests failed 3 times',
+                        data: batchResponses,
+                    };
                 }
-                attempts -= 1;
-            } while (!batchCompleted && attempts !== 0);
-            if (!batchCompleted) {
-                return {
-                    success: false,
-                    message: 'Batch requests failed 3 times',
-                    data: batchResponses,
-                };
+                logger.debug('FB batch-delete successful');
+            } else {
+                const deletePromises = campaignIds.map(id => fbRequest.delete(id));
+                await Promise.all(deletePromises);
             }
-            logger.debug('FB batch-delete successful');
             const writeResult = await CampaignModel.updateMany(
                 { id: { $in: campaignIds } },
                 {
