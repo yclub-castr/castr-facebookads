@@ -10,6 +10,10 @@ const userAgent = `${appName}/${appVersion}`;
 const host = 'https://graph.facebook.com/';
 const apiVersion = 'v2.10';
 
+const MAX_USAGE = 25;
+const DELAY_PER_USAGE = 3000;
+const accountUsage = {};
+
 const fbErrCodes = {
     RATE_LIMITED: 613,
     INVALID_PARAM: 100,
@@ -50,6 +54,22 @@ function objToStr(obj) {
     return `"${obj}"`;
 }
 
+function addUsage(accountId) {
+    if (!accountUsage[accountId]) accountUsage[accountId] = 1;
+    else accountUsage[accountId] += 1;
+    logger.debug(`Usage (#${accountId}): ${accountUsage[accountId]} (${accountUsage[accountId] * (DELAY_PER_USAGE / 1000)} seconds delay)`);
+    return accountUsage[accountId];
+}
+
+function decayUsage() {
+    const keys = Object.keys(accountUsage);
+    for (let i = keys.length - 1; i >= 0; i--) {
+        const accountId = keys[i];
+        if (accountUsage[accountId] <= 0) delete accountUsage[accountId];
+        else accountUsage[accountId] -= 1;
+    }
+}
+
 const get = async (node, edge, params) => {
     const options = {
         uri: getUri(node, edge),
@@ -70,6 +90,9 @@ const get = async (node, edge, params) => {
 };
 
 const post = async (node, edge, params, method, attempts) => {
+    let usage;
+    if (node.includes('act_')) usage = addUsage(node);
+    const throttle = (usage) ? (usage * DELAY_PER_USAGE) : 0;
     const options = {
         method: method,
         uri: getUri(node, edge),
@@ -81,16 +104,24 @@ const post = async (node, edge, params, method, attempts) => {
         json: true,
     };
     try {
-        const response = await rp(options);
-        return response;
+        return new Promise((resolve, reject) => {
+            setTimeout(async () => {
+                try {
+                    const response = await rp(options);
+                    resolve(response);
+                } catch (errr) {
+                    reject(errr);
+                }
+            }, throttle);
+        });
     } catch (err) {
         const attempt = attempts || 1;
         if (attempt <= 3) {
             const error = (err.error) ? err.error.error || err.error : err;
-            let throttle = 5;
+            let delay = 5;
             if (error.code === fbErrCodes.RATE_LIMITED && error.error_subcode === fbErrSubcodes.ACCOUNT_RATE_LIMITED) {
                 logger.error(error);
-                throttle = 300;
+                delay = 300;
             } else if (error.code === fbErrCodes.PERMISSIONS_ERROR || error.code === fbErrCodes.INVALID_PARAM) {
                 logger.error(error);
                 throw err;
@@ -100,8 +131,8 @@ const post = async (node, edge, params, method, attempts) => {
             } else {
                 logger.error(error);
             }
-            throttle *= attempt;
-            logger.debug(`Unfortunate API failure, retrying in ${throttle} seconds...\n${options.method} ${options.uri}\n${JSON.stringify(options.body, null, 2)}`);
+            delay *= attempt;
+            logger.debug(`Unfortunate API failure, retrying in ${delay} seconds...\n${options.method} ${options.uri}\n${JSON.stringify(options.body, null, 2)}`);
             return new Promise((resolve, reject) => {
                 setTimeout(async () => {
                     logger.debug(`Retrying attempt (${attempt}/3) ...`);
@@ -111,7 +142,7 @@ const post = async (node, edge, params, method, attempts) => {
                     } catch (errr) {
                         reject(errr);
                     }
-                }, throttle * 1000);
+                }, delay * 1000);
             });
         }
         throw err;
@@ -141,7 +172,6 @@ const batch = async (batchParams, hasBody) => {
         method: 'POST',
         uri: host,
         body: {
-            // access_token: process.env.ADMIN_SYS_USER_TOKEN,
             batch: batchParams,
         },
         headers: {
@@ -156,6 +186,8 @@ const batch = async (batchParams, hasBody) => {
         throw err;
     }
 };
+
+setInterval(decayUsage, 1000);
 
 module.exports = {
     get: get,
