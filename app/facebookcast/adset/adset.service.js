@@ -161,8 +161,10 @@ class AdSetService {
                     castrBizId: castrBizId,
                     castrLocId: castrLocId,
                     promotionId: promotionId,
+                    campaignId: adset.campaign_id,
                     id: adset.id,
                     name: adset.name,
+                    optimizationGoal: adset.optimization_goal,
                     recommendations: validation.recommendations,
                 },
             };
@@ -190,7 +192,6 @@ class AdSetService {
             }
             const adsetIds = adsets.map(adset => adset.id);
             if (!params.parentsDeleted) {
-                const batches = [];
                 let batchCompleted = false;
                 const requests = adsetIds.map(id => ({
                     method: 'DELETE',
@@ -199,6 +200,7 @@ class AdSetService {
                 let attempts = 3;
                 let batchResponses;
                 do {
+                    const batches = [];
                     logger.debug(`Batching ${adsets.length} delete adset requests...`);
                     for (let i = 0; i < Math.ceil(requests.length / 50); i++) {
                         batches.push(fbRequest.batch(requests.slice(i * 50, (i * 50) + 50)));
@@ -213,7 +215,6 @@ class AdSetService {
                                 batchCompleted = false;
                                 break;
                             }
-                            if (!batchCompleted) break;
                         }
                     }
                     attempts -= 1;

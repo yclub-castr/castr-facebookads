@@ -264,7 +264,6 @@ class AdService {
             }
             const adIds = ads.map(ad => ad.id);
             if (!params.parentsDeleted) {
-                const batches = [];
                 let batchCompleted = false;
                 const requests = adIds.map(id => ({
                     method: 'DELETE',
@@ -273,6 +272,7 @@ class AdService {
                 let attempts = 3;
                 let batchResponses;
                 do {
+                    const batches = [];
                     logger.debug(`Batching ${ads.length} delete ad requests...`);
                     for (let i = 0; i < Math.ceil(requests.length / 50); i++) {
                         batches.push(fbRequest.batch(requests.slice(i * 50, (i * 50) + 50)));
@@ -287,7 +287,6 @@ class AdService {
                                 batchCompleted = false;
                                 break;
                             }
-                            if (!batchCompleted) break;
                         }
                     }
                     attempts -= 1;

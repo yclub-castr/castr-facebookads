@@ -107,16 +107,6 @@ class CreativeService {
             logger.debug('Creating adlabels for creatives...');
             const labelPromises = adSpecs.map(spec => fbRequest.post(accountId, 'adlabels', { name: spec.name }));
             logger.debug(`Creating creative for promotion (#${promotionId}) ...`);
-            // const batches = [];
-            // const requests = adSpecs.map((spec) => {
-            //     if (!spec) return null;
-            //     return {
-            //         method: 'POST',
-            //         relative_url: `${fbRequest.apiVersion}/${accountId}/adcreatives`,
-            //         body: spec,
-            //     };
-            // });
-            // const batchResponse = await fbRequest.batch(requests, true);
             const createPromises = adSpecs.map(spec => fbRequest.post(accountId, 'adcreatives', spec));
             const creatives = await Promise.all(createPromises);
             const creativeLabels = await Promise.all(labelPromises);
@@ -184,7 +174,6 @@ class CreativeService {
                 }, 'id creativeLabel');
             }
             const creativeIds = creatives.map(creative => creative.id);
-            const batches = [];
             let batchCompleted = false;
             const requests = [];
             for (let i = 0; i < creatives.length; i++) {
@@ -202,6 +191,7 @@ class CreativeService {
             let attempts = 3;
             let batchResponses;
             do {
+                const batches = [];
                 logger.debug(`Batching ${creatives.length} delete creative requests...`);
                 for (let i = 0; i < Math.ceil(requests.length / 50); i++) {
                     batches.push(fbRequest.batch(requests.slice(i * 50, (i * 50) + 50)));
@@ -212,11 +202,11 @@ class CreativeService {
                     const fbResponses = batchResponses[i];
                     for (let j = 0; j < fbResponses.length; j++) {
                         if (fbResponses[i].code !== 200) {
+                            logger.error(fbResponses[i].error);
                             logger.debug('One of batch requests failed, trying again...');
                             batchCompleted = false;
                             break;
                         }
-                        if (!batchCompleted) break;
                     }
                 }
                 attempts -= 1;

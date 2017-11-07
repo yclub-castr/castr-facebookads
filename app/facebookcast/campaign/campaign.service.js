@@ -147,7 +147,6 @@ class CampaignService {
                 }, 'id');
             }
             const campaignIds = campaigns.map(campaign => campaign.id);
-            const batches = [];
             let batchCompleted = false;
             const requests = campaignIds.map(id => ({
                 method: 'DELETE',
@@ -156,6 +155,7 @@ class CampaignService {
             let attempts = 3;
             let batchResponses;
             do {
+                const batches = [];
                 logger.debug(`Batching ${campaigns.length} delete campaign requests...`);
                 for (let i = 0; i < Math.ceil(requests.length / 50); i++) {
                     batches.push(fbRequest.batch(requests.slice(i * 50, (i * 50) + 50)));
@@ -170,7 +170,6 @@ class CampaignService {
                             batchCompleted = false;
                             break;
                         }
-                        if (!batchCompleted) break;
                     }
                 }
                 attempts -= 1;
