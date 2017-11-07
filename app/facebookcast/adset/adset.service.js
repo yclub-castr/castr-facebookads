@@ -119,7 +119,7 @@ class AdSetService {
                 [AdSetField.execution_options]: ['validate_only', 'include_recommendations'],
                 [AdSetField.redownload]: true,
             };
-            logger.debug(`Creating adset for promotion (#${promotionId}) ...`);
+            logger.debug(`Validating adset for promotion (#${promotionId}) ...`);
             const validation = await fbRequest.post(accountId, 'adsets', adsetParams);
             if (!validation.success) {
                 const msg = 'Failed validation from Facebook';
@@ -130,6 +130,7 @@ class AdSetService {
                 };
             }
             delete adsetParams[AdSetField.execution_options];
+            logger.debug(`Creating adset for promotion (#${promotionId}) ...`);
             const fbResponse = await fbRequest.post(accountId, 'adsets', adsetParams);
             const adset = fbResponse.data.adsets[fbResponse.id];
             const msg = `AdSet (#${adset.id}) created`;

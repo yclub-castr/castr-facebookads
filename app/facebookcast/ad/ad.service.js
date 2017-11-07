@@ -194,7 +194,7 @@ class AdService {
             if (pixelId) {
                 adParams[AdField.tracking_specs] = { 'action.type': ['offsite_conversion'], fb_pixel: [pixelId] };
             }
-            logger.debug(`Creating ad for promotion (#${promotionId}) ...`);
+            logger.debug(`Validating ad for promotion (#${promotionId}) ...`);
             const validation = await fbRequest.post(accountId, 'ads', adParams);
             if (!validation.success) {
                 const msg = 'Failed validation from Facebook';
@@ -205,6 +205,7 @@ class AdService {
                 };
             }
             delete adParams[AdField.execution_options];
+            logger.debug(`Creating ad for promotion (#${promotionId}) ...`);
             const fbResponse = await fbRequest.post(accountId, 'ads', adParams);
             const ad = fbResponse.data.ads[fbResponse.id];
             const msg = `Ad (#${ad.id}) created`;
