@@ -22,7 +22,7 @@ mongoDB.isReady()
         logger.debug('Databases are ready');
 
         app.use('/', (req, res, next) => {
-            req.setTimeout(1800000);
+            req.setTimeout(7200000);
             logger.debug(`# ${req.method} ${req.path}`);
             next();
         });
