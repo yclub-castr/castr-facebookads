@@ -10,9 +10,11 @@ const userAgent = `${appName}/${appVersion}`;
 const host = 'https://graph.facebook.com/';
 const apiVersion = 'v2.10';
 
-const MAX_USAGE = 25;
-const DELAY_PER_USAGE = 3000;
+const DELAY_PER_USAGE = 7000; // milliseconds
+const MAX_USAGE = Math.floor(DELAY_PER_USAGE / 1000);
+
 const accountUsage = {};
+const usageQueue = {};
 
 const fbErrCodes = {
     RATE_LIMITED: 613,
@@ -20,6 +22,12 @@ const fbErrCodes = {
     PERMISSIONS_ERROR: 200,
     NONEXISTENT_ENDPOINT: 803,
 };
+
+const fatalErrors = [
+    fbErrCodes.INVALID_PARAM,
+    fbErrCodes.PERMISSIONS_ERROR,
+    fbErrCodes.NONEXISTENT_ENDPOINT
+];
 
 const fbErrSubcodes = {
     ACCOUNT_RATE_LIMITED: 1487742,
@@ -57,17 +65,28 @@ function objToStr(obj) {
 function addUsage(accountId) {
     if (!accountUsage[accountId]) accountUsage[accountId] = 1;
     else accountUsage[accountId] += 1;
-    logger.debug(`Usage (#${accountId}): ${accountUsage[accountId]} (${accountUsage[accountId] * (DELAY_PER_USAGE / 1000)} seconds delay)`);
+    logger.info(`Usage (#${accountId}): ${accountUsage[accountId]} (${accountUsage[accountId] * (DELAY_PER_USAGE / 1000)} seconds delay)`);
     return accountUsage[accountId];
 }
 
 function decayUsage() {
-    const keys = Object.keys(accountUsage);
-    for (let i = keys.length - 1; i >= 0; i--) {
-        const accountId = keys[i];
+    const accounts = Object.keys(accountUsage);
+    for (let i = accounts.length - 1; i >= 0; i--) {
+        const accountId = accounts[i];
         if (accountUsage[accountId] <= 0) delete accountUsage[accountId];
         else accountUsage[accountId] -= 1;
     }
+}
+
+function addQueue(accountId) {
+    if (!usageQueue[accountId]) usageQueue[accountId] = 1;
+    else usageQueue[accountId] += 1;
+    return usageQueue[accountId];
+}
+
+function removeQueue(accountId) {
+    if (usageQueue[accountId] <= 1) delete usageQueue[accountId];
+    else usageQueue[accountId] -= 1;
 }
 
 const get = async (node, edge, params) => {
@@ -91,8 +110,24 @@ const get = async (node, edge, params) => {
 
 const post = async (node, edge, params, method, attempts) => {
     let usage;
-    if (node.includes('act_')) usage = addUsage(node);
-    const throttle = (usage) ? (usage * DELAY_PER_USAGE) : 0;
+    let throttle;
+    do {
+        if (node.includes('act_')) usage = addUsage(node);
+        if (usage) {
+            if (usage > MAX_USAGE) {
+                decayUsage(node);
+                const queue = addQueue(node);
+                logger.info(`Max usage reached. Retrying in ${((DELAY_PER_USAGE * queue) / 1000).toFixed(2)} seconds (${queue} queued)`);
+                await new Promise((resolve) => { setTimeout(resolve, DELAY_PER_USAGE * queue); });
+                removeQueue(node);
+            } else {
+                throttle = usage * DELAY_PER_USAGE;
+                break;
+            }
+        } else {
+            throttle = 0;
+        }
+    } while (usage);
     const options = {
         method: method,
         uri: getUri(node, edge),
@@ -104,7 +139,7 @@ const post = async (node, edge, params, method, attempts) => {
         json: true,
     };
     try {
-        return new Promise((resolve, reject) => {
+        const resp = await new Promise((resolve, reject) => {
             setTimeout(async () => {
                 try {
                     const response = await rp(options);
@@ -114,28 +149,25 @@ const post = async (node, edge, params, method, attempts) => {
                 }
             }, throttle);
         });
+        return resp;
     } catch (err) {
         const attempt = attempts || 1;
         if (attempt <= 3) {
             const error = (err.error) ? err.error.error || err.error : err;
             let delay = 5;
-            if (error.code === fbErrCodes.RATE_LIMITED && error.error_subcode === fbErrSubcodes.ACCOUNT_RATE_LIMITED) {
+            if (fatalErrors.includes(error.code)) {
+                throw err;
+            } else if (error.code === fbErrCodes.RATE_LIMITED && error.error_subcode === fbErrSubcodes.ACCOUNT_RATE_LIMITED) {
                 logger.error(error);
                 delay = 300;
-            } else if (error.code === fbErrCodes.PERMISSIONS_ERROR || error.code === fbErrCodes.INVALID_PARAM) {
-                logger.error(error);
-                throw err;
-            } else if (error.code === fbErrCodes.NONEXISTENT_ENDPOINT) {
-                logger.error(error);
-                throw err;
             } else {
                 logger.error(error);
             }
             delay *= attempt;
-            logger.debug(`Unfortunate API failure, retrying in ${delay} seconds...\n${options.method} ${options.uri}\n${JSON.stringify(options.body, null, 2)}`);
+            logger.warn(`Request failed, retrying in ${delay} seconds...\n${options.method} ${options.uri}\n${JSON.stringify(options.body, null, 2)}`);
             return new Promise((resolve, reject) => {
                 setTimeout(async () => {
-                    logger.debug(`Retrying attempt (${attempt}/3) ...`);
+                    logger.warn(`Retrying attempt (${attempt}/3) ...`);
                     try {
                         const response = await post(node, edge, params, method, attempt + 1);
                         resolve(response);
@@ -187,7 +219,7 @@ const batch = async (batchParams, hasBody) => {
     }
 };
 
-setInterval(decayUsage, 1000);
+setInterval(decayUsage, DELAY_PER_USAGE);
 
 module.exports = {
     get: get,
