@@ -9,7 +9,6 @@ const cors = require('cors');
 const bodyParser = require('body-parser');
 const mongoDB = require('./app/db');
 const logger = require('./app/utils').logger();
-const adsSdk = require('facebook-ads-sdk');
 
 const app = express();
 const port = process.env.PORT;
@@ -23,6 +22,7 @@ mongoDB.isReady()
         logger.debug('Databases are ready');
 
         app.use('/', (req, res, next) => {
+            req.setTimeout(1800000);
             logger.debug(`# ${req.method} ${req.path}`);
             next();
         });
