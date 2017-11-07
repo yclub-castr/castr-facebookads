@@ -167,7 +167,7 @@ const post = async (node, edge, params, method, attempts) => {
             logger.warn(`Request failed, retrying in ${delay} seconds...\n${options.method} ${options.uri}\n${JSON.stringify(options.body, null, 2)}`);
             return new Promise((resolve, reject) => {
                 setTimeout(async () => {
-                    logger.warn(`Retrying attempt (${attempt}/3) ...`);
+                    logger.debug(`Retrying attempt (${attempt}/3) ...`);
                     try {
                         const response = await post(node, edge, params, method, attempt + 1);
                         resolve(response);
