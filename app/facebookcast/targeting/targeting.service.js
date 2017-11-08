@@ -213,7 +213,10 @@ class TargetingService {
     }
 
     async locationSample(castrLocId) {
-        const locationBasic = {
+        return {
+            id: castrLocId || 'TEST_LOC_ID',
+            castrBizId: 'TEST_BIZ_ID',
+            promotionIds: ['TEST_PROMO_ID_1', 'TEST_PROMO_ID_2', 'TEST_PROMO_ID_3'],
             businessName: 'Business Name',
             displayName: 'Display Name',
             shortDesc: 'Location short description',
@@ -231,8 +234,6 @@ class TargetingService {
             },
             budgetOptimized: true,
             max4WkBudget: 10000,
-        };
-        const locationDetail = {
             industryType: { id: '6003269553527', name: '스포츠' },
             businessType: [
                 {
@@ -240,12 +241,14 @@ class TargetingService {
                     name: '골프',
                 }
             ],
+            businessTypeCustom: [],
             keywords: [
                 {
                     id: '6003605498820',
                     name: '골프공',
                 }
             ],
+            keywordsCustom: [],
             competitors: [
                 {
                     id: '6003344120039',
@@ -289,13 +292,6 @@ class TargetingService {
                     ],
                 },
             },
-        };
-        return {
-            id: castrLocId || 'TEST_LOC_ID',
-            castrBizId: 'TEST_BIZ_ID',
-            promotionIds: ['TEST_PROMO_ID_1', 'TEST_PROMO_ID_2', 'TEST_PROMO_ID_3'],
-            basic: locationBasic,
-            detail: locationDetail,
         };
     }
 
