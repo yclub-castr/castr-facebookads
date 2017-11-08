@@ -3,6 +3,7 @@
 'use strict';
 
 const logger = require('../../utils').logger();
+const constants = require('../../constants');
 const fbRequest = require('../fbapi');
 const PixelService = require('../pixel/pixel.service');
 const Model = require('./adset.model');
@@ -79,6 +80,7 @@ class AdSetService {
         const optimizationGoal = params.optimizationGoal;
         const startDate = params.startDate;
         const endDate = params.endDate;
+        const days = Math.round(endDate - startDate) / constants.fullDayMilliseconds;
         const isAutoBid = true;
         const targeting = params.targeting;
         try {
@@ -93,12 +95,26 @@ class AdSetService {
             const locationLabel = project.adLabels.locationLabels.filter(label => label.name === castrLocId)[0];
             const promotionLabel = project.adLabels.promotionLabels.filter(label => label.name === promotionId)[0];
             let promotedObject;
+            let freqCtrlSpecs;
             if (objective === CampaignObjective.conversions) {
                 promotedObject = {
                     pixel_id: (await PixelService.getPixel(project)).data.id,
                     custom_event_type: 'PURCHASE',
                 };
             } else {
+                if (objective === CampaignObjective.reach) {
+                    freqCtrlSpecs = [{
+                        event: 'IMPRESSIONS',
+                        interval_days: days,
+                        max_frequency: 1,
+                    }];
+                } else if (objective === CampaignObjective.brand_awareness && optimizationGoal === OptimizationGoal.reach) {
+                    freqCtrlSpecs = [{
+                        event: 'IMPRESSIONS',
+                        interval_days: days,
+                        max_frequency: 1,
+                    }];
+                }
                 promotedObject = {
                     page_id: project.pageId,
                 };
@@ -114,6 +130,7 @@ class AdSetService {
                 [AdSetField.is_autobid]: isAutoBid,
                 [AdSetField.promoted_object]: promotedObject,
                 [AdSetField.status]: AdSetStatus.active,
+                [AdSetField.frequency_control_specs]: freqCtrlSpecs,
                 [AdSetField.start_time]: startDate,
                 [AdSetField.end_time]: endDate,
                 [AdSetField.execution_options]: ['validate_only', 'include_recommendations'],
