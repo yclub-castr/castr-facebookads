@@ -1,0 +1,246 @@
+{
+    "id": "6003167425934",
+    "name": "Shopping and fashion",
+    "businessType": [
+        {
+            "id": "6003456388203",
+            "name": "Clothing",
+            "keywords": [
+                {
+                    "id": "6003397760241",
+                    "name": "Coat (clothing)"
+                },
+                {
+                    "id": "6003374850325",
+                    "name": "Denim"
+                },
+                {
+                    "id": "6003281049823",
+                    "name": "Jacket"
+                },
+                {
+                    "id": "6003020572529",
+                    "name": "Slim-fit pants"
+                },
+                {
+                    "id": "6003130740236",
+                    "name": "Polo shirt"
+                },
+                {
+                    "id": "6003242077675",
+                    "name": "Shirt"
+                },
+                {
+                    "id": "6003102718234",
+                    "name": "Shorts"
+                },
+                {
+                    "id": "6003467486537",
+                    "name": "Suit (clothing)"
+                },
+                {
+                    "id": "6003327272745",
+                    "name": "Sweater"
+                },
+                {
+                    "id": "6003466817119",
+                    "name": "Swimsuit"
+                },
+                {
+                    "id": "6003372784175",
+                    "name": "T-shirt"
+                },
+                {
+                    "id": "6003191739722",
+                    "name": "Vest"
+                },
+                {
+                    "id": "6003111546435",
+                    "name": "Undergarment"
+                },
+                {
+                    "id": "6003204485047",
+                    "name": "Panties"
+                },
+                {
+                    "id": "6003291295743",
+                    "name": "Sock"
+                }
+            ]
+        },
+        {
+            "id": "6003348453981",
+            "name": "Shoes",
+            "keywords": [
+                {
+                    "id": "6004534191112",
+                    "name": "Boat shoe"
+                },
+                {
+                    "id": "6003420000031",
+                    "name": "Boot"
+                },
+                {
+                    "id": "6003280231780",
+                    "name": "Brogue shoe"
+                },
+                {
+                    "id": "6003056006985",
+                    "name": "Dress shoe"
+                },
+                {
+                    "id": "6005753823482",
+                    "name": "Espadrille"
+                },
+                {
+                    "id": "6002978979720",
+                    "name": "Flip-flops"
+                },
+                {
+                    "id": "6003176472552",
+                    "name": "High-top"
+                },
+                {
+                    "id": "6003179886152",
+                    "name": "Slip-on shoe"
+                },
+                {
+                    "id": "6004155190989",
+                    "name": "Monk shoe"
+                },
+                {
+                    "id": "6003181005133",
+                    "name": "Oxford shoe"
+                },
+                {
+                    "id": "6003402194039",
+                    "name": "Sandal"
+                },
+                {
+                    "id": "6003110309072",
+                    "name": "Slipper"
+                },
+                {
+                    "id": "6003384587151",
+                    "name": "Sneakers (footwear)"
+                },
+                {
+                    "id": "6003434451039",
+                    "name": "Heel (shoe)"
+                }
+            ]
+        },
+        {
+            "id": "6003243777367",
+            "name": "Bag",
+            "keywords": [
+                {
+                    "id": "6003198354465",
+                    "name": "Backpack"
+                },
+                {
+                    "id": "6003542892427",
+                    "name": "CLUTCHES"
+                },
+                {
+                    "id": "6002970041729",
+                    "name": "Messenger bag"
+                },
+                {
+                    "id": "6003127278324",
+                    "name": "Tote bag"
+                }
+            ]
+        },
+        {
+            "id": "6003266225248",
+            "name": "Jewelry",
+            "keywords": [
+                {
+                    "id": "6003370765074",
+                    "name": "Bracelet"
+                },
+                {
+                    "id": "6003425474591",
+                    "name": "Hairpin (fashion)"
+                },
+                {
+                    "id": "6003107507035",
+                    "name": "Cufflink"
+                },
+                {
+                    "id": "6003110979645",
+                    "name": "Earring"
+                },
+                {
+                    "id": "6003543366227",
+                    "name": "Necklace"
+                },
+                {
+                    "id": "6003193633966",
+                    "name": "Ring (jewellery)"
+                }
+            ]
+        },
+        {
+            "id": "6003729063753",
+            "name": "Watch",
+            "keywords": [
+                {
+                    "id": "6004113124809",
+                    "name": "Analog watch"
+                },
+                {
+                    "id": "6004947688373",
+                    "name": "Smartwatch"
+                },
+                {
+                    "id": "331530550372473",
+                    "name": "Apple Watch"
+                },
+                {
+                    "id": "6003312953611",
+                    "name": "Automatic watch"
+                },
+                {
+                    "id": "6003012330597",
+                    "name": "Pocket watch"
+                },
+                {
+                    "id": "6003314360114",
+                    "name": "Mechanical watch"
+                }
+            ]
+        },
+        {
+            "id": "6003348604581",
+            "name": "Fashion accessories",
+            "keywords": [
+                {
+                    "id": "6002919200622",
+                    "name": "Belt (clothing)"
+                },
+                {
+                    "id": "6003370765074",
+                    "name": "Bracelet"
+                },
+                {
+                    "id": "6003352962957",
+                    "name": "Hat"
+                },
+                {
+                    "id": "6003352347000",
+                    "name": "Scarf"
+                },
+                {
+                    "id": "6002898879962",
+                    "name": "Necktie"
+                },
+                {
+                    "id": "6003343542656",
+                    "name": "Wallet"
+                }
+            ]
+        }
+    ]
+}
