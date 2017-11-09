@@ -80,7 +80,7 @@ class AdSetService {
         const optimizationGoal = params.optimizationGoal;
         const startDate = params.startDate;
         const endDate = params.endDate;
-        const days = Math.round(endDate - startDate) / constants.fullDayMilliseconds;
+        const days = Math.round((endDate - startDate) / (constants.fullDayMilliseconds / 1000));
         const isAutoBid = true;
         const targeting = params.targeting;
         try {
@@ -102,13 +102,7 @@ class AdSetService {
                     custom_event_type: 'PURCHASE',
                 };
             } else {
-                if (objective === CampaignObjective.reach) {
-                    freqCtrlSpecs = [{
-                        event: 'IMPRESSIONS',
-                        interval_days: days,
-                        max_frequency: 1,
-                    }];
-                } else if (objective === CampaignObjective.brand_awareness && optimizationGoal === OptimizationGoal.reach) {
+                if (optimizationGoal === OptimizationGoal.reach) {
                     freqCtrlSpecs = [{
                         event: 'IMPRESSIONS',
                         interval_days: days,
