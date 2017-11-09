@@ -15,6 +15,7 @@ exports.Model = fbCastDB.model(
             name: { type: String, required: false },
             description: String,
             cells: Object,
+            status: String,
             startTime: Date,
             endTime: Date,
         },

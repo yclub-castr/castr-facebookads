@@ -33,12 +33,12 @@ router.route('/')
     .delete(async (req, res, next) => {
         try {
             const params = {
+                adstudyId: req.body.adstudyId,
                 castrBizId: req.body.castrBizId,
                 castrLocId: req.body.castrLocId,
                 promotionId: req.body.promotionId,
             };
             if (!params.castrBizId) throw new Error('Missing body parameter: \'castrBizId\'');
-            // if (!params.castrLocId) throw new Error('Missing body parameter: \'castrLocId\'');
             if (!params.promotionId) throw new Error('Missing body parameter: \'promotionId\'');
             res.json(await adstudyService.deleteAdStudy(params));
         } catch (err) {

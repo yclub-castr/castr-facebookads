@@ -44,11 +44,11 @@ class AdStudyService {
                 const name = `Promotion split test (#${promotionId}) - Week ${week}`;
                 const desc = `Biz#${castrBizId} | Loc#${locId} | Promo#${promotionId} | Week ${week}`;
                 const cells = locationAdsets[locId].adsets.map(adset => ({
-                    name: adset.name,
+                    name: `${adset.name} (#${adset.id})`,
                     treatment_percentage: Math.floor(100 / locationAdsets[locId].adsets.length),
                     adsets: [adset.id],
                 }));
-                const start = Math.max(moment().add(3, 'minute').unix(), moment(locationAdsets[locId].start).unix());
+                const start = Math.max(moment().add(30, 'second').unix(), moment(locationAdsets[locId].start).unix());
                 const end = moment(locationAdsets[locId].end).unix();
                 const splitTestParams = {
                     name: name,
@@ -75,9 +75,10 @@ class AdStudyService {
                             name: resp.name,
                             description: resp.description,
                             cells: resp.cells.data.map(cell => ({
-                                id: cell.data[0].id,
-                                name: cell.name
+                                id: cell.id,
+                                adsetId: cell.name.match(/AdSet.*\(#(\d+)\)/)[1],
                             })),
+                            status: 'ACTIVE',
                             startTime: moment(resp.start_time).toDate(),
                             endTime: moment(resp.end_time).toDate(),
                         },
@@ -97,8 +98,51 @@ class AdStudyService {
     }
 
     async deleteAdStudy(params) {
+        const adstudyId = params.adstudyId;
+        const castrLocId = params.castrLocId;
+        const promotionId = params.promotionId;
+        const castrBizId = params.castrBizId;
         try {
-            return null * moment();
+            let dbUpdate;
+            if (adstudyId) {
+                const fbResponse = await fbRequest.delete(adstudyId);
+                dbUpdate = AdStudyModel.updateOne(
+                    { id: adstudyId },
+                    { $set: { status: 'DELETED' } }
+                );
+            } else if (castrLocId) {
+                const studies = await AdStudyModel.find({
+                    castrLocId: castrLocId,
+                    promotionId: promotionId,
+                });
+                const fbResponses = await Promise.all(studies.map(study => fbRequest.delete(study.id)));
+                dbUpdate = AdStudyModel.updateMany(
+                    {
+                        castrLocId: castrLocId,
+                        promotionId: promotionId,
+                    },
+                    { $set: { status: 'DELETED' } }
+                );
+            } else {
+                const studies = await AdStudyModel.find({
+                    castrBizId: castrBizId,
+                    promotionId: promotionId,
+                });
+                const fbResponses = await Promise.all(studies.map(study => fbRequest.delete(study.id)));
+                dbUpdate = AdStudyModel.updateMany(
+                    {
+                        castrBizId: castrBizId,
+                        promotionId: promotionId,
+                    },
+                    { $set: { status: 'DELETED' } }
+                );
+            }
+            const writeResult = await dbUpdate;
+            return {
+                success: true,
+                message: `${writeResult.nModified} split tests deleted`,
+                data: null,
+            };
         } catch (err) {
             throw err;
         }
