@@ -11,7 +11,7 @@ const host = 'https://graph.facebook.com/';
 const apiVersion = 'v2.10';
 
 const DELAY_PER_USAGE = 7000; // milliseconds
-const MAX_USAGE = Math.floor(DELAY_PER_USAGE / 1000);
+const MAX_USAGE = Math.max(Math.floor(DELAY_PER_USAGE / 1000), 1);
 
 const accountUsage = {};
 const usageQueue = {};
