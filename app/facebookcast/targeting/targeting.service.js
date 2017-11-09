@@ -214,7 +214,7 @@ class TargetingService {
 
     async locationSample(castrLocId) {
         return {
-            id: castrLocId || 'TEST_LOC_ID',
+            _id: castrLocId || 'TEST_LOC_ID',
             castrBizId: 'TEST_BIZ_ID',
             promotionIds: ['TEST_PROMO_ID_1', 'TEST_PROMO_ID_2', 'TEST_PROMO_ID_3'],
             businessName: 'Business Name',
