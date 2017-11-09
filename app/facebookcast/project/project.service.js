@@ -105,10 +105,13 @@ class ProjectService {
             } else {
                 accountId = params.accountId;
             }
-            const data = { adaccount_id: accountId };
-            logger.debug(`Disintegrating adaccount owned by Business (#${castrBizId}) ...`);
-            const fbResponse = await fbRequest.delete(process.env.CASTR_BUSINESS_ID, 'adaccounts', data);
-            logger.debug(`Disintegrated Business (#${castrBizId}) adaccount`);
+            let fbResponse = null;
+            if (accountId) {
+                const data = { adaccount_id: accountId };
+                logger.debug(`Disintegrating adaccount owned by Business (#${castrBizId}) ...`);
+                fbResponse = await fbRequest.delete(process.env.CASTR_BUSINESS_ID, 'adaccounts', data);
+                logger.debug(`Disintegrated Business (#${castrBizId}) adaccount`);
+            }
             await ProjectModel.update(
                 {
                     castrBizId: castrBizId,
@@ -262,10 +265,13 @@ class ProjectService {
                 pageId = params.pageId;
             }
             if (pageId === process.env.CASTR_PRIMARY_PAGE_ID) throw new Error('Cannot disintegrate Castr primary page');
-            const data = { page_id: pageId };
-            logger.debug(`Disintegrating page owned by Business (#${castrBizId}) ...`);
-            const fbResponse = await fbRequest.delete(process.env.CASTR_BUSINESS_ID, 'pages', data);
-            logger.debug(`Disintegrated Business (#${castrBizId}) page`);
+            let fbResponse = null;
+            if (pageId) {
+                const data = { page_id: pageId };
+                logger.debug(`Disintegrating page owned by Business (#${castrBizId}) ...`);
+                fbResponse = await fbRequest.delete(process.env.CASTR_BUSINESS_ID, 'pages', data);
+                logger.debug(`Disintegrated Business (#${castrBizId}) page`);
+            }
             await ProjectModel.update(
                 {
                     castrBizId: castrBizId,
