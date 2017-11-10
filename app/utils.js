@@ -9,6 +9,7 @@ const moment = require('moment-timezone');
 const logger = tracer.console({
     format: '[{{timestamp}}] <{{title}}> {{message}} - ({{file}}:{{line}})',
     dateformat: 'mmm. d | HH:MM:ss.L',
+    level: 'debug',
 });
 
 // Moment - date wrapper
