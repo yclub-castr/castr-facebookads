@@ -121,8 +121,9 @@ class AdService {
         const promotionId = params.promotionId;
         const creatives = params.creatives;
         const adCreatePromises = [];
-        logger.debug(`Generating ads from ${creatives.length} creatives...`);
         try {
+            if (!creatives) throw new Error('Missing param: \'creatives\' must be provided');
+            logger.debug(`Generating ads from ${creatives.length} creatives...`);
             const project = await ProjectModel.findOne({ castrBizId: castrBizId });
             if (!project) throw new Error(`No such Business (#${castrBizId})`);
             const campaign = await CampaignModel.findOne({ id: params.campaignId }, 'objective');
