@@ -4,6 +4,8 @@ const timezone = {
     79: 'Asia/Seoul',
     us_east: 'America/New_York',
     7: 'America/New_York',
+    karachi: 'Asia/Karachi',
+    105: 'Asia/Karachi',
     us_west: '',
     utc: 'UTC',
 };
