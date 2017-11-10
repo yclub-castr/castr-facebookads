@@ -23,6 +23,7 @@
     "dotenv": "^4.0.0",
     "express": "^4.16.2",
     "facebook-ads-sdk": "^2.10.5",
+    "fb-moment-tzparser": "^1.0.3",
     "moment": "^2.19.1",
     "moment-timezone": "^0.5.13",
     "mongodb": "^2.2.33",
