@@ -105,7 +105,9 @@ class CreativeService {
             let adSpecs = await Promise.all(adSpecPromises);
             adSpecs = adSpecs.concat(await this.getLinkAdCreative(projectParams, creativeParams));
             logger.debug('Creating adlabels for creatives...');
-            const labelPromises = adSpecs.map(spec => fbRequest.post(accountId, 'adlabels', { name: spec.name }));
+            const labelPromises = adSpecs
+                .filter(spec => spec !== null)
+                .map(spec => fbRequest.post(accountId, 'adlabels', { name: spec.name }));
             logger.debug(`Creating creative for promotion (#${promotionId}) ...`);
             const createPromises = adSpecs.map(spec => fbRequest.post(accountId, 'adcreatives', spec));
             const creatives = await Promise.all(createPromises);
@@ -140,7 +142,7 @@ class CreativeService {
                 });
             }
             await Promise.all(updatePromises);
-            logger.debug(`(#${creatives.length}) creative stored to DB`);
+            logger.debug(`${creatives.length} creatives stored to DB`);
             return {
                 success: true,
                 message: msg,
