@@ -65,7 +65,7 @@ class RandomRatio {
     }
 }
 
-const genderAge = () => {
+const mockGenderAge = () => {
     const random1 = new RandomRatio(genders.length * ages.length);
     const random2 = new RandomRatio(genders.length * ages.length);
     const random3 = new RandomRatio(genders.length * ages.length);
@@ -96,7 +96,7 @@ const genderAge = () => {
     return response;
 };
 
-const hour = () => {
+const mockHour = () => {
     const random1 = new RandomRatio(24);
     const random2 = new RandomRatio(24);
     const random3 = new RandomRatio(24);
@@ -126,7 +126,7 @@ const hour = () => {
     return response;
 };
 
-const region = () => {
+const mockRegion = () => {
     const random1 = new RandomRatio(regions.length);
     const random2 = new RandomRatio(regions.length);
     const random3 = new RandomRatio(regions.length);
@@ -154,7 +154,7 @@ const region = () => {
     return response;
 };
 
-const platform = () => {
+const mockPlatform = () => {
     const randoms = [];
     for (let i = 0; i < 12; i++) randoms[i] = new RandomRatio(platforms.length);
     const response = {};
@@ -214,8 +214,82 @@ const platform = () => {
 };
 
 exports.Mock = {
-    genderAge: genderAge,
-    region: region,
-    hour: hour,
-    platform: platform,
+    genderAge: mockGenderAge,
+    region: mockRegion,
+    hour: mockHour,
+    platform: mockPlatform,
 };
+
+// const demoReport = {
+//     impressions: {},
+//     clicks: {},
+//     linkClicks: {},
+//     purchases: {},
+// };
+
+const getValue = (insightObj, metric) => {
+    let value;
+    if (metric === 'impressions') {
+        value = insightObj.impressions;
+    } else if (metric === 'clicks') {
+        value = insightObj.clicks;
+    } else if (metric === 'linkClicks') {
+        for (let i = 0; i < insightObj.actions.length; i++) {
+            if (insightObj.actions[i].action_type === 'link_click') value = insightObj.actions[i].value;
+        }
+    } else if (metric === 'purchases') {
+        for (let i = 0; i < insightObj.actions.length; i++) {
+            if (insightObj.actions[i].action_type === 'offsite_conversion.fb_pixel_purchase') value = insightObj.actions[i].value;
+        }
+    }
+    return value;
+};
+
+const genderAgeFormatter = (demoReport, genderAgeArray) => {
+    Object.keys(demoReport).forEach((metric) => {
+        demoReport[metric].genderAge = {};
+        const totals = {};
+        genders.forEach((gender) => {
+            demoReport[metric].genderAge[gender] = {};
+            totals[gender] = 0;
+        });
+        genderAgeArray.forEach((item) => {
+            const value = getValue(item, metric);
+            demoReport[metric].genderAge[item[Breakdown.gender]][item[Breakdown.age]] = value;
+            totals[item[Breakdown.gender]] += value;
+        });
+        Object.keys(totals).forEach((gender) => {
+            demoReport[metric].genderAge[gender].total = totals[gender];
+        });
+    });
+    return demoReport;
+};
+
+const regionFormatter = (demoReport, regionArray) => {
+    Object.keys(demoReport).forEach((metric) => {
+        demoReport[metric].region = {};
+        regionArray.forEach((item) => {
+            const value = getValue(item, metric);
+            demoReport[metric].region[item[Breakdown.region]] = value;
+        });
+    });
+    return demoReport;
+};
+
+const hourFormatter = (demoReport, hourArray) => {
+    Object.keys(demoReport).forEach((metric) => {
+        demoReport[metric].hour = {};
+        hourArray.forEach((item) => {
+            const value = getValue(item, metric);
+            demoReport[metric].hour[item[Breakdown.hourly_stats_aggregated_by_advertiser_time_zone]] = value;
+        });
+    });
+    return demoReport;
+};
+
+exports.Formatter = {
+    genderAge: genderAgeFormatter,
+    region: regionFormatter,
+    hour: hourFormatter,
+};
+
