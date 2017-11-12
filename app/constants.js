@@ -32,4 +32,4 @@ exports.locale = (loc) => {
     return locale[loc];
 };
 exports.fullDayMilliseconds = fullDayMilliseconds;
-exports.parseFbRegion = region => koreanRegionMap[region];
+exports.koreanRegionMap = koreanRegionMap;
