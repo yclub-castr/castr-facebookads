@@ -5,74 +5,115 @@
 const logger = require('../../utils').logger();
 const fbRequest = require('../fbapi');
 const moment = require('../../utils').moment();
-const InsightField = require('facebook-ads-sdk').AdsInsights.Field;
 const ProjectModel = require('../project/project.model').Model;
+const Insight = require('./insight.model');
 
-// const readFields = [
-//     InsightField.,
-//     InsightField.,
-//     InsightField.,
-//     InsightField.,
-//     InsightField.,
-//     InsightField.,
-//     InsightField.,
-//     InsightField.,
-//     InsightField.,
-//     InsightField.,
-//     InsightField.,
-//     InsightField.,
-//     InsightField.,
-//     InsightField., actions action_values
-//     InsightField., spend
-// hourly_stats_aggregated_by_advertiser_time_zone
-// ].toString();region reach gender frequency age
+const InsightField = Insight.Field;
+const Breakdown = Insight.Breakdown;
+const DatePreset = Insight.DatePreset;
 
-const ageGender = {
-    breakdown: `${InsightField.age},${InsightField.gender}`,
-    fields: [
-        // InsightField.age,
-        // InsightField.gender,
-        InsightField.impressions,
-        InsightField.clicks
-    ].toString(),
+const breakdowns = {
+    platform: Breakdown.publisher_platform,
+    genderAge: `${Breakdown.age},${Breakdown.gender}`,
+    hour: Breakdown.hourly_stats_aggregated_by_advertiser_time_zone,
+    region: Breakdown.region,
+};
+
+const fields = {
+    platform: [InsightField.spend, InsightField.reach, InsightField.impressions, InsightField.clicks, InsightField.actions, InsightField.action_values],
+    demographic: [InsightField.spend, InsightField.impressions, InsightField.clicks, InsightField.actions],
+    // genderAge: [InsightField.spend, InsightField.impressions, InsightField.clicks, InsightField.actions],
+    // hour: [InsightField.spend, InsightField.impressions, InsightField.clicks, InsightField.actions],
+    // region: [InsightField.spend, InsightField.impressions, InsightField.clicks, InsightField.actions],
 };
 
 class InsightService {
-    async getPromotionInsights(params) {
+    async getPromotionInsights(params, mock) {
         const castrBizId = params.castrBizId;
-        let promotionIds = params.promotionIds.split(',').map(id => `"${id}"`);
-        let dateRange = params.dateRange;
-        let filtering;
+        const castrLocId = params.castrLocId;
+        const promotionId = params.promotionId;
+        const dateRange = params.dateRange;
+        const insightParams = {};
         try {
             const project = await ProjectModel.findOne({ castrBizId: castrBizId });
+            if (!project) throw new Error(`No such Business (#${castrBizId})`);
             const accountId = project.accountId;
             const accountTimezone = project.timezone;
+
+            // Preparing time range param
             if (!dateRange) {
-                const today = moment.tz(accountTimezone);
-                dateRange = [moment(today).subtract(4, 'week').format('YYYYMMDD'), today.format('YYYYMMDD')];
-            } else { dateRange = dateRange.split(','); }
-            const timeRange = {
-                since: moment.tz(dateRange[0], accountTimezone).format('YYYY-MM-DD'),
-                until: moment.tz(dateRange[1], accountTimezone).format('YYYY-MM-DD'),
-            };
-            if (!promotionIds) {
-                promotionIds = project.adLabels.promotionLabels.map(label => `"${label.name}"`);
+                logger.debug('Preparing default \'date_preset\' parameter...');
+                insightParams.date_preset = DatePreset.last_28d;
+            } else {
+                logger.debug('Validating \'dateRange\' parameter...');
+                const dates = dateRange.split(',').map(date => moment(date).format('YYYY-MM-DD'));
+                const start = dates[0];
+                const end = dates[1];
+                if (end.diff(start) < 0) {
+                    throw new Error(`Invalid date range: endDate (${end.format('L')}) cannot be earlier than startDate (${start.format('L')})`);
+                }
+                insightParams.time_range = { since: start, until: end };
             }
-            filtering = `[ {"field": "campaign.adlabels","operator": "ANY","value": [${promotionIds.join()}] } ]`;
-            // time_increment: 1
-            const ageGenderReport = await fbRequest.get(accountId, 'insights', {
-                breakdown: ageGender.breakdown,
-                fields: ageGender.fields,
-                filtering: filtering,
-            });
 
+            // Preparing filtering param
+            logger.debug('Preparing \'filtering\' parameters...');
+            const adlabels = [];
+            if (castrBizId) adlabels.push(`"${castrBizId}"`);
+            if (castrLocId) adlabels.push(`"${castrLocId}"`);
+            if (promotionId) adlabels.push(`"${promotionId}"`);
+            insightParams.filtering = `[ {"field": "campaign.adlabels","operator": "ALL","value": [${adlabels.join()}] } ]`;
 
-            const msg = `Preview sets fetched for ${null} creatives`;
+            let genderAgeReport;
+            if (!mock) {
+                const genderAgeParams = Object.assign({}, insightParams);
+                genderAgeParams.breakdowns = breakdowns.genderAge;
+                genderAgeParams.fields = fields.demographic;
+                genderAgeReport = await fbRequest.get(accountId, 'insights', genderAgeParams);
+            } else {
+                genderAgeReport = Insight.Mock.genderAge();
+            }
+
+            let regionReport;
+            if (!mock) {
+                const regionParams = Object.assign({}, insightParams);
+                regionParams.breakdowns = breakdowns.region;
+                regionParams.fields = fields.demographic;
+                regionReport = await fbRequest.get(accountId, 'insights', regionParams);
+            } else {
+                regionReport = Insight.Mock.region();
+            }
+
+            let hourReport;
+            if (!mock) {
+                const hourParams = Object.assign({}, insightParams);
+                hourParams.breakdowns = breakdowns.hour;
+                hourParams.fields = fields.demographic;
+                hourReport = await fbRequest.get(accountId, 'insights', hourParams);
+            } else {
+                hourReport = Insight.Mock.hour();
+            }
+
+            let platformReport;
+            if (!mock) {
+                const platformParams = Object.assign({}, insightParams);
+                platformParams.breakdowns = breakdowns.platform;
+                platformParams.fields = fields.platform;
+                platformReport = await fbRequest.get(accountId, 'insights', platformParams);
+            } else {
+                platformReport = Insight.Mock.platform();
+            }
+
+            const msg = `Insights returned`;
             logger.debug(msg);
             return {
                 success: true,
                 message: msg,
-                data: ageGenderReport,
+                data: {
+                    platform: platformReport,
+                    genderAge: genderAgeReport,
+                    region: regionReport,
+                    hour: hourReport,
+                }
             };
         } catch (err) {
             throw err;
