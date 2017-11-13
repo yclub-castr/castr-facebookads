@@ -36,7 +36,38 @@ moment.locale('kr', {
 });
 moment.locale('en');
 
+class RandomRatio {
+    constructor(numRands) {
+        this.randomTokens = [];
+        this.sum = 0;
+        this.counter = 0;
+        for (let i = 0; i < numRands; i++) {
+            const randTok = Math.random();
+            this.sum += randTok;
+            this.randomTokens.push(randTok);
+        }
+    }
+
+    hasNext() {
+        if (this.counter < this.randomTokens.length) return true;
+        return false;
+    }
+
+    next() {
+        const nextPart = this.randomTokens[this.counter] / this.sum;
+        this.counter += 1;
+        return nextPart;
+    }
+
+    distribute(sum) {
+        const distribution = [];
+        while (this.hasNext()) distribution.push(Math.round(sum * this.next()));
+        return distribution;
+    }
+}
+
 module.exports = {
     logger() { return logger; },
     moment() { return moment; },
+    RandomRatio: RandomRatio,
 };
