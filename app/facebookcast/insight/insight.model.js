@@ -220,13 +220,6 @@ exports.Mock = {
     platform: mockPlatform,
 };
 
-// const demoReport = {
-//     impressions: {},
-//     clicks: {},
-//     linkClicks: {},
-//     purchases: {},
-// };
-
 const getValue = (insightObj, metric) => {
     let value;
     if (metric === 'impressions') {
