@@ -264,8 +264,8 @@ const regionFormatter = (demoReport, regionArray, locale) => {
         regionArray.forEach((item) => {
             const value = getValue(item, metric);
             demoReport[metric].region.push({
-                key: constants.koreanRegionMap[item[Breakdown.region]].key,
-                name: (locale === 'kr') ? constants.koreanRegionMap[item[Breakdown.region]].name_kr : item[Breakdown.region],
+                id: constants.koreanRegionMap[item[Breakdown.region]].key,
+                title: (locale === 'kr') ? constants.koreanRegionMap[item[Breakdown.region]].name_kr : item[Breakdown.region],
                 value: value,
             });
         });
