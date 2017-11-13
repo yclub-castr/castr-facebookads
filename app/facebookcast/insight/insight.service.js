@@ -93,15 +93,15 @@ class InsightService {
                 hourResp = Insight.Mock.hour();
             }
 
-            let platformResp;
-            if (!mock) {
-                const platformParams = Object.assign({}, insightParams);
-                platformParams.breakdowns = breakdowns.platform;
-                platformParams.fields = fields.platform;
-                platformResp = await fbRequest.get(accountId, 'insights', platformParams);
-            } else {
-                platformResp = Insight.Mock.platform();
-            }
+            // let platformResp;
+            // if (!mock) {
+            //     const platformParams = Object.assign({}, insightParams);
+            //     platformParams.breakdowns = breakdowns.platform;
+            //     platformParams.fields = fields.platform;
+            //     platformResp = await fbRequest.get(accountId, 'insights', platformParams);
+            // } else {
+            //     platformResp = Insight.Mock.platform();
+            // }
 
             const demoReport = {
                 impressions: {},
@@ -119,7 +119,7 @@ class InsightService {
                 success: true,
                 message: msg,
                 data: {
-                    platform: platformResp,
+                    platformReport: Insight.Mock.platform(accountTimezone),
                     demoReport: demoReport,
                 },
             };

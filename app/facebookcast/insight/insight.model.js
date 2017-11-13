@@ -2,6 +2,7 @@
 
 const fbCastDB = require('../../db').fbCastDB;
 const mongoose = require('../../db').mongoose;
+const utils = require('../../utils');
 const constants = require('../../constants');
 const Insight = require('facebook-ads-sdk').AdsInsights;
 
@@ -13,6 +14,9 @@ const ages = ['13-17', '18-24', '25-34', '35-44', '45-54', '55-64', '65+'];
 const genders = ['male', 'female'];
 const platforms = ['facebook', 'audience_network', 'instagram'];
 const regions = Object.keys(constants.koreanRegionMap);
+
+const moment = utils.moment();
+const RandomRatio = utils.RandomRatio;
 
 exports.Field = Field;
 exports.Breakdown = Breakdown;
@@ -40,30 +44,12 @@ exports.Model = fbCastDB.model(
 
 const mockRandomMax = {
     reach: 7500,
-    impressions: 10000,
-    clicks: 1000,
-    link_clicks: 200,
+    impressions: 15000,
+    clicks: 2000,
+    linkClicks: 500,
     conversions: 50,
     spend: 500000,
 };
-
-class RandomRatio {
-    constructor(numRands) {
-        this.randomTokens = [];
-        this.sum = 0;
-        this.counter = 0;
-        for (let i = 0; i < numRands; i++) {
-            const randTok = Math.random();
-            this.sum += randTok;
-            this.randomTokens.push(randTok);
-        }
-    }
-    next() {
-        const nextPart = this.randomTokens[this.counter] / this.sum;
-        this.counter += 1;
-        return nextPart;
-    }
-}
 
 const mockGenderAge = () => {
     const random1 = new RandomRatio(genders.length * ages.length);
@@ -83,7 +69,7 @@ const mockGenderAge = () => {
                 actions: [
                     {
                         action_type: 'link_click',
-                        value: Math.round(mockRandomMax.link_clicks * clickRatio),
+                        value: Math.round(mockRandomMax.linkClicks * clickRatio),
                     },
                     {
                         action_type: 'offsite_conversion.fb_pixel_purchase',
@@ -114,7 +100,7 @@ const mockHour = () => {
             actions: [
                 {
                     action_type: 'link_click',
-                    value: Math.round(mockRandomMax.link_clicks * clickRatio),
+                    value: Math.round(mockRandomMax.linkClicks * clickRatio),
                 },
                 {
                     action_type: 'offsite_conversion.fb_pixel_purchase',
@@ -142,7 +128,7 @@ const mockRegion = () => {
             actions: [
                 {
                     action_type: 'link_click',
-                    value: Math.round(mockRandomMax.link_clicks * clickRatio),
+                    value: Math.round(mockRandomMax.linkClicks * clickRatio),
                 },
                 {
                     action_type: 'offsite_conversion.fb_pixel_purchase',
@@ -169,7 +155,7 @@ const mockPlatform = () => {
             actions: [
                 {
                     action_type: 'link_click',
-                    value: Math.round(mockRandomMax.link_clicks * clickRatio),
+                    value: Math.round(mockRandomMax.linkClicks * clickRatio),
                 },
                 {
                     action_type: 'offsite_conversion.fb_pixel_add_payment_info',
@@ -213,26 +199,181 @@ const mockPlatform = () => {
     return { data: response };
 };
 
+const getXValues = (timezone) => {
+    const x = [];
+    const endDate = moment.tz(timezone).hour(0).minute(0).second(0).millisecond(0);
+    for (let i = 27; i >= 0; i--) {
+        x.push(moment(endDate).subtract(i, 'day').format('MM/DD'));
+    }
+    return x;
+};
+
+const getYValues = (lines) => {
+    const y = { total: [] };
+    const labels = [];
+    for (let i = 0; i < lines.length; i++) {
+        const label = lines[i][0];
+        labels.push(label);
+        y[label] = new RandomRatio(27).distribute(lines[i][1]);
+    }
+    for (let i = 0; i < 27; i++) {
+        let total = 0;
+        labels.forEach((label) => {
+            total += y[label][i];
+        });
+        y.total.push(total);
+    }
+    return Object.keys(y).map(key => ({ label: key, data: y[key] }));
+};
+
+const mockPlatformReport = (timezone) => {
+    const response = {
+        numPromotions: 2,
+        numAds: 144,
+        impressions: mockRandomMax.impressions,
+        linkClicks: mockRandomMax.linkClicks,
+        purchases: mockRandomMax.conversions,
+        responses: mockRandomMax.conversions * 8,
+        amountSpent: mockRandomMax.spend,
+        promotions: {
+            TEST_PROMO_ID_1: {
+                numAds: 72,
+                impressions: mockRandomMax.impressions / 2,
+                linkClicks: mockRandomMax.linkClicks / 2,
+                purchases: mockRandomMax.conversions / 2,
+                responses: mockRandomMax.conversions * 4,
+                amountSpent: mockRandomMax.spend / 2,
+            },
+            TEST_PROMO_ID_2: {
+                numAds: 72,
+                impressions: mockRandomMax.impressions / 2,
+                linkClicks: mockRandomMax.linkClicks / 2,
+                purchases: mockRandomMax.conversions / 2,
+                responses: mockRandomMax.conversions * 4,
+                amountSpent: mockRandomMax.spend / 2,
+            },
+        },
+        budget: {
+            facebook: mockRandomMax.spend / 3,
+            instagram: mockRandomMax.spend / 3,
+            audienceNetwork: mockRandomMax.spend / 3,
+            graph: {
+                y: getYValues([
+                    ['facebook', mockRandomMax.spend / 3],
+                    ['instagram', mockRandomMax.spend / 3],
+                    ['audienceNetwork', mockRandomMax.spend / 3]
+                ]),
+                x: getXValues(),
+            },
+        },
+        ads: {
+            facebook: 144,
+            instagram: 144,
+            audienceNetwork: 144,
+        },
+        impression: {
+            facebook: mockRandomMax.impressions / 2,
+            instagram: mockRandomMax.impressions / 4,
+            audienceNetwork: mockRandomMax.impressions / 4,
+            graph: {
+                y: getYValues([
+                    ['facebook', mockRandomMax.impressions / 2],
+                    ['instagram', mockRandomMax.impressions / 4],
+                    ['audienceNetwork', mockRandomMax.impressions / 4]
+                ]),
+                x: getXValues(),
+            },
+        },
+        reach: {
+            facebook: mockRandomMax.reach / 2,
+            instagram: mockRandomMax.reach / 4,
+            audienceNetwork: mockRandomMax.reach / 4,
+            graph: {
+                y: getYValues([
+                    ['facebook', mockRandomMax.reach / 2],
+                    ['instagram', mockRandomMax.reach / 4],
+                    ['audienceNetwork', mockRandomMax.reach / 4]
+                ]),
+                x: getXValues(),
+            },
+        },
+        linkClick: {
+            facebook: mockRandomMax.linkClicks / 2,
+            instagram: mockRandomMax.linkClicks / 4,
+            audienceNetwork: mockRandomMax.linkClicks / 4,
+            graph: {
+                y: getYValues([
+                    ['facebook', mockRandomMax.linkClicks / 2],
+                    ['instagram', mockRandomMax.linkClicks / 4],
+                    ['audienceNetwork', mockRandomMax.linkClicks / 4]
+                ]),
+                x: getXValues(),
+            },
+        },
+        purchase: {
+            facebook: mockRandomMax.conversions / 2,
+            instagram: mockRandomMax.conversions / 4,
+            audienceNetwork: mockRandomMax.conversions / 4,
+            graph: {
+                y: getYValues([
+                    ['facebook', mockRandomMax.conversions / 2],
+                    ['instagram', mockRandomMax.conversions / 4],
+                    ['audienceNetwork', mockRandomMax.conversions / 4]
+                ]),
+                x: getXValues(),
+            },
+        },
+        response: {
+            addPaymentInfo: mockRandomMax.conversions / 2,
+            addToCart: mockRandomMax.conversions * 2,
+            addToWishlist: mockRandomMax.conversions,
+            completeRegistration: mockRandomMax.conversions,
+            initiateCheckout: mockRandomMax.conversions / 4,
+            lead: mockRandomMax.conversions / 3,
+            search: mockRandomMax.conversions * 3,
+            viewContent: mockRandomMax.conversions * 4,
+            graph: {
+                y: getYValues([
+                    ['addPaymentInfo', mockRandomMax.conversions / 2],
+                    ['addToCart', mockRandomMax.conversions * 2],
+                    ['addToWishlist', mockRandomMax.conversions],
+                    ['completeRegistration', mockRandomMax.conversions],
+                    ['initiateCheckout', mockRandomMax.conversions / 4],
+                    ['lead', mockRandomMax.conversions / 3],
+                    ['search', mockRandomMax.conversions * 3],
+                    ['viewContent', mockRandomMax.conversions * 4]
+                ]),
+                x: getXValues(),
+            },
+        },
+    };
+    return response;
+};
+
 exports.Mock = {
     genderAge: mockGenderAge,
     region: mockRegion,
     hour: mockHour,
-    platform: mockPlatform,
+    platform: mockPlatformReport,
 };
 
 const getValue = (insightObj, metric) => {
-    let value;
+    let value = 0;
     if (metric === 'impressions') {
         value = insightObj.impressions;
     } else if (metric === 'clicks') {
         value = insightObj.clicks;
     } else if (metric === 'linkClicks') {
-        for (let i = 0; i < insightObj.actions.length; i++) {
-            if (insightObj.actions[i].action_type === 'link_click') value = insightObj.actions[i].value;
+        if (insightObj.actions) {
+            for (let i = 0; i < insightObj.actions.length; i++) {
+                if (insightObj.actions[i].action_type === 'link_click') value = insightObj.actions[i].value;
+            }
         }
     } else if (metric === 'purchases') {
-        for (let i = 0; i < insightObj.actions.length; i++) {
-            if (insightObj.actions[i].action_type === 'offsite_conversion.fb_pixel_purchase') value = insightObj.actions[i].value;
+        if (insightObj.actions) {
+            for (let i = 0; i < insightObj.actions.length; i++) {
+                if (insightObj.actions[i].action_type === 'offsite_conversion.fb_pixel_purchase') value = insightObj.actions[i].value;
+            }
         }
     }
     return value;
