@@ -21,8 +21,8 @@ const breakdowns = {
 };
 
 const fields = {
-    platform: [InsightField.spend, InsightField.reach, InsightField.impressions, InsightField.clicks, InsightField.actions, InsightField.action_values],
-    demographic: [InsightField.spend, InsightField.impressions, InsightField.clicks, InsightField.actions],
+    platform: [InsightField.spend, InsightField.reach, InsightField.impressions, InsightField.clicks, InsightField.actions, InsightField.action_values].toString(),
+    demographic: [InsightField.spend, InsightField.impressions, InsightField.clicks, InsightField.actions].toString(),
 };
 
 class InsightService {
@@ -42,6 +42,7 @@ class InsightService {
             if (!dateRange) {
                 logger.debug('Preparing default \'date_preset\' parameter...');
                 insightParams.date_preset = DatePreset.last_28d;
+                insightParams.time_increment = 1;
             } else {
                 logger.debug('Validating \'dateRange\' parameter...');
                 const dates = dateRange.split(',').map(date => moment(date).format('YYYY-MM-DD'));
@@ -51,6 +52,7 @@ class InsightService {
                     throw new Error(`Invalid date range: endDate (${end.format('L')}) cannot be earlier than startDate (${start.format('L')})`);
                 }
                 insightParams.time_range = { since: start, until: end };
+                insightParams.time_increment = 1;
             }
 
             // Preparing filtering param
@@ -107,9 +109,9 @@ class InsightService {
                 linkClicks: {},
                 purchases: {},
             };
-            Formatter.genderAge(demoReport, genderAgeResp);
-            Formatter.region(demoReport, regionResp);
-            Formatter.hour(demoReport, hourResp);
+            Formatter.genderAge(demoReport, genderAgeResp.data);
+            Formatter.region(demoReport, regionResp.data, params.locale);
+            Formatter.hour(demoReport, hourResp.data);
 
             const msg = `Insights returned`;
             logger.debug(msg);

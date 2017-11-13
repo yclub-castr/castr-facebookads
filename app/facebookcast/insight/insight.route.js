@@ -14,6 +14,7 @@ router.get('/', async (req, res, next) => {
             castrLocId: req.query.castrLocId,
             promotionId: req.query.promotionId,
             dateRange: req.query.dateRange,
+            locale: req.query.locale || 'us',
         };
         if (!params.castrBizId && !params.castrLocId) throw new Error('Missing query param: must provide either \'castrBizId\' or \'castrLocId\'');
         res.json(await insightService.getPromotionInsights(params, false));
@@ -29,6 +30,7 @@ router.get('/mock', async (req, res, next) => {
             castrLocId: req.query.castrLocId,
             promotionId: req.query.promotionId,
             dateRange: req.query.dateRange,
+            locale: req.query.locale || 'us',
         };
         if (!params.castrBizId && !params.castrLocId) throw new Error('Missing query param: must provide either \'castrBizId\' or \'castrLocId\'');
         res.json(await insightService.getPromotionInsights(params, true));

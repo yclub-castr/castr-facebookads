@@ -93,7 +93,7 @@ const mockGenderAge = () => {
             });
         }
     }
-    return response;
+    return { data: response };
 };
 
 const mockHour = () => {
@@ -123,7 +123,7 @@ const mockHour = () => {
             ],
         });
     }
-    return response;
+    return { data: response };
 };
 
 const mockRegion = () => {
@@ -151,7 +151,7 @@ const mockRegion = () => {
             ],
         });
     }
-    return response;
+    return { data: response };
 };
 
 const mockPlatform = () => {
@@ -210,7 +210,7 @@ const mockPlatform = () => {
             ],
         };
     }
-    return response;
+    return { data: response };
 };
 
 exports.Mock = {
@@ -258,12 +258,16 @@ const genderAgeFormatter = (demoReport, genderAgeArray) => {
     return demoReport;
 };
 
-const regionFormatter = (demoReport, regionArray) => {
+const regionFormatter = (demoReport, regionArray, locale) => {
     Object.keys(demoReport).forEach((metric) => {
-        demoReport[metric].region = {};
+        demoReport[metric].region = [];
         regionArray.forEach((item) => {
             const value = getValue(item, metric);
-            demoReport[metric].region[item[Breakdown.region]] = value;
+            demoReport[metric].region.push({
+                key: constants.koreanRegionMap[item[Breakdown.region]].key,
+                name: (locale === 'kr') ? constants.koreanRegionMap[item[Breakdown.region]].name_kr : item[Breakdown.region],
+                value: value,
+            });
         });
     });
     return demoReport;
