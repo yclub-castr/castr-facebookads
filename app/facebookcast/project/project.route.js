@@ -96,7 +96,10 @@ router.get('/page/verify', async (req, res, next) => {
         const params = {
             castrBizId: req.query.castrBizId,
             pageId: req.query.pageId,
+            pageAccessToken: req.query.pageAccessToken,
         };
+        if (!params.castrBizId) throw new Error('Missing param: \'castrBizId\' must be provided');
+        if (!params.pageAccessToken) throw new Error('Missing param: \'pageAccessToken\' must be provided');
         res.json(await projectService.verifyPage(params));
     } catch (err) {
         next(err);
@@ -107,8 +110,10 @@ router.get('/instagram', async (req, res, next) => {
     try {
         const params = {
             pageId: req.query.pageId,
-            accessToken: req.query.accessToken,
+            pageAccessToken: req.query.pageAccessToken,
         };
+        if (!params.pageId) throw new Error('Missing param: \'pageId\' must be provided');
+        if (!params.pageAccessToken) throw new Error('Missing param: \'pageAccessToken\' must be provided');
         res.json(await projectService.getInstagrams(params));
     } catch (err) {
         next(err);

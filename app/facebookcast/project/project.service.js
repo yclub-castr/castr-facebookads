@@ -18,7 +18,14 @@ class ProjectService {
     async getProject(params) {
         const castrBizId = params.castrBizId;
         try {
-            const project = await ProjectModel.findOne({ castrBizId: castrBizId });
+            const project = await ProjectModel.findOne({
+                castrBizId: castrBizId,
+                accountStatus: { $ne: ProjectStatus.Disintegrated },
+                // $and: [
+                // { accountStatus: { $ne: ProjectStatus.Disintegrated } },
+                // { pageStatus: { $ne: ProjectStatus.Disintegrated } }
+                // ]
+            });
             if (!project) throw new Error(`No such Business (#${castrBizId})`);
             const msg = `Business (#${castrBizId}) project fetched`;
             logger.debug(msg);
@@ -66,7 +73,7 @@ class ProjectService {
         };
         try {
             logger.debug(`Requesting access to adaccount (#${accountId}) owned by Business (#${castrBizId}) ...`);
-            const fbResponse = await fbRequest.post(process.env.CASTR_BUSINESS_ID, 'adaccounts', data);
+            const fbResponse = await fbRequest.post(process.env.CASTR_BUSINESS_ID, 'client_ad_accounts', data);
             logger.debug(`Adaccount request sent to Business (#${castrBizId})`);
             await ProjectModel.update(
                 { castrBizId: castrBizId },
@@ -151,13 +158,13 @@ class ProjectService {
             const data = {
                 business: process.env.CASTR_BUSINESS_ID,
                 user: process.env.ADMIN_SYS_USER_ID,
-                role: 'ADMIN',
+                role: process.env.ACCOUNT_ROLES.split(',')[0],
             };
             logger.debug(`Assigning system user to adaccount owned by Business (#${castrBizId}) ...`);
             logger.debug(`Creating adlabel for adaccount owned by Business (#${castrBizId}) ...`);
             const promises = [
-                fbRequest.post(accountId, 'userpermissions', data),
-                fbRequest.post(accountId, 'adlabels', { name: castrBizId, fields: 'name' }),
+                fbRequest.post(accountId, 'assigned_users', data, true),
+                fbRequest.post(accountId, 'adlabels', { name: castrBizId, fields: 'name' }, true),
                 fbRequest.get(accountId, null, { fields: 'timezone_id, currency' })
             ];
             const fbResponses = await Promise.all(promises);
@@ -195,7 +202,7 @@ class ProjectService {
     async getPages(params) {
         const userId = params.userId;
         const accessToken = params.accessToken;
-        const fields = ['id', 'name'];
+        const fields = ['id', 'name', 'access_token'];
         const data = {
             access_token: accessToken,
             fields: fields.toString(),
@@ -226,7 +233,7 @@ class ProjectService {
         };
         try {
             logger.debug(`Requesting access to page (#${pageId}) owned by Business (#${castrBizId}) ...`);
-            const fbResponse = await fbRequest.post(process.env.CASTR_BUSINESS_ID, 'pages', data);
+            const fbResponse = await fbRequest.post(process.env.CASTR_BUSINESS_ID, 'client_pages', data);
             logger.debug(`Page request sent to Business (#${castrBizId})`);
             await ProjectModel.update(
                 { castrBizId: castrBizId },
@@ -297,6 +304,7 @@ class ProjectService {
 
     async verifyPage(params) {
         const castrBizId = params.castrBizId;
+        const pageAccessToken = params.pageAccessToken;
         let pageId;
         try {
             if (!params.pageId) {
@@ -308,19 +316,22 @@ class ProjectService {
                 pageId = params.pageId;
             }
             const pageRequestData = {
-                business: process.env.CASTR_BUSINESS_ID,
                 user: process.env.ADMIN_SYS_USER_ID,
-                role: 'MANAGER',
+                role: process.env.PAGE_ROLES.split(',')[0],
+                access_token: pageAccessToken,
             };
             logger.debug(`Assigning system user to page owned by Business (#${castrBizId}) ...`);
-            const fbResponse = await fbRequest.post(pageId, 'userpermissions', pageRequestData);
+            const fbResponse = await fbRequest.post(pageId, 'assigned_users', pageRequestData);
             logger.debug(`System user assigned to Business (#${castrBizId}) page`);
             const dbUpdate = {
                 pageStatus: ProjectStatus.Approved,
                 pageVerified: true,
             };
             logger.debug(`Fetching Instagram account(s) belonging to Business (#${castrBizId}) page...`);
-            const instagramRequestData = { fields: ['id', 'username'].toString() };
+            const instagramRequestData = {
+                fields: ['id', 'username'].toString(),
+                access_token: pageAccessToken,
+            };
             const promises = [
                 fbRequest.get(pageId, 'instagram_accounts', instagramRequestData),
                 fbRequest.get(pageId, 'page_backed_instagram_accounts', instagramRequestData)
@@ -368,10 +379,10 @@ class ProjectService {
 
     async getInstagrams(params) {
         const pageId = params.pageId;
-        const accessToken = params.accessToken;
+        const pageAccessToken = params.pageAccessToken;
         const fields = ['id', 'username', 'followed_by_count'];
         const data = {
-            access_token: accessToken,
+            access_token: pageAccessToken,
             fields: fields.toString(),
         };
         try {
@@ -437,20 +448,22 @@ class ProjectService {
                 response.success = true;
                 response.message = `Funding source found for the adaccount owned by Business (#${castrBizId})`;
             }
-            await ProjectModel.update(
-                {
-                    castrBizId: castrBizId,
-                    accountId: accountId,
-                },
-                {
-                    $set: {
-                        accountStatus: (response.success) ? ProjectStatus.Active : ProjectStatus.Approved,
-                        paymentMethod: fbResponse.funding_source_details.display_string,
-                        paymentMethodVerified: response.success,
+            if (response.success) {
+                await ProjectModel.update(
+                    {
+                        castrBizId: castrBizId,
+                        accountId: accountId,
                     },
-                }
-            );
-            logger.debug(response.message);
+                    {
+                        $set: {
+                            accountStatus: (response.success) ? ProjectStatus.Active : ProjectStatus.Approved,
+                            paymentMethod: fbResponse.funding_source_details.display_string,
+                            paymentMethodVerified: response.success,
+                        },
+                    }
+                );
+                logger.debug(response.message);
+            }
             response.data = fbResponse;
             return response;
         } catch (err) {
