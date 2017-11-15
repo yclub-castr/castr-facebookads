@@ -8,7 +8,7 @@ const appVersion = 'v0.1.0';
 const userAgent = `${appName}/${appVersion}`;
 
 const host = 'https://graph.facebook.com/';
-const apiVersion = 'v2.10';
+const apiVersion = 'v2.11';
 
 const DELAY_PER_USAGE = 7000; // milliseconds
 const MAX_USAGE = Math.max(Math.floor(DELAY_PER_USAGE / 1000), 1);
