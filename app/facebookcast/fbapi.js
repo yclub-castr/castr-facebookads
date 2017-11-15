@@ -108,26 +108,28 @@ const get = async (node, edge, params) => {
     }
 };
 
-const post = async (node, edge, params, method, attempts) => {
+const post = async (node, edge, params, method, attempts, noThrottle) => {
     let usage;
     let throttle;
-    do {
-        if (node.includes('act_')) usage = addUsage(node);
-        if (usage) {
-            if (usage > MAX_USAGE) {
-                decayUsage(node);
-                const queue = addQueue(node);
-                logger.info(`Max usage reached. Retrying in ${((DELAY_PER_USAGE * queue) / 1000).toFixed(2)} seconds (${queue} queued)`);
-                await new Promise((resolve) => { setTimeout(resolve, DELAY_PER_USAGE * queue); });
-                removeQueue(node);
+    if (!noThrottle) {
+        do {
+            if (node.includes('act_')) usage = addUsage(node);
+            if (usage) {
+                if (usage > MAX_USAGE) {
+                    decayUsage(node);
+                    const queue = addQueue(node);
+                    logger.info(`Max usage reached. Retrying in ${((DELAY_PER_USAGE * queue) / 1000).toFixed(2)} seconds (${queue} queued)`);
+                    await new Promise((resolve) => { setTimeout(resolve, DELAY_PER_USAGE * queue); });
+                    removeQueue(node);
+                } else {
+                    throttle = usage * DELAY_PER_USAGE;
+                    break;
+                }
             } else {
-                throttle = usage * DELAY_PER_USAGE;
-                break;
+                throttle = 0;
             }
-        } else {
-            throttle = 0;
-        }
-    } while (usage);
+        } while (usage);
+    }
     const options = {
         method: method,
         uri: getUri(node, edge),
@@ -223,8 +225,8 @@ setInterval(decayUsage, DELAY_PER_USAGE);
 
 module.exports = {
     get: get,
-    post: (node, edge, params) => post(node, edge, params, 'POST'),
-    delete: (node, edge, params) => post(node, edge, params, 'DELETE'),
+    post: (node, edge, params, noThrottle) => post(node, edge, params, 'POST', null, noThrottle),
+    delete: (node, edge, params, noThrottle) => post(node, edge, params, 'DELETE', null, noThrottle),
     batch: batch,
     apiVersion: apiVersion,
 };
