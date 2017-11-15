@@ -116,7 +116,7 @@ class ProjectService {
             if (accountId) {
                 const data = { adaccount_id: accountId };
                 logger.debug(`Disintegrating adaccount owned by Business (#${castrBizId}) ...`);
-                fbResponse = await fbRequest.delete(process.env.CASTR_BUSINESS_ID, 'adaccounts', data);
+                fbResponse = await fbRequest.delete(process.env.CASTR_BUSINESS_ID, 'ad_accounts', data);
                 logger.debug(`Disintegrated Business (#${castrBizId}) adaccount`);
             }
             await ProjectModel.update(
