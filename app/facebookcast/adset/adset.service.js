@@ -101,7 +101,7 @@ class AdSetService {
                     pixel_id: (await PixelService.getPixel(project)).data.id,
                     custom_event_type: 'PURCHASE',
                 };
-            } else {
+            } else if (objective === CampaignObjective.brand_awareness) {
                 if (optimizationGoal === OptimizationGoal.reach) {
                     freqCtrlSpecs = [{
                         event: 'IMPRESSIONS',
@@ -109,6 +109,7 @@ class AdSetService {
                         max_frequency: 1,
                     }];
                 }
+            } else {
                 promotedObject = {
                     page_id: project.pageId,
                 };
