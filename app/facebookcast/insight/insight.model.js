@@ -25,13 +25,25 @@ exports.Model = fbCastDB.model(
     'Insight',
     new mongoose.Schema(
         {
-            castrBizId: { type: String, required: false },
-            castrLocId: String,
+            date: { type: Date, required: true },
+            castrBizId: { type: String, required: true },
+            castrLocId: { type: String, required: true },
             promotionId: { type: String, required: false },
-            accountId: { type: String, required: false },
-            campaignId: { type: String, required: false },
-            adsetId: { type: String, required: false },
-            adId: { type: String, required: false },
+            platform: { type: String, enum: platforms, required: true },
+            spend: Number,
+            reach: Number,
+            impressions: Number,
+            clicks: Number,
+            linkClicks: Number,
+            purchases: Number,
+            addPaymentInfo: Number,
+            addToCart: Number,
+            addToWishlist: Number,
+            completeRegistration: Number,
+            initiateCheckout: Number,
+            lead: Number,
+            search: Number,
+            viewContent: Number,
         },
         {
             timestamps: {
@@ -43,12 +55,12 @@ exports.Model = fbCastDB.model(
 );
 
 const mockRandomMax = {
+    spend: 500000,
     reach: 7500,
     impressions: 15000,
     clicks: 2000,
     linkClicks: 500,
     conversions: 50,
-    spend: 500000,
 };
 
 const mockGenderAge = () => {
@@ -140,61 +152,68 @@ const mockRegion = () => {
     return { data: response };
 };
 
-const mockPlatform = () => {
+const mockPlatform = (timezone) => {
     const randoms = [];
-    for (let i = 0; i < 12; i++) randoms[i] = new RandomRatio(platforms.length);
-    const response = {};
+    for (let i = 0; i < 12; i++) randoms[i] = new RandomRatio(platforms.length * 28);
+    const response = [];
+    const endDate = moment.tz(timezone);
     for (let i = 0; i < platforms.length; i++) {
-        const impRatio = randoms[1].next();
-        const clickRatio = randoms[2].next();
-        response[platforms[i]] = {
-            spend: Math.round(mockRandomMax.spend * randoms[0].next()),
-            reach: Math.round(mockRandomMax.reach * impRatio),
-            impressions: Math.round(mockRandomMax.impressions * impRatio),
-            clicks: Math.round(mockRandomMax.clicks * clickRatio),
-            actions: [
-                {
-                    action_type: 'link_click',
-                    value: Math.round(mockRandomMax.linkClicks * clickRatio),
-                },
-                {
-                    action_type: 'offsite_conversion.fb_pixel_add_payment_info',
-                    value: Math.round(mockRandomMax.conversions * randoms[3].next()),
-                },
-                {
-                    action_type: 'offsite_conversion.fb_pixel_add_to_cart',
-                    value: Math.round(mockRandomMax.conversions * randoms[4].next()),
-                },
-                {
-                    action_type: 'offsite_conversion.fb_pixel_add_to_wishlist',
-                    value: Math.round(mockRandomMax.conversions * randoms[5].next()),
-                },
-                {
-                    action_type: 'offsite_conversion.fb_pixel_complete_registration',
-                    value: Math.round(mockRandomMax.conversions * randoms[6].next()),
-                },
-                {
-                    action_type: 'offsite_conversion.fb_pixel_initiate_checkout',
-                    value: Math.round(mockRandomMax.conversions * randoms[7].next()),
-                },
-                {
-                    action_type: 'offsite_conversion.fb_pixel_lead',
-                    value: Math.round(mockRandomMax.conversions * randoms[8].next()),
-                },
-                {
-                    action_type: 'offsite_conversion.fb_pixel_purchase',
-                    value: Math.round(mockRandomMax.conversions * randoms[9].next()),
-                },
-                {
-                    action_type: 'offsite_conversion.fb_pixel_search',
-                    value: Math.round(mockRandomMax.conversions * randoms[10].next()),
-                },
-                {
-                    action_type: 'offsite_conversion.fb_pixel_view_content',
-                    value: Math.round(mockRandomMax.conversions * randoms[11].next()),
-                }
-            ],
-        };
+        for (let j = 27; j >= 0; j--) {
+            const date = moment(endDate).subtract(j, 'day').format('YYYY-MM-DD');
+            const impRatio = randoms[1].next();
+            const clickRatio = randoms[2].next();
+            response.push({
+                date_start: date,
+                date_stop: date,
+                publisher_platform: platforms[i],
+                spend: Math.round(mockRandomMax.spend * randoms[0].next()),
+                reach: Math.round(mockRandomMax.reach * impRatio),
+                impressions: Math.round(mockRandomMax.impressions * impRatio),
+                clicks: Math.round(mockRandomMax.clicks * clickRatio),
+                actions: [
+                    {
+                        action_type: 'link_click',
+                        value: Math.round(mockRandomMax.linkClicks * clickRatio),
+                    },
+                    {
+                        action_type: 'offsite_conversion.fb_pixel_add_payment_info',
+                        value: Math.round(mockRandomMax.conversions * randoms[3].next()),
+                    },
+                    {
+                        action_type: 'offsite_conversion.fb_pixel_add_to_cart',
+                        value: Math.round(mockRandomMax.conversions * randoms[4].next()),
+                    },
+                    {
+                        action_type: 'offsite_conversion.fb_pixel_add_to_wishlist',
+                        value: Math.round(mockRandomMax.conversions * randoms[5].next()),
+                    },
+                    {
+                        action_type: 'offsite_conversion.fb_pixel_complete_registration',
+                        value: Math.round(mockRandomMax.conversions * randoms[6].next()),
+                    },
+                    {
+                        action_type: 'offsite_conversion.fb_pixel_initiate_checkout',
+                        value: Math.round(mockRandomMax.conversions * randoms[7].next()),
+                    },
+                    {
+                        action_type: 'offsite_conversion.fb_pixel_lead',
+                        value: Math.round(mockRandomMax.conversions * randoms[8].next()),
+                    },
+                    {
+                        action_type: 'offsite_conversion.fb_pixel_purchase',
+                        value: Math.round(mockRandomMax.conversions * randoms[9].next()),
+                    },
+                    {
+                        action_type: 'offsite_conversion.fb_pixel_search',
+                        value: Math.round(mockRandomMax.conversions * randoms[10].next()),
+                    },
+                    {
+                        action_type: 'offsite_conversion.fb_pixel_view_content',
+                        value: Math.round(mockRandomMax.conversions * randoms[11].next()),
+                    }
+                ],
+            });
+        }
     }
     return { data: response };
 };
@@ -263,7 +282,7 @@ const mockPlatformReport = (timezone) => {
                     ['instagram', mockRandomMax.spend / 3],
                     ['audienceNetwork', mockRandomMax.spend / 3]
                 ]),
-                x: getXValues(),
+                x: getXValues(timezone),
             },
         },
         ads: {
@@ -281,7 +300,7 @@ const mockPlatformReport = (timezone) => {
                     ['instagram', mockRandomMax.impressions / 4],
                     ['audienceNetwork', mockRandomMax.impressions / 4]
                 ]),
-                x: getXValues(),
+                x: getXValues(timezone),
             },
         },
         reach: {
@@ -294,7 +313,7 @@ const mockPlatformReport = (timezone) => {
                     ['instagram', mockRandomMax.reach / 4],
                     ['audienceNetwork', mockRandomMax.reach / 4]
                 ]),
-                x: getXValues(),
+                x: getXValues(timezone),
             },
         },
         linkClick: {
@@ -307,7 +326,7 @@ const mockPlatformReport = (timezone) => {
                     ['instagram', mockRandomMax.linkClicks / 4],
                     ['audienceNetwork', mockRandomMax.linkClicks / 4]
                 ]),
-                x: getXValues(),
+                x: getXValues(timezone),
             },
         },
         purchase: {
@@ -320,7 +339,7 @@ const mockPlatformReport = (timezone) => {
                     ['instagram', mockRandomMax.conversions / 4],
                     ['audienceNetwork', mockRandomMax.conversions / 4]
                 ]),
-                x: getXValues(),
+                x: getXValues(timezone),
             },
         },
         response: {
@@ -343,7 +362,7 @@ const mockPlatformReport = (timezone) => {
                     ['search', mockRandomMax.conversions * 3],
                     ['viewContent', mockRandomMax.conversions * 4]
                 ]),
-                x: getXValues(),
+                x: getXValues(timezone),
             },
         },
     };
@@ -354,7 +373,8 @@ exports.Mock = {
     genderAge: mockGenderAge,
     region: mockRegion,
     hour: mockHour,
-    platform: mockPlatformReport,
+    platform: mockPlatform,
+    platformReport: mockPlatformReport,
 };
 
 const getValue = (insightObj, metric) => {
