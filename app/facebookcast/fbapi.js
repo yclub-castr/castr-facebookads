@@ -153,7 +153,7 @@ const post = async (node, edge, params, method, attempts, noThrottle) => {
         });
         return resp;
     } catch (err) {
-        const attempt = attempts || 1;
+        let attempt = attempts || 1;
         if (attempt <= 3) {
             const error = (err.error) ? err.error.error || err.error : err;
             let delay = 5;
@@ -162,6 +162,10 @@ const post = async (node, edge, params, method, attempts, noThrottle) => {
             } else if (error.code === fbErrCodes.RATE_LIMITED && error.error_subcode === fbErrSubcodes.ACCOUNT_RATE_LIMITED) {
                 logger.error(error);
                 delay = 300;
+            } else if (error.code === 2) {
+                logger.error(error);
+                delay = 30;
+                attempt -= 1;
             } else {
                 logger.error(error);
             }
