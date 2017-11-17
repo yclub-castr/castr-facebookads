@@ -152,7 +152,7 @@ const mockRegion = () => {
     return { data: response };
 };
 
-const mockPlatform = (timezone) => {
+const mockPlatform = async (timezone) => {
     const randoms = [];
     for (let i = 0; i < 12; i++) randoms[i] = new RandomRatio(platforms.length * 28);
     const response = [];
@@ -386,13 +386,19 @@ const getValue = (insightObj, metric) => {
     } else if (metric === 'linkClicks') {
         if (insightObj.actions) {
             for (let i = 0; i < insightObj.actions.length; i++) {
-                if (insightObj.actions[i].action_type === 'link_click') value = insightObj.actions[i].value;
+                if (insightObj.actions[i].action_type === 'link_click') {
+                    value = insightObj.actions[i].value;
+                    break;
+                }
             }
         }
     } else if (metric === 'purchases') {
         if (insightObj.actions) {
             for (let i = 0; i < insightObj.actions.length; i++) {
-                if (insightObj.actions[i].action_type === 'offsite_conversion.fb_pixel_purchase') value = insightObj.actions[i].value;
+                if (insightObj.actions[i].action_type === 'offsite_conversion.fb_pixel_purchase') {
+                    value = insightObj.actions[i].value;
+                    break;
+                }
             }
         }
     }
