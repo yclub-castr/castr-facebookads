@@ -15,6 +15,22 @@ const accountRoles = process.env.ACCOUNT_ROLES.split(',');
 const pageRoles = process.env.PAGE_ROLES.split(',');
 
 class ProjectService {
+    async getActiveProjects(params) {
+        try {
+            const runningProjects = await ProjectModel.find({
+                accountStatus: { $in: [ProjectStatus.Approved, ProjectStatus.Active] },
+                'adLabels.promotionLabels': { $exists: true, $ne: [] },
+            });
+            return {
+                success: true,
+                message: `${runningProjects.length} active projects found`,
+                data: runningProjects,
+            };
+        } catch (err) {
+            throw err;
+        }
+    }
+
     async getProject(params) {
         const castrBizId = params.castrBizId;
         try {

@@ -187,4 +187,12 @@ router.route('/:castrBizId/promotion')
         }
     });
 
+router.get('/', async (req, res, next) => {
+    try {
+        res.json(await projectService.getActiveProjects());
+    } catch (err) {
+        next(err);
+    }
+});
+
 module.exports = router;
