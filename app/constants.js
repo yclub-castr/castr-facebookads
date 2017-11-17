@@ -76,6 +76,7 @@ const koreanRegionMap = {
 async function getSamplePromotion(promotionId) {
     return {
         _id: promotionId || 'TEST_PROMO_ID',
+        castrBizId: 'TEST_BIZ_ID',
         title: 'Promotion Title',
         description: 'This is the description of this promotion',
         effectiveDate: moment(),
