@@ -39,4 +39,24 @@ router.get('/mock', async (req, res, next) => {
     }
 });
 
+router.post('/update', async (req, res, next) => {
+    try {
+        const promotionParams = req.body.promotionParams;
+        if (!promotionParams) throw new Error('Missing body param: must provide \'promotionParams\'');
+        res.json(await insightService.updatePromotionInsights(promotionParams, false));
+    } catch (err) {
+        next(err);
+    }
+});
+
+router.post('/update/mock', async (req, res, next) => {
+    try {
+        const promotionParams = req.body.promotionParams;
+        if (!promotionParams) throw new Error('Missing body param: must provide \'promotionParams\'');
+        res.json(await insightService.updatePromotionInsights(promotionParams, true));
+    } catch (err) {
+        next(err);
+    }
+});
+
 module.exports = router;
