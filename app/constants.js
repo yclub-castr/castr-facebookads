@@ -81,6 +81,7 @@ async function getSamplePromotion(promotionId) {
         description: 'This is the description of this promotion',
         effectiveDate: moment(),
         expirationDate: moment().add(28, 'day'),
+        timezone: 'America/New_York',
         locations: [
             {
                 id: 'TEST_LOC_ID_1',
