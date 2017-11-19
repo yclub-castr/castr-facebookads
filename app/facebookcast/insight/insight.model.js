@@ -433,9 +433,10 @@ const graph = (report, x, y, type) => {
     }
 };
 
-const platformFormatter = (platformArray, tz) => {
+const platformFormatter = (platformArray, platformAds, tz) => {
     const report = {
         numPromotions: 0,
+        numAds: platformAds.total,
         impressions: 0,
         linkClicks: 0,
         purchases: 0,
@@ -575,6 +576,8 @@ const platformFormatter = (platformArray, tz) => {
     }
     const x = dateIds.map(dateId => dateId.substring(5));
     graph(report, x, budget, 'budget');
+    delete platformAds.total;
+    report.ads = platformAds;
     graph(report, x, impression, 'impression');
     graph(report, x, reach, 'reach');
     graph(report, x, linkClick, 'linkClick');

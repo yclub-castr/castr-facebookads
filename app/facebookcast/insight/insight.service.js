@@ -6,16 +6,20 @@ const utils = require('../../utils');
 const fbRequest = require('../fbapi');
 const Project = require('../project/project.model');
 const Insight = require('./insight.model');
+const AdSet = require('../adset/adset.model');
+const Ad = require('../ad/ad.model');
 
 const logger = utils.logger();
 const moment = utils.moment();
 
 const ProjectModel = Project.Model;
+const AdSetModel = AdSet.Model;
+const AdModel = Ad.Model;
+const InsightModel = Insight.Model;
 const InsightField = Insight.Field;
 const Breakdown = Insight.Breakdown;
 const DatePreset = Insight.DatePreset;
 const Formatter = Insight.Formatter;
-const InsightModel = Insight.Model;
 
 const breakdowns = {
     platform: Breakdown.publisher_platform,
@@ -63,12 +67,7 @@ class InsightService {
 
             // Preparing filtering param
             logger.debug('Preparing \'filtering\' parameters...');
-            const query = {
-                $and: [
-                    { date: { $gte: start } },
-                    { date: { $lte: end } }
-                ],
-            };
+            const query = {};
             const adlabels = [];
             if (castrBizId) {
                 query.castrBizId = castrBizId;
@@ -84,41 +83,57 @@ class InsightService {
             }
             insightParams.filtering = `[ {"field": "campaign.adlabels","operator": "ALL","value": [${adlabels.join()}] } ]`;
 
-            let platformReport;
-            if (!mock) {
-                const insightsRecords = await InsightModel.find(query);
-                platformReport = Formatter.platform(insightsRecords, accountTimezone);
-            } else {
-                platformReport = Insight.Mock.platformReport();
-            }
+            const platformAds = { facebook: 0, instagram: 0, audienceNetwork: 0 };
+            const associatedAds = await AdModel.find(query);
+            platformAds.total = associatedAds.length;
+            const associatedAdsets = {};
+            associatedAds.forEach((ad) => {
+                if (!associatedAdsets[ad.adsetId]) associatedAdsets[ad.adsetId] = 1;
+                else associatedAdsets[ad.adsetId] += 1;
+            });
+            const adsets = await AdSetModel.find({ id: { $in: Object.keys(associatedAdsets) } });
+            adsets.forEach((adset) => {
+                const platforms = adset.targeting.publisher_platforms;
+                if (!platforms) {
+                    platformAds.facebook += 1;
+                    platformAds.instagram += 1;
+                    platformAds.audienceNetwork += 1;
+                } else {
+                    platforms.forEach((platform) => {
+                        if (platform === 'facebook') platformAds.facebook += 1;
+                        else if (platform === 'instagram') platformAds.instagram += 1;
+                        else if (platform === 'audience_network') platformAds.audienceNetwork += 1;
+                    });
+                }
+            });
 
+            let platformReport;
             let genderAgeResp;
+            let regionResp;
+            let hourResp;
             if (!mock) {
+                query.$and = [{ date: { $gte: start } }, { date: { $lte: end } }];
+                const insightsRecords = await InsightModel.find(query);
+                platformReport = Formatter.platform(insightsRecords, platformAds, accountTimezone);
+
                 const genderAgeParams = Object.assign({}, insightParams);
                 genderAgeParams.breakdowns = breakdowns.genderAge;
                 genderAgeParams.fields = fields.demographic;
                 genderAgeResp = await fbRequest.get(accountId, 'insights', genderAgeParams);
-            } else {
-                genderAgeResp = Insight.Mock.genderAge();
-            }
 
-            let regionResp;
-            if (!mock) {
                 const regionParams = Object.assign({}, insightParams);
                 regionParams.breakdowns = breakdowns.region;
                 regionParams.fields = fields.demographic;
                 regionResp = await fbRequest.get(accountId, 'insights', regionParams);
-            } else {
-                regionResp = Insight.Mock.region();
-            }
 
-            let hourResp;
-            if (!mock) {
                 const hourParams = Object.assign({}, insightParams);
                 hourParams.breakdowns = breakdowns.hour;
                 hourParams.fields = fields.demographic;
                 hourResp = await fbRequest.get(accountId, 'insights', hourParams);
             } else {
+                platformReport = Insight.Mock.platformReport();
+                genderAgeResp = Insight.Mock.genderAge();
+                regionResp = Insight.Mock.region();
                 hourResp = Insight.Mock.hour();
             }
 
@@ -234,7 +249,7 @@ class InsightService {
                 });
             });
 
-            const bulkWriteResult = await InsightModel.bulkWrite(bulkWrites, { ordered: false });
+            if (bulkWrites.length > 0) await InsightModel.bulkWrite(bulkWrites, { ordered: false });
 
             const msg = `${platformResp.length} promotions insights updated`;
             logger.debug(msg);
