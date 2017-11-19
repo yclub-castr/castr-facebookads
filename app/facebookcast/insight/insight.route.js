@@ -17,6 +17,7 @@ router.get('/', async (req, res, next) => {
             locale: req.query.locale || 'us',
         };
         if (!params.castrBizId && !params.castrLocId) throw new Error('Missing query param: must provide either \'castrBizId\' or \'castrLocId\'');
+        if (params.dateRange && !params.dateRange.match(/^\d{8},\d{8}$/)) throw new Error('Invalid param: \'dateRange\' must be in correct format (YYYYMMDD,YYYYMMDD)');
         res.json(await insightService.getPromotionInsights(params, false));
     } catch (err) {
         next(err);
@@ -33,6 +34,7 @@ router.get('/mock', async (req, res, next) => {
             locale: req.query.locale || 'us',
         };
         if (!params.castrBizId && !params.castrLocId) throw new Error('Missing query param: must provide either \'castrBizId\' or \'castrLocId\'');
+        if (params.dateRange && !params.dateRange.match(/^\d{8},\d{8}$/)) throw new Error('Invalid param: \'dateRange\' must be in correct format (YYYYMMDD,YYYYMMDD)');
         res.json(await insightService.getPromotionInsights(params, true));
     } catch (err) {
         next(err);
