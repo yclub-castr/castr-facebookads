@@ -377,6 +377,215 @@ exports.Mock = {
     platformReport: mockPlatformReport,
 };
 
+const addUpMetrics = (container, metrics) => {
+    container.impressions += metrics.impressions;
+    container.linkClicks += metrics.linkClicks;
+    container.purchases += metrics.purchases;
+    container.responses += metrics.responses || (metrics.addPaymentInfo
+        + metrics.addToCart
+        + metrics.addToWishlist
+        + metrics.completeRegistration
+        + metrics.initiateCheckout
+        + metrics.lead
+        + metrics.search
+        + metrics.viewContent);
+    container.amountSpent += metrics.amountSpent || metrics.spend;
+};
+
+const graph = (report, x, y, type) => {
+    if (type !== 'response') {
+        report[type] = {
+            facebook: y.facebook.reduce((a, b) => a + b, 0),
+            instagram: y.instagram.reduce((a, b) => a + b, 0),
+            audienceNetwork: y.audienceNetwork.reduce((a, b) => a + b, 0),
+            graph: {
+                x: x,
+                y: Object.keys(y).map((key) => {
+                    const line = {
+                        label: key,
+                        data: y[key],
+                    };
+                    return line;
+                }),
+            },
+        };
+    } else {
+        report[type] = {
+            addPaymentInfo: y.addPaymentInfo.reduce((a, b) => a + b, 0),
+            addToCart: y.addToCart.reduce((a, b) => a + b, 0),
+            addToWishlist: y.addToWishlist.reduce((a, b) => a + b, 0),
+            completeRegistration: y.completeRegistration.reduce((a, b) => a + b, 0),
+            initiateCheckout: y.initiateCheckout.reduce((a, b) => a + b, 0),
+            lead: y.lead.reduce((a, b) => a + b, 0),
+            search: y.search.reduce((a, b) => a + b, 0),
+            viewContent: y.viewContent.reduce((a, b) => a + b, 0),
+            graph: {
+                x: x,
+                y: Object.keys(y).map((key) => {
+                    const line = {
+                        label: key,
+                        data: y[key],
+                    };
+                    return line;
+                }),
+            },
+        };
+    }
+};
+
+const platformFormatter = (platformArray, tz) => {
+    const report = {
+        numPromotions: 0,
+        impressions: 0,
+        linkClicks: 0,
+        purchases: 0,
+        responses: 0,
+        amountSpent: 0,
+        promotions: {},
+    };
+    const dates = {};
+    const platformCounter = {
+        facebook: 0,
+        instagram: 0,
+        audience_network: 0,
+    };
+    const platformBreakdown = {
+        facebook: [],
+        instagram: [],
+        audienceNetwork: [],
+        total: [],
+    };
+    platformArray.forEach((record) => {
+        // Prepare dates
+        const date = moment.tz(record.date, tz).format('YYYY/MM/DD');
+        const platform = record.platform;
+        if (!dates[date]) {
+            dates[date] = {
+                budget: Object.assign({}, platformCounter),
+                impression: Object.assign({}, platformCounter),
+                reach: Object.assign({}, platformCounter),
+                linkClick: Object.assign({}, platformCounter),
+                purchase: Object.assign({}, platformCounter),
+                response: {
+                    addPaymentInfo: 0,
+                    addToCart: 0,
+                    addToWishlist: 0,
+                    completeRegistration: 0,
+                    initiateCheckout: 0,
+                    lead: 0,
+                    search: 0,
+                    viewContent: 0,
+                },
+            };
+        }
+        dates[date].budget[platform] += record.spend;
+        dates[date].impression[platform] += record.impressions;
+        dates[date].reach[platform] += record.reach;
+        dates[date].linkClick[platform] += record.linkClicks;
+        dates[date].purchase[platform] += record.purchases;
+        dates[date].response.addPaymentInfo += record.addPaymentInfo;
+        dates[date].response.addToCart += record.addToCart;
+        dates[date].response.addToWishlist += record.addToWishlist;
+        dates[date].response.completeRegistration += record.completeRegistration;
+        dates[date].response.initiateCheckout += record.initiateCheckout;
+        dates[date].response.lead += record.lead;
+        dates[date].response.search += record.search;
+        dates[date].response.viewContent += record.viewContent;
+
+        // Count individual promotion metrics
+        const promotionId = record.promotionId;
+        if (!report.promotions[promotionId]) {
+            report.numPromotions += 1;
+            report.promotions[promotionId] = {
+                impressions: 0,
+                linkClicks: 0,
+                purchases: 0,
+                responses: 0,
+                amountSpent: 0,
+            };
+        }
+        addUpMetrics(report.promotions[promotionId], record);
+    });
+    const dateIds = Object.keys(dates).sort();
+    const budget = JSON.parse(JSON.stringify(platformBreakdown));
+    const impression = JSON.parse(JSON.stringify(platformBreakdown));
+    const reach = JSON.parse(JSON.stringify(platformBreakdown));
+    const linkClick = JSON.parse(JSON.stringify(platformBreakdown));
+    const purchase = JSON.parse(JSON.stringify(platformBreakdown));
+    const response = {
+        addPaymentInfo: [],
+        addToCart: [],
+        addToWishlist: [],
+        completeRegistration: [],
+        initiateCheckout: [],
+        lead: [],
+        search: [],
+        viewContent: [],
+        total: [],
+    };
+    for (let i = 0; i < dateIds.length; i++) {
+        const dateValues = dates[dateIds[i]];
+        // Budget
+        budget.facebook[i] = dateValues.budget.facebook;
+        budget.instagram[i] = dateValues.budget.instagram;
+        budget.audienceNetwork[i] = dateValues.budget.audience_network;
+        budget.total[i] = budget.facebook[i] + budget.instagram[i] + budget.audienceNetwork[i];
+
+        // Impression
+        impression.facebook[i] = dateValues.impression.facebook;
+        impression.instagram[i] = dateValues.impression.instagram;
+        impression.audienceNetwork[i] = dateValues.impression.audience_network;
+        impression.total[i] = impression.facebook[i] + impression.instagram[i] + impression.audienceNetwork[i];
+
+        // Reach
+        reach.facebook[i] = dateValues.reach.facebook;
+        reach.instagram[i] = dateValues.reach.instagram;
+        reach.audienceNetwork[i] = dateValues.reach.audience_network;
+        reach.total[i] = reach.facebook[i] + reach.instagram[i] + reach.audienceNetwork[i];
+
+        // LinkClick
+        linkClick.facebook[i] = dateValues.linkClick.facebook;
+        linkClick.instagram[i] = dateValues.linkClick.instagram;
+        linkClick.audienceNetwork[i] = dateValues.linkClick.audience_network;
+        linkClick.total[i] = linkClick.facebook[i] + linkClick.instagram[i] + linkClick.audienceNetwork[i];
+
+        // Purchase
+        purchase.facebook[i] = dateValues.purchase.facebook;
+        purchase.instagram[i] = dateValues.purchase.instagram;
+        purchase.audienceNetwork[i] = dateValues.purchase.audience_network;
+        purchase.total[i] = purchase.facebook[i] + purchase.instagram[i] + purchase.audienceNetwork[i];
+
+        // Response
+        response.addPaymentInfo[i] = dateValues.response.addPaymentInfo;
+        response.addToCart[i] = dateValues.response.addToCart;
+        response.addToWishlist[i] = dateValues.response.addToWishlist;
+        response.completeRegistration[i] = dateValues.response.completeRegistration;
+        response.initiateCheckout[i] = dateValues.response.initiateCheckout;
+        response.lead[i] = dateValues.response.lead;
+        response.search[i] = dateValues.response.search;
+        response.viewContent[i] = dateValues.response.viewContent;
+        response.total[i] = response.addPaymentInfo[i]
+            + response.addToCart[i]
+            + response.addToWishlist[i]
+            + response.completeRegistration[i]
+            + response.initiateCheckout[i]
+            + response.lead[i]
+            + response.search[i]
+            + response.viewContent[i];
+    }
+    const x = dateIds.map(dateId => dateId.substring(5));
+    graph(report, x, budget, 'budget');
+    graph(report, x, impression, 'impression');
+    graph(report, x, reach, 'reach');
+    graph(report, x, linkClick, 'linkClick');
+    graph(report, x, purchase, 'purchase');
+    graph(report, x, response, 'response');
+    Object.keys(report.promotions).forEach((promotionId) => {
+        addUpMetrics(report, report.promotions[promotionId]);
+    });
+    return report;
+};
+
 const getValue = (insightObj, metric) => {
     let value = 0;
     if (metric === 'impressions') {
@@ -452,6 +661,7 @@ const hourFormatter = (demoReport, hourArray) => {
 };
 
 exports.Formatter = {
+    platform: platformFormatter,
     genderAge: genderAgeFormatter,
     region: regionFormatter,
     hour: hourFormatter,
