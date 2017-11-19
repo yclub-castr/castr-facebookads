@@ -43,38 +43,54 @@ class InsightService {
             const accountTimezone = project.timezone;
 
             // Preparing time range param
+            let start;
+            let end;
             if (!dateRange) {
                 logger.debug('Preparing default \'date_preset\' parameter...');
                 insightParams.date_preset = DatePreset.last_28d;
-                // insightParams.time_increment = 1;
+                end = moment.tz(accountTimezone).hour(23).minute(59).second(59).millisecond(999);
+                start = moment(end).subtract(27, 'day').hour(0).minute(0).second(0).millisecond(0);
             } else {
                 logger.debug('Validating \'dateRange\' parameter...');
-                const dates = dateRange.split(',').map(date => moment(date).format('YYYY-MM-DD'));
-                const start = dates[0];
-                const end = dates[1];
+                const dates = dateRange.split(',');
+                start = moment.tz(dates[0], accountTimezone).hour(0).minute(0).second(0).millisecond(0);
+                end = moment.tz(dates[1], accountTimezone).hour(23).minute(59).second(59).millisecond(999);
                 if (end.diff(start) < 0) {
                     throw new Error(`Invalid date range: endDate (${end.format('L')}) cannot be earlier than startDate (${start.format('L')})`);
                 }
                 insightParams.time_range = { since: start, until: end };
-                // insightParams.time_increment = 1;
             }
 
             // Preparing filtering param
             logger.debug('Preparing \'filtering\' parameters...');
+            const query = {
+                $and: [
+                    { date: { $gte: start } },
+                    { date: { $lte: end } }
+                ],
+            };
             const adlabels = [];
-            if (castrBizId) adlabels.push(`"${castrBizId}"`);
-            if (castrLocId) adlabels.push(`"${castrLocId}"`);
-            if (promotionId) adlabels.push(`"${promotionId}"`);
+            if (castrBizId) {
+                query.castrBizId = castrBizId;
+                adlabels.push(`"${castrBizId}"`);
+            }
+            if (castrLocId) {
+                query.castrLocId = castrLocId;
+                adlabels.push(`"${castrLocId}"`);
+            }
+            if (promotionId) {
+                query.promotionId = promotionId;
+                adlabels.push(`"${promotionId}"`);
+            }
             insightParams.filtering = `[ {"field": "campaign.adlabels","operator": "ALL","value": [${adlabels.join()}] } ]`;
 
-            const platformReport = await InsightModel.find({
-                // $and:[
-                //     date: {$gte:}
-                // ]
-                castrBizId: castrBizId,
-                castrLocId: castrLocId,
-                promotionId: promotionId,
-            });
+            let platformReport;
+            if (!mock) {
+                const insightsRecords = await InsightModel.find(query);
+                platformReport = Formatter.platform(insightsRecords, accountTimezone);
+            } else {
+                platformReport = Insight.Mock.platformReport();
+            }
 
             let genderAgeResp;
             if (!mock) {
