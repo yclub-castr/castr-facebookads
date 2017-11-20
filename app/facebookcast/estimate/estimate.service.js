@@ -7,7 +7,22 @@ const fbRequest = require('../fbapi');
 const ProjectModel = require('../project/project.model').Model;
 
 class EstimateService {
-    async getEstimate(params) {
+    async getAdSetEstimate(params) {
+        const adsetId = params.adsetId;
+        try {
+            logger.debug(`Getting estimates for adset (#${adsetId}) ...`);
+            const fbResponse = await fbRequest.get(adsetId, 'delivery_estimate');
+            return {
+                success: true,
+                message: null,
+                data: fbResponse.data[0],
+            };
+        } catch (err) {
+            throw err;
+        }
+    }
+
+    async getAccountEstimate(params) {
         const castrBizId = params.castrBizId;
         const optimizationGoal = params.optimizationGoal;
         const promotedObject = params.promotedObject;
@@ -16,7 +31,7 @@ class EstimateService {
             const project = await ProjectModel.findOne({ castrBizId: castrBizId });
             if (!project) throw new Error(`No such Business (#${castrBizId})`);
             const accountId = project.accountId;
-            logger.debug(`Getting estimates for ${accountId}...`);
+            logger.debug(`Getting estimates for account (#${accountId}) ...`);
             const estimateParams = {
                 optimization_goal: optimizationGoal,
                 promoted_object: promotedObject,

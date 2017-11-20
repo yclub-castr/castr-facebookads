@@ -8,7 +8,19 @@ const estimateService = require('./estimate.service');
 
 const router = express.Router();
 
-router.get('/', async (req, res, next) => {
+router.get('/adset', async (req, res, next) => {
+    try {
+        const params = {
+            adsetId: req.query.adsetId,
+        };
+        if (!params.adsetId) throw new Error('Missing params: must provide `adsetId`');
+        res.json(await estimateService.getAdSetEstimate(params));
+    } catch (err) {
+        next(err);
+    }
+});
+
+router.get('/account', async (req, res, next) => {
     try {
         const params = {
             castrBizId: req.query.castrBizId,
@@ -17,7 +29,7 @@ router.get('/', async (req, res, next) => {
             targetingSpec: req.query.targetingSpec,
         };
         if (!params.castrBizId) throw new Error('Missing params: must provide `castrBizId`');
-        res.json(await estimateService.getEstimate(params));
+        res.json(await estimateService.getAccountEstimate(params));
     } catch (err) {
         next(err);
     }
