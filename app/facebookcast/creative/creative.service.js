@@ -167,12 +167,12 @@ class CreativeService {
             if (promotionId) {
                 creatives = await CreativeModel.find({
                     promotionId: promotionId,
-                    [CreativeField.status]: { $ne: [CreativeStatus.deleted] },
+                    [CreativeField.status]: { $ne: CreativeStatus.deleted },
                 }, 'id creativeLabel');
             } else if (castrBizId) {
                 creatives = await CreativeModel.find({
                     castrBizId: castrBizId,
-                    [CreativeField.status]: { $ne: [CreativeStatus.deleted] },
+                    [CreativeField.status]: { $ne: CreativeStatus.deleted },
                 }, 'id creativeLabel');
             }
             const creativeIds = creatives.map(creative => creative.id);

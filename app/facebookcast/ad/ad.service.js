@@ -256,12 +256,12 @@ class AdService {
             if (promotionId) {
                 ads = await AdModel.find({
                     promotionId: promotionId,
-                    [AdField.status]: { $ne: [AdStatus.deleted] },
+                    [AdField.status]: { $ne: AdStatus.deleted },
                 }, 'id');
             } else if (castrBizId) {
                 ads = await AdModel.find({
                     castrBizId: castrBizId,
-                    [AdField.status]: { $ne: [AdStatus.deleted] },
+                    [AdField.status]: { $ne: AdStatus.deleted },
                 }, 'id');
             }
             const adIds = ads.map(ad => ad.id);

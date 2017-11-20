@@ -165,7 +165,7 @@ const post = async (node, edge, params, method, attempts, noThrottle) => {
             } else if (error.code === 2) {
                 logger.error(error);
                 delay = 30;
-                attempt -= 1;
+                attempt = 1;
             } else {
                 logger.error(error);
             }

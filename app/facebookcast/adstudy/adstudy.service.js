@@ -6,7 +6,10 @@ const logger = require('../../utils').logger();
 const moment = require('../../utils').moment();
 const fbRequest = require('../fbapi');
 const AdStudyModel = require('../adstudy/adstudy.model').Model;
-const AdSetModel = require('../adset/adset.model').Model;
+const AdSet = require('../adset/adset.model');
+
+const AdSetModel = AdSet.Model;
+const AdSetStatus = AdSet.Status;
 
 class AdStudyService {
     async createAdStudy(params) {
@@ -21,11 +24,13 @@ class AdStudyService {
                 adsets = await AdSetModel.find({
                     castrLocId: castrLocId,
                     promotionId: promotionId,
+                    status: { $ne: AdSetStatus.deleted },
                 });
             } else {
                 adsets = await AdSetModel.find({
                     castrBizId: castrBizId,
                     promotionId: promotionId,
+                    status: { $ne: AdSetStatus.deleted },
                 });
             }
             adsets.forEach((adset) => {
@@ -114,6 +119,7 @@ class AdStudyService {
                 const studies = await AdStudyModel.find({
                     castrLocId: castrLocId,
                     promotionId: promotionId,
+                    status: { $ne: 'DELETED' },
                 });
                 const fbResponses = await Promise.all(studies.map(study => fbRequest.delete(study.id)));
                 dbUpdate = AdStudyModel.updateMany(
@@ -127,6 +133,7 @@ class AdStudyService {
                 const studies = await AdStudyModel.find({
                     castrBizId: castrBizId,
                     promotionId: promotionId,
+                    status: { $ne: 'DELETED' },
                 });
                 const fbResponses = await Promise.all(studies.map(study => fbRequest.delete(study.id)));
                 dbUpdate = AdStudyModel.updateMany(

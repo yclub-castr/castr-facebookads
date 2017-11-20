@@ -141,12 +141,12 @@ class CampaignService {
             if (promotionId) {
                 campaigns = await CampaignModel.find({
                     promotionId: promotionId,
-                    [CampaignField.status]: { $ne: [CampaignStatus.deleted] },
+                    [CampaignField.status]: { $ne: CampaignStatus.deleted },
                 }, 'id');
             } else if (castrBizId) {
                 campaigns = await CampaignModel.find({
                     castrBizId: castrBizId,
-                    [CampaignField.status]: { $ne: [CampaignStatus.deleted] },
+                    [CampaignField.status]: { $ne: CampaignStatus.deleted },
                 }, 'id');
             }
             const campaignIds = campaigns.map(campaign => campaign.id);
