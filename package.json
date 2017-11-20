@@ -28,6 +28,7 @@
     "moment-timezone": "^0.5.13",
     "mongodb": "^2.2.33",
     "mongoose": "^4.12.3",
+    "regression": "^2.0.0",
     "request": "^2.83.0",
     "request-promise": "^4.2.2",
     "tracer": "^0.8.11"
