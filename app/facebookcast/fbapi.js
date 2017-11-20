@@ -65,7 +65,7 @@ function objToStr(obj) {
 function addUsage(accountId) {
     if (!accountUsage[accountId]) accountUsage[accountId] = 1;
     else accountUsage[accountId] += 1;
-    logger.info(`Usage (#${accountId}): ${accountUsage[accountId]} (${accountUsage[accountId] * (DELAY_PER_USAGE / 1000)} seconds delay)`);
+    logger.trace(`Usage (#${accountId}): ${accountUsage[accountId]} (${accountUsage[accountId] * (DELAY_PER_USAGE / 1000)} seconds delay)`);
     return accountUsage[accountId];
 }
 
@@ -118,7 +118,7 @@ const post = async (node, edge, params, method, attempts, noThrottle) => {
                 if (usage > MAX_USAGE) {
                     decayUsage(node);
                     const queue = addQueue(node);
-                    logger.info(`Max usage reached. Retrying in ${((DELAY_PER_USAGE * queue) / 1000).toFixed(2)} seconds (${queue} queued)`);
+                    logger.trace(`Max usage reached. Retrying in ${((DELAY_PER_USAGE * queue) / 1000).toFixed(2)} seconds (${queue} queued)`);
                     await new Promise((resolve) => { setTimeout(resolve, DELAY_PER_USAGE * queue); });
                     removeQueue(node);
                 } else {
