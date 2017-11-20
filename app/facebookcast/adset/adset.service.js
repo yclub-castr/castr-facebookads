@@ -189,21 +189,24 @@ class AdSetService {
     async deleteAdSets(params) {
         const castrBizId = params.castrBizId;
         const promotionId = params.promotionId;
+        let adsetIds = params.adsetIds;
         try {
             logger.debug('Fetching adsets for deletion...');
-            let adsets;
-            if (promotionId) {
-                adsets = await AdSetModel.find({
-                    promotionId: promotionId,
-                    [AdSetField.status]: { $ne: [AdSetStatus.deleted] },
-                }, 'id');
-            } else if (castrBizId) {
-                adsets = await AdSetModel.find({
-                    castrBizId: castrBizId,
-                    [AdSetField.status]: { $ne: [AdSetStatus.deleted] },
-                }, 'id');
+            if (!adsetIds) {
+                let adsets;
+                if (promotionId) {
+                    adsets = await AdSetModel.find({
+                        promotionId: promotionId,
+                        [AdSetField.status]: { $ne: AdSetStatus.deleted },
+                    }, 'id');
+                } else if (castrBizId) {
+                    adsets = await AdSetModel.find({
+                        castrBizId: castrBizId,
+                        [AdSetField.status]: { $ne: AdSetStatus.deleted },
+                    }, 'id');
+                }
+                adsetIds = adsets.map(adset => adset.id);
             }
-            const adsetIds = adsets.map(adset => adset.id);
             if (!params.parentsDeleted) {
                 let batchCompleted = false;
                 const requests = adsetIds.map(id => ({
@@ -214,7 +217,7 @@ class AdSetService {
                 let batchResponses;
                 do {
                     const batches = [];
-                    logger.debug(`Batching ${adsets.length} delete adset requests...`);
+                    logger.debug(`Batching ${adsetIds.length} delete adset requests...`);
                     for (let i = 0; i < Math.ceil(requests.length / 50); i++) {
                         batches.push(fbRequest.batch(requests.slice(i * 50, (i * 50) + 50)));
                     }
