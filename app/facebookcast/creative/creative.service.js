@@ -105,13 +105,12 @@ class CreativeService {
             let adSpecs = await Promise.all(adSpecPromises);
             adSpecs = adSpecs.concat(await this.getLinkAdCreative(projectParams, creativeParams));
             logger.debug('Creating adlabels for creatives...');
-            const labelPromises = adSpecs
-                .filter(spec => spec !== null)
-                .map(spec => fbRequest.post(accountId, 'adlabels', { name: spec.name }));
+            adSpecs = adSpecs.filter(spec => spec !== null);
+            const labelPromises = adSpecs.map(spec => fbRequest.post(accountId, 'adlabels', { name: spec.name }));
+            const creativeLabels = await Promise.all(labelPromises);
             logger.debug(`Creating creative for promotion (#${promotionId}) ...`);
             const createPromises = adSpecs.map(spec => fbRequest.post(accountId, 'adcreatives', spec));
             const creatives = await Promise.all(createPromises);
-            const creativeLabels = await Promise.all(labelPromises);
             // TODO: handle errors
             const msg = `${creatives.length} creatives created`;
             logger.debug(msg);
@@ -294,7 +293,7 @@ class CreativeService {
                     // page_welcome_message: welcomeMsg, // for messenger
                 },
                 page_id: projectParams.pageId,
-                instagram_actor_id: projectParams.instagramId,
+                // instagram_actor_id: projectParams.instagramId,
             };
             return {
                 name: name,
@@ -340,7 +339,7 @@ class CreativeService {
                 multi_share_optimized: true,
             },
             page_id: projectParams.pageId,
-            instagram_actor_id: projectParams.instagramId,
+            // instagram_actor_id: projectParams.instagramId,
         };
         for (let i = 0; i < imageUrls.length; i++) {
             objectStorySpec.link_data.child_attachments.push({
@@ -391,7 +390,7 @@ class CreativeService {
                     // page_welcome_message: welcomeMsg, // for messenger
                 },
                 page_id: projectParams.pageId,
-                instagram_actor_id: projectParams.instagramId,
+                // instagram_actor_id: projectParams.instagramId,
             };
             return {
                 name: name,
@@ -435,7 +434,7 @@ class CreativeService {
                     // page_welcome_message: welcomeMsg, // for messenger
                 },
                 page_id: projectParams.pageId,
-                instagram_actor_id: projectParams.instagramId,
+                // instagram_actor_id: projectParams.instagramId,
             };
             return {
                 name: name,
