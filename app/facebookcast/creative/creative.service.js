@@ -312,7 +312,7 @@ class CreativeService {
         const attchTitles = [];
         const attchDescs = [];
         const destinationUrls = [];
-        const imageUrls = creativeParams.promoImages.map(img => img['1x191']);
+        const imageUrls = creativeParams.promoImages.map(img => img['1x1']);
         const callToActions = [];
         for (let i = 0; i < imageUrls.length; i++) {
             attchTitles.push(creativeParams.locName);
@@ -411,7 +411,7 @@ class CreativeService {
             const postText = creativeParams.promoDesc;
             const attchTitle = creativeParams.promoTitle;
             const attchDesc = creativeParams.locDescShort;
-            const imageUrls = creativeParams.promoImages.map(img => img['1x191']);
+            const imageUrls = creativeParams.promoImages.map(img => img['1x1']);
             const thumbnail = imageUrls[0];
             const destinationUrl = creativeParams.link;
             // const welcomeMsg = 'WELCOME';
