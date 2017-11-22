@@ -9,7 +9,51 @@ const Creative = require('../creative/creative.model');
 const CreativeModel = Creative.Model;
 const CreativeStatus = Creative.Status;
 
+const adFormats = {
+    fbDesktop: 'DESKTOP_FEED_STANDARD',
+    fbMobile: 'MOBILE_FEED_STANDARD',
+    instagram: 'INSTAGRAM_STANDARD',
+    nativeMobile: 'MOBILE_NATIVE',
+};
+
+const formatSizes = {
+    DESKTOP_FEED_STANDARD: {
+        SINGLE_IMAGE: [520, 520],
+        CAROUSEL: [520, 560],
+        SINGLE_VIDEO: [520, 600],
+        SLIDESHOW: [520, 800],
+    },
+    MOBILE_FEED_STANDARD: {
+        SINGLE_IMAGE: [340, 620],
+        CAROUSEL: [340, 620],
+        SINGLE_VIDEO: [340, 620],
+        SLIDESHOW: [340, 620],
+    },
+    INSTAGRAM_STANDARD: {
+        // SINGLE_IMAGE: [,],
+        // CAROUSEL: [,],
+        // SINGLE_VIDEO: [,],
+        // SLIDESHOW: [,],
+    },
+    MOBILE_NATIVE: {
+        // SINGLE_IMAGE: [,],
+        // CAROUSEL: [,],
+        // SINGLE_VIDEO: [,],
+        // SLIDESHOW: [,],
+    },
+};
+
 class PreviewService {
+    resizePreview(iframe, format, type) {
+        if (formatSizes[format][type]) {
+            const size = formatSizes[format][type];
+            let resized = iframe.replace(/width="[\d]+"/, `width=${size[0]}`);
+            resized = resized.replace(/height="[\d]+"/, `height=${size[1]}`);
+            return resized;
+        }
+        return iframe;
+    }
+
     async getPreviews(params) {
         const castrBizId = params.castrBizId;
         let castrLocIds = [];
@@ -32,11 +76,11 @@ class PreviewService {
             }
             let formats;
             if (platform === 'facebook') {
-                formats = ['DESKTOP_FEED_STANDARD', 'MOBILE_FEED_STANDARD'];
+                formats = [adFormats.fbDesktop, adFormats.fbMobile];
             } else if (platform === 'instagram') {
-                formats = ['INSTAGRAM_STANDARD'];
+                formats = [adFormats.instagram];
             } else {
-                formats = ['DESKTOP_FEED_STANDARD', 'MOBILE_FEED_STANDARD', 'INSTAGRAM_STANDARD', 'MOBILE_NATIVE'];
+                formats = Object.values(adFormats);
             }
             const creatives = await CreativeModel.find(query);
             const previewPromises = creatives.map((creative) => { // eslint-disable-line arrow-body-style
@@ -46,18 +90,26 @@ class PreviewService {
                     try {
                         logger.debug(`Fetching previews for creative (#${creative.id}) ...`);
                         const previews = {};
-                        const requests = formats.map(format => fbRequest.get(creative.id, 'previews', { ad_format: format, locale: locale })
-                            .then((fbResponse) => {
-                                previews[format] = fbResponse.data[0].body;
-                            }));
+                        const requests = formats.map((format) => {
+                            const previewParam = {
+                                ad_format: format,
+                                locale: locale,
+                                width: 520,
+                            };
+                            return fbRequest.get(creative.id, 'previews', previewParam)
+                                .then((fbResponse) => {
+                                    previews[format] = fbResponse.data[0].body;
+                                });
+                        });
                         const fbResponses = await Promise.all(requests);
+                        const type = creative.name.match(/\[(.*)\]/)[1]
                         resolve({
                             promotionId: creative.promotionId,
                             castrLocId: creative.castrLocId,
-                            type: creative.name.match(/\[(.*)\]/)[1],
+                            type: type,
                             previews: formats.map(format => ({
                                 type: format,
-                                iframe: previews[format],
+                                iframe: this.resizePreview(previews[format], format, type),
                             })),
                         });
                     } catch (err) {
