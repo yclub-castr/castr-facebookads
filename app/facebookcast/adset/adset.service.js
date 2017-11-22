@@ -23,7 +23,10 @@ const excludedFields = [
     AdSetField.campaign,
     AdSetField.daily_imps,
     AdSetField.configured_status,
-    AdSetField.execution_options
+    AdSetField.execution_options,
+    AdSetField.frequency_cap,
+    AdSetField.lifetime_frequency_cap,
+    AdSetField.frequency_cap_reset_period
 ];
 const readFields = Object.values(AdSetField).filter(field => !excludedFields.includes(field)).toString();
 
