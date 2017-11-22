@@ -14,6 +14,7 @@ class PreviewService {
         const castrBizId = params.castrBizId;
         let castrLocIds = [];
         let promotionIds = [];
+        const platform = params.platform;
         const locale = params.locale;
         try {
             logger.debug(`Fetching creatives for Business (#${castrBizId}) ...`);
@@ -29,6 +30,14 @@ class PreviewService {
                 promotionIds = params.promotionIds.split(',');
                 query.promotionId = { $in: promotionIds };
             }
+            let formats;
+            if (platform === 'facebook') {
+                formats = ['DESKTOP_FEED_STANDARD', 'MOBILE_FEED_STANDARD'];
+            } else if (platform === 'instagram') {
+                formats = ['INSTAGRAM_STANDARD'];
+            } else {
+                formats = ['DESKTOP_FEED_STANDARD', 'MOBILE_FEED_STANDARD', 'INSTAGRAM_STANDARD', 'MOBILE_NATIVE'];
+            }
             const creatives = await CreativeModel.find(query);
             const previewPromises = creatives.map((creative) => { // eslint-disable-line arrow-body-style
                 if (!castrLocIds.includes(creative.castrLocId)) castrLocIds.push(creative.castrLocId);
@@ -36,35 +45,20 @@ class PreviewService {
                 return new Promise(async (resolve, reject) => {
                     try {
                         logger.debug(`Fetching previews for creative (#${creative.id}) ...`);
-                        const fbResponses = await Promise.all([
-                            fbRequest.get(creative.id, 'previews', { ad_format: 'DESKTOP_FEED_STANDARD', locale: locale }),
-                            fbRequest.get(creative.id, 'previews', { ad_format: 'MOBILE_FEED_STANDARD', locale: locale }),
-                            fbRequest.get(creative.id, 'previews', { ad_format: 'INSTAGRAM_STANDARD', locale: locale }),
-                            fbRequest.get(creative.id, 'previews', { ad_format: 'MOBILE_NATIVE', locale: locale })
-                        ]);
+                        const previews = {};
+                        const requests = formats.map(format => fbRequest.get(creative.id, 'previews', { ad_format: format, locale: locale })
+                            .then((fbResponse) => {
+                                previews[format] = fbResponse.data[0].body;
+                            }));
+                        const fbResponses = await Promise.all(requests);
                         resolve({
                             promotionId: creative.promotionId,
                             castrLocId: creative.castrLocId,
-                            // id: creative.id,
                             type: creative.name.match(/\[(.*)\]/)[1],
-                            previews: [
-                                {
-                                    type: 'DESKTOP_FEED_STANDARD',
-                                    iframe: fbResponses[0].data[0].body,
-                                },
-                                {
-                                    type: 'MOBILE_FEED_STANDARD',
-                                    iframe: fbResponses[1].data[0].body,
-                                },
-                                {
-                                    type: 'INSTAGRAM_STANDARD',
-                                    iframe: fbResponses[2].data[0].body,
-                                },
-                                {
-                                    type: 'MOBILE_NATIVE',
-                                    iframe: fbResponses[3].data[0].body,
-                                }
-                            ],
+                            previews: formats.map(format => ({
+                                type: format,
+                                iframe: previews[format],
+                            })),
                         });
                     } catch (err) {
                         reject(err);

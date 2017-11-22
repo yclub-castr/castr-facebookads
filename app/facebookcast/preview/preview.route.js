@@ -14,6 +14,7 @@ router.get('/', async (req, res, next) => {
             castrBizId: req.query.castrBizId,
             castrLocIds: req.query.castrLocIds,
             promotionIds: req.query.promotionIds,
+            platform: req.query.platform,
         };
         if (!params.castrBizId) throw new Error('Missing params: must provide `castrBizId`');
         if (req.query.locale) params.locale = locale(req.query.locale);
