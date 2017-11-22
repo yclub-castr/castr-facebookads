@@ -25,6 +25,7 @@ router.route('/account')
                 castrBizId: req.body.castrBizId,
                 accountId: req.body.accountId,
                 accountName: req.body.accountName,
+                accessToken: req.body.accessToken,
             };
             res.json(await projectService.integrateAccount(params));
         } catch (err) {
@@ -73,6 +74,7 @@ router.route('/page')
                 castrBizId: req.body.castrBizId,
                 pageId: req.body.pageId,
                 pageName: req.body.pageName,
+                pageAccessToken: req.body.pageAccessToken,
             };
             res.json(await projectService.integratePage(params));
         } catch (err) {

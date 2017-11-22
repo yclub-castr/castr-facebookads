@@ -82,15 +82,16 @@ class ProjectService {
         const castrBizId = params.castrBizId;
         const accountId = params.accountId;
         const accountName = params.accountName;
+        const accessToken = params.accessToken;
         const data = {
-            adaccount_id: accountId,
-            access_type: accessType,
+            business: process.env.CASTR_BUSINESS_ID,
             permitted_roles: accountRoles,
+            access_token: accessToken,
         };
         try {
-            logger.debug(`Requesting access to adaccount (#${accountId}) owned by Business (#${castrBizId}) ...`);
-            const fbResponse = await fbRequest.post(process.env.CASTR_BUSINESS_ID, 'client_ad_accounts', data);
-            logger.debug(`Adaccount request sent to Business (#${castrBizId})`);
+            logger.debug(`Integrating adaccount (#${accountId}) owned by Business (#${castrBizId}) ...`);
+            const fbResponse = await fbRequest.post(accountId, 'agencies', data);
+            logger.debug(`Adaccount (#${accountId}) added to Castr`);
             await ProjectModel.update(
                 { castrBizId: castrBizId },
                 {
@@ -105,10 +106,10 @@ class ProjectService {
                 },
                 { upsert: true }
             );
-            logger.debug(`Pending status for business (#${castrBizId}) stored to DB`);
+            logger.debug(`Pending adaccount status for business (#${castrBizId}) stored to DB`);
             return {
                 success: true,
-                message: 'Account integration pending, request sent',
+                message: 'Account integration pending, please call verify',
                 data: fbResponse,
             };
         } catch (err) {
@@ -242,15 +243,16 @@ class ProjectService {
         const castrBizId = params.castrBizId;
         const pageId = params.pageId;
         const pageName = params.pageName;
+        const pageAccessToken = params.pageAccessToken;
         const data = {
-            page_id: pageId,
-            access_type: accessType,
+            business: process.env.CASTR_BUSINESS_ID,
             permitted_roles: pageRoles,
+            access_token: pageAccessToken,
         };
         try {
-            logger.debug(`Requesting access to page (#${pageId}) owned by Business (#${castrBizId}) ...`);
-            const fbResponse = await fbRequest.post(process.env.CASTR_BUSINESS_ID, 'client_pages', data);
-            logger.debug(`Page request sent to Business (#${castrBizId})`);
+            logger.debug(`Integrating page (#${pageId}) owned by Business (#${castrBizId}) ...`);
+            const fbResponse = await fbRequest.post(pageId, 'agencies', data);
+            logger.debug(`Page (#${pageId}) added to Castr`);
             await ProjectModel.update(
                 { castrBizId: castrBizId },
                 {
@@ -264,10 +266,10 @@ class ProjectService {
                 },
                 { upsert: true }
             );
-            logger.debug(`Pending status for business (#${castrBizId}) stored to DB`);
+            logger.debug(`Pending page status for business (#${castrBizId}) stored to DB`);
             return {
                 success: true,
-                message: 'Page integration pending, request sent',
+                message: 'Page integration pending, please call verify',
                 data: fbResponse,
             };
         } catch (err) {
@@ -332,6 +334,7 @@ class ProjectService {
                 pageId = params.pageId;
             }
             const pageRequestData = {
+                business: process.env.CASTR_BUSINESS_ID,
                 user: process.env.ADMIN_SYS_USER_ID,
                 role: process.env.PAGE_ROLES.split(',')[0],
                 access_token: pageAccessToken,
@@ -345,18 +348,23 @@ class ProjectService {
             };
             logger.debug(`Fetching Instagram account(s) belonging to Business (#${castrBizId}) page...`);
             const instagramRequestData = {
-                fields: ['id', 'username'].toString(),
+                fields: ['connected_instagram_account{id,username}'].toString(),
                 access_token: pageAccessToken,
             };
             const promises = [
-                fbRequest.get(pageId, 'instagram_accounts', instagramRequestData),
-                fbRequest.get(pageId, 'page_backed_instagram_accounts', instagramRequestData)
+                fbRequest.get(pageId, null, instagramRequestData),
+                // fbRequest.get(pageId, 'page_backed_instagram_accounts', instagramRequestData)
             ];
             const fbResponses = await Promise.all(promises);
             let foundInstagramAccount = false;
-            for (let i = 0; i < 2; i++) {
+            let instagram;
+            for (let i = 0; i < fbResponses.length; i++) {
+                if (i === 0) {
+                    instagram = fbResponses[i].connected_instagram_account;
+                } else {
+                    instagram = fbResponses[i].data[0];
+                }
                 const isPBIA = (i === 1);
-                const instagram = fbResponses[i].data[0];
                 if (instagram) {
                     logger.debug('Instagram account fetched');
                     dbUpdate.instagramId = instagram.id;
@@ -366,14 +374,14 @@ class ProjectService {
                     break;
                 }
             }
-            if (!foundInstagramAccount) {
-                logger.debug('No Instagram account fetched, creating new PBIA...');
-                const instagram = await fbRequest.post(pageId, 'page_backed_instagram_accounts', instagramRequestData);
-                logger.debug(`New PBIA created for Business (#${castrBizId}) page`);
-                dbUpdate.instagramId = instagram.id;
-                dbUpdate.instagramName = instagram.username;
-                dbUpdate.isPBIA = true;
-            }
+            // if (!foundInstagramAccount) {
+            //     logger.debug('No Instagram account fetched, creating new PBIA...');
+            //     const PBIA = await fbRequest.post(pageId, 'page_backed_instagram_accounts', instagramRequestData);
+            //     logger.debug(`New PBIA created for Business (#${castrBizId}) page`);
+            //     dbUpdate.instagramId = PBIA.id;
+            //     dbUpdate.instagramName = PBIA.username;
+            //     dbUpdate.isPBIA = true;
+            // }
             await ProjectModel.update(
                 {
                     castrBizId: castrBizId,
@@ -396,7 +404,7 @@ class ProjectService {
     async getInstagrams(params) {
         const pageId = params.pageId;
         const pageAccessToken = params.pageAccessToken;
-        const fields = ['id', 'username', 'followed_by_count'];
+        const fields = ['connected_instagram_account{id,username}'];
         const data = {
             access_token: pageAccessToken,
             fields: fields.toString(),
@@ -404,17 +412,21 @@ class ProjectService {
         try {
             logger.debug(`Fetching Instagram account(s) belonging to Page (#${pageId}) ...`);
             const promises = [
-                fbRequest.get(pageId, 'instagram_accounts', data),
-                fbRequest.get(pageId, 'page_backed_instagram_accounts', data)
+                fbRequest.get(pageId, null, data),
+                // fbRequest.get(pageId, 'page_backed_instagram_accounts', data)
             ];
             const fbResponses = await Promise.all(promises);
             const msg = 'Instagram account(s) fetched';
             logger.debug(msg);
-            for (let i = 0; i < 2; i++) {
-                const isPBIA = (i === 1);
-                const instagram = fbResponses[i].data[0];
+            let instagram;
+            for (let i = 0; i < fbResponses.length; i++) {
+                if (i === 0) {
+                    instagram = fbResponses[i].connected_instagram_account;
+                } else {
+                    instagram = fbResponses[i].data[0];
+                }
                 if (instagram) {
-                    instagram.isPBIA = isPBIA;
+                    instagram.isPBIA = (i !== 0);
                     return {
                         success: true,
                         message: msg,
