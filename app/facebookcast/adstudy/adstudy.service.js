@@ -37,10 +37,12 @@ class AdStudyService {
                 const locId = adset.castrLocId;
                 if (locationAdsets[locId]) locationAdsets[locId].adsets.push(adset.toObject());
                 else {
+                    let end = adset.endTime;
+                    if (!end) end = moment(adset.startTime).add(1, 'week');
                     locationAdsets[locId] = {
                         adsets: [adset.toObject()],
                         start: adset.startTime,
-                        end: adset.endTime,
+                        end: end,
                     };
                 }
             });
