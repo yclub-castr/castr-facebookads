@@ -102,7 +102,7 @@ class PreviewService {
                                 });
                         });
                         const fbResponses = await Promise.all(requests);
-                        const type = creative.name.match(/\[(.*)\]/)[1]
+                        const type = creative.name.match(/\[(.*)\]/)[1];
                         resolve({
                             promotionId: creative.promotionId,
                             castrLocId: creative.castrLocId,
