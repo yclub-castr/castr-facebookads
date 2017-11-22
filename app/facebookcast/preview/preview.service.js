@@ -12,18 +12,27 @@ const CreativeStatus = Creative.Status;
 class PreviewService {
     async getPreviews(params) {
         const castrBizId = params.castrBizId;
-        const castrLocIds = params.castrLocIds;
-        const promotionIds = params.promotionIds;
+        let castrLocIds = [];
+        let promotionIds = [];
         const locale = params.locale;
         try {
             logger.debug(`Fetching creatives for Business (#${castrBizId}) ...`);
-            const creatives = await CreativeModel.find({
+            const query = {
                 castrBizId: castrBizId,
-                castrLocId: { $in: castrLocIds },
-                promotionId: { $in: promotionIds },
                 status: { $ne: CreativeStatus.deleted },
-            });
+            };
+            if (params.castrLocIds) {
+                castrLocIds = params.castrLocIds.split(',');
+                query.castrLocId = { $in: castrLocIds };
+            }
+            if (params.promotionIds) {
+                promotionIds = params.promotionIds.split(',');
+                query.promotionId = { $in: promotionIds };
+            }
+            const creatives = await CreativeModel.find(query);
             const previewPromises = creatives.map((creative) => { // eslint-disable-line arrow-body-style
+                if (!castrLocIds.includes(creative.castrLocId)) castrLocIds.push(creative.castrLocId);
+                if (!promotionIds.includes(creative.promotionId)) promotionIds.push(creative.promotionId);
                 return new Promise(async (resolve, reject) => {
                     try {
                         logger.debug(`Fetching previews for creative (#${creative.id}) ...`);

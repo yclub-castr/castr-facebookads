@@ -10,15 +10,13 @@ const router = express.Router();
 
 router.get('/', async (req, res, next) => {
     try {
-        if (!req.query.castrLocIds) throw new Error('Missing param: must provide \'castrLocIds\' (eg. ?castrLocIds=ID1,ID2,ID3)');
-        if (!req.query.promotionIds) throw new Error('Missing param: must provide \'promotionIds\' (eg. ?promotionIds=ID1,ID2,ID3)');
         const params = {
             castrBizId: req.query.castrBizId,
-            castrLocIds: req.query.castrLocIds.split(','),
-            promotionIds: req.query.promotionIds.split(','),
-            locale: locale(req.query.locale),
+            castrLocIds: req.query.castrLocIds,
+            promotionIds: req.query.promotionIds,
         };
         if (!params.castrBizId) throw new Error('Missing params: must provide `castrBizId`');
+        if (req.query.locale) params.locale = locale(req.query.locale);
         res.json(await previewService.getPreviews(params));
     } catch (err) {
         next(err);
