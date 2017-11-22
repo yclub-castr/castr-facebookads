@@ -57,5 +57,17 @@ router.route('/')
         }
     });
 
+router.post('/activate', async (req, res, next) => {
+    try {
+        const params = {
+            promotionId: req.body.promotionId,
+            campaignIds: req.body.campaignIds,
+        };
+        if (!(params.campaignIds || params.promotionId)) throw new Error('Missing body param: Either \'prmotionId\' or \'campaignIds\' is required');
+        res.json(await campaignService.activate(params));
+    } catch (err) {
+        next(err);
+    }
+});
 
 module.exports = router;

@@ -230,6 +230,56 @@ class CampaignService {
         await Promise.all(promises);
         logger.debug(`Synchronized ${campaigns.length} campaigns`);
     }
+
+    async activate(params) {
+        const promotionId = params.promotionId;
+        let campaignIds = params.campaignIds;
+        try {
+            if (!campaignIds) {
+                logger.debug('Campaign ids not provided, fetching from DB...');
+                const campaigns = await CampaignModel.find({ promotionId: promotionId }, 'id');
+                campaignIds = campaigns.map(campaign => campaign.id);
+            }
+            const campaignParams = {
+                [CampaignField.status]: CampaignStatus.active,
+                fields: [CampaignField.status, CampaignField.effective_status],
+            };
+            logger.debug(`Activating campaigns [${campaignIds.toString()}] ...`);
+            const requests = campaignIds.map(id => ({
+                method: 'POST',
+                relative_url: `${fbRequest.apiVersion}/${id}`,
+                body: campaignParams,
+            }));
+            const activations = await fbRequest.batch(requests, true);
+            const bulkWrites = [];
+            const activated = [];
+            activations.forEach((fbResponse) => {
+                if (fbResponse.code === 200) {
+                    const campaign = JSON.parse(fbResponse.body);
+                    activated.push(campaign.id);
+                    bulkWrites.push({
+                        updateOne: {
+                            filter: { id: campaign.id },
+                            update: {
+                                status: campaign[CampaignField.status],
+                                effectiveStatus: campaign[CampaignField.effective_status],
+                            },
+                        },
+                    });
+                }
+            });
+            if (bulkWrites.length > 0) await CampaignModel.bulkWrite(bulkWrites, { ordered: false });
+            const msg = `${campaignIds.length} campaigns activated`;
+            logger.debug(msg);
+            return {
+                success: true,
+                message: msg,
+                data: { activated: activated },
+            };
+        } catch (err) {
+            throw err;
+        }
+    }
 }
 
 module.exports = new CampaignService();
