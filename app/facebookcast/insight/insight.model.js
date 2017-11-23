@@ -11,7 +11,7 @@ const Breakdown = Insight.Breakdowns;
 const DatePreset = Insight.DatePreset;
 
 const ages = ['13-17', '18-24', '25-34', '35-44', '45-54', '55-64', '65+'];
-const genders = ['male', 'female'];
+const genders = ['male', 'female', 'unknown'];
 const platforms = ['facebook', 'audience_network', 'instagram'];
 const regions = Object.keys(constants.koreanRegionMap);
 
@@ -381,14 +381,16 @@ const addUpMetrics = (container, metrics) => {
     container.impressions += metrics.impressions;
     container.linkClicks += metrics.linkClicks;
     container.purchases += metrics.purchases;
-    container.responses += metrics.responses || (metrics.addPaymentInfo
-        + metrics.addToCart
-        + metrics.addToWishlist
-        + metrics.completeRegistration
-        + metrics.initiateCheckout
-        + metrics.lead
-        + metrics.search
-        + metrics.viewContent);
+    container.responses += (metrics.responses || metrics.responses === 0)
+        ? metrics.responses
+        : (metrics.addPaymentInfo
+            + metrics.addToCart
+            + metrics.addToWishlist
+            + metrics.completeRegistration
+            + metrics.initiateCheckout
+            + metrics.lead
+            + metrics.search
+            + metrics.viewContent);
     container.amountSpent += metrics.amountSpent || metrics.spend;
 };
 
@@ -614,7 +616,7 @@ const getValue = (insightObj, metric) => {
             }
         }
     }
-    return value;
+    return parseInt(value, 10);
 };
 
 const genderAgeFormatter = (demoReport, genderAgeArray) => {
