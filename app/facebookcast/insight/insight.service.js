@@ -51,7 +51,7 @@ class InsightService {
             let end;
             if (!dateRange) {
                 logger.debug('Preparing default \'date_preset\' parameter...');
-                insightParams.date_preset = DatePreset.last_28d;
+                // insightParams.date_preset = DatePreset.last_28d;
                 end = moment.tz(accountTimezone).hour(23).minute(59).second(59).millisecond(999);
                 start = moment(end).subtract(27, 'day').hour(0).minute(0).second(0).millisecond(0);
             } else {
@@ -62,8 +62,8 @@ class InsightService {
                 if (end.diff(start) < 0) {
                     throw new Error(`Invalid date range: endDate (${end.format('L')}) cannot be earlier than startDate (${start.format('L')})`);
                 }
-                insightParams.time_range = { since: start, until: end };
             }
+            insightParams.time_range = { since: start.format('YYYY-MM-DD'), until: end.format('YYYY-MM-DD') };
 
             // Preparing filtering param
             logger.debug('Preparing \'filtering\' parameters...');
@@ -166,7 +166,7 @@ class InsightService {
         const insightParams = {
             breakdowns: breakdowns.platform,
             fields: fields.platform,
-            data_preset: DatePreset.last_28d,
+            // data_preset: DatePreset.last_28d,
             time_increment: 1,
         };
         try {
@@ -179,6 +179,9 @@ class InsightService {
                     adlabels[1] = `"${params.castrLocId}"`;
                     adlabels[2] = `"${params.promotionId}"`;
                     insightParams.filtering = `[ {"field": "campaign.adlabels","operator": "ALL","value": [${adlabels.join()}] } ]`;
+                    const end = moment.tz(params.timezone).hour(23).minute(59).second(59).millisecond(999);
+                    const start = moment(end).subtract(28, 'day').hour(0).minute(0).second(0).millisecond(0);
+                    insightParams.time_range = { since: start.format('YYYY-MM-DD'), until: end.format('YYYY-MM-DD') };
                     const insightPromise = fbRequest.get(params.accountId, 'insights', insightParams);
                     insightsRequests.push(insightPromise.then((fbResponse) => {
                         params.insights = fbResponse;
@@ -228,20 +231,20 @@ class InsightService {
                                 platform: insights.publisher_platform,
                             },
                             update: {
-                                spend: insights.spend,
-                                reach: insights.reach,
-                                impressions: insights.impressions,
-                                clicks: insights.clicks,
-                                linkClicks: actions.linkClicks,
-                                purchases: actions.purchase,
-                                addPaymentInfo: actions.addPaymentInfo,
-                                addToCart: actions.addToCart,
-                                addToWishlist: actions.addToWishlist,
-                                completeRegistration: actions.completeRegistration,
-                                initiateCheckout: actions.initiateCheckout,
-                                lead: actions.lead,
-                                search: actions.search,
-                                viewContent: actions.viewContent,
+                                spend: insights.spend || 0,
+                                reach: insights.reach || 0,
+                                impressions: insights.impressions || 0,
+                                clicks: insights.clicks || 0,
+                                linkClicks: actions.linkClicks || 0,
+                                purchases: actions.purchase || 0,
+                                addPaymentInfo: actions.addPaymentInfo || 0,
+                                addToCart: actions.addToCart || 0,
+                                addToWishlist: actions.addToWishlist || 0,
+                                completeRegistration: actions.completeRegistration || 0,
+                                initiateCheckout: actions.initiateCheckout || 0,
+                                lead: actions.lead || 0,
+                                search: actions.search || 0,
+                                viewContent: actions.viewContent || 0,
                             },
                             upsert: true,
                         },
