@@ -7,6 +7,10 @@ const locale = {
 };
 
 const koreanRegionMap = {
+    Unknown: {
+        name_kr: '알수없음',
+        key: 'UNKNOWN',
+    },
     Seoul: {
         name_kr: '서울',
         key: 'KR-11',
