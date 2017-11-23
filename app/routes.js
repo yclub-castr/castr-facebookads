@@ -15,6 +15,7 @@ const insightRouter = require('./facebookcast/insight/insight.route');
 const adlabelRouter = require('./facebookcast/adlabel/adlabel.route');
 const estimateRouter = require('./facebookcast/estimate/estimate.route');
 const adstudyRouter = require('./facebookcast/adstudy/adstudy.route');
+const budgetRouter = require('./facebookcast/budget/budget.route');
 
 // Temporary routing
 // const masterRouter = require('./master/master.route');
@@ -37,6 +38,7 @@ router.use('/insight', insightRouter);
 router.use('/adlabel', adlabelRouter);
 router.use('/estimate', estimateRouter);
 router.use('/adstudy', adstudyRouter);
+router.use('/budget', budgetRouter);
 
 // Temporary routing
 // router.use('/master', masterRouter);
