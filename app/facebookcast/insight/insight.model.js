@@ -44,6 +44,7 @@ exports.Model = fbCastDB.model(
             lead: Number,
             search: Number,
             viewContent: Number,
+            timeUpdated: { type: Date, required: true },
         },
         {
             timestamps: {

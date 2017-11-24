@@ -245,6 +245,7 @@ class InsightService {
                                 lead: actions.lead || 0,
                                 search: actions.search || 0,
                                 viewContent: actions.viewContent || 0,
+                                timeUpdated: new Date(),
                             },
                             upsert: true,
                         },
@@ -254,12 +255,13 @@ class InsightService {
 
             if (bulkWrites.length > 0) await InsightModel.bulkWrite(bulkWrites, { ordered: false });
 
-            const msg = `${platformResp.length} promotions insights updated`;
+            const updatedPromotions = promotionParams.filter(params => params.insights.data.length !== 0);
+            const msg = `${updatedPromotions.length} promotions insights updated`;
             logger.debug(msg);
             return {
                 success: true,
                 message: msg,
-                data: [],
+                data: { updatedPromotions: updatedPromotions },
             };
         } catch (err) {
             throw err;
