@@ -135,34 +135,47 @@ class CampaignService {
     async deleteCampaigns(params) {
         const castrBizId = params.castrBizId;
         const promotionId = params.promotionId;
+        let campaignIds = params.campaignIds;
+        const archive = params.archive;
         try {
             logger.debug('Fetching campaigns for deletion...');
-            let campaigns;
-            if (promotionId) {
-                campaigns = await CampaignModel.find({
-                    promotionId: promotionId,
-                    [CampaignField.status]: { $ne: CampaignStatus.deleted },
-                }, 'id');
-            } else if (castrBizId) {
-                campaigns = await CampaignModel.find({
-                    castrBizId: castrBizId,
-                    [CampaignField.status]: { $ne: CampaignStatus.deleted },
-                }, 'id');
+            if (!campaignIds) {
+                let campaigns;
+                if (promotionId) {
+                    campaigns = await CampaignModel.find({
+                        promotionId: promotionId,
+                        [CampaignField.status]: { $ne: CampaignStatus.deleted },
+                    }, 'id');
+                } else if (castrBizId) {
+                    campaigns = await CampaignModel.find({
+                        castrBizId: castrBizId,
+                        [CampaignField.status]: { $ne: CampaignStatus.deleted },
+                    }, 'id');
+                }
+                campaignIds = campaigns.map(campaign => campaign.id);
             }
-            const campaignIds = campaigns.map(campaign => campaign.id);
             if (BATCH) {
                 let batchCompleted = false;
-                const requests = campaignIds.map(id => ({
-                    method: 'DELETE',
-                    relative_url: `${fbRequest.apiVersion}/${id}`,
-                }));
+                let requests;
+                if (archive) {
+                    requests = campaignIds.map(id => ({
+                        method: 'POST',
+                        relative_url: `${fbRequest.apiVersion}/${id}`,
+                        body: { status: CampaignStatus.archived },
+                    }));
+                } else {
+                    requests = campaignIds.map(id => ({
+                        method: 'DELETE',
+                        relative_url: `${fbRequest.apiVersion}/${id}`,
+                    }));
+                }
                 let attempts = 3;
                 let batchResponses;
                 do {
                     const batches = [];
-                    logger.debug(`Batching ${campaigns.length} delete campaign requests...`);
+                    logger.debug(`Batching ${campaignIds.length} ${(archive) ? 'archive' : 'delete'} campaign requests...`);
                     for (let i = 0; i < Math.ceil(requests.length / 50); i++) {
-                        batches.push(fbRequest.batch(requests.slice(i * 50, (i * 50) + 50)));
+                        batches.push(fbRequest.batch(requests.slice(i * 50, (i * 50) + 50), archive));
                     }
                     batchResponses = await Promise.all(batches);
                     batchCompleted = true;
@@ -185,21 +198,22 @@ class CampaignService {
                         data: batchResponses,
                     };
                 }
-                logger.debug('FB batch-delete successful');
+                logger.debug(`FB batch-${(archive) ? 'archive' : 'delete'} successful`);
             } else {
-                const deletePromises = campaignIds.map(id => fbRequest.delete(id));
+                const deletePromises = campaignIds.map(id => fbRequest.post(id, null, { status: CampaignStatus.archived }));
                 await Promise.all(deletePromises);
             }
+            const status = (archive) ? CampaignStatus.archived : CampaignStatus.deleted;
             const writeResult = await CampaignModel.updateMany(
                 { id: { $in: campaignIds } },
                 {
                     $set: {
-                        status: CampaignStatus.deleted,
-                        effectiveStatus: CampaignStatus.deleted,
+                        status: status,
+                        effectiveStatus: status,
                     },
                 }
             );
-            const msg = `${writeResult.nModified} campaigns deleted`;
+            const msg = `${writeResult.nModified} campaigns ${(archive) ? 'archived' : 'deleted'}`;
             logger.debug(msg);
             return {
                 success: true,
@@ -237,7 +251,7 @@ class CampaignService {
         try {
             if (!campaignIds) {
                 logger.debug('Campaign ids not provided, fetching from DB...');
-                const campaigns = await CampaignModel.find({ promotionId: promotionId }, 'id');
+                const campaigns = await CampaignModel.find({ promotionId: promotionId, status: CampaignStatus.paused }, 'id');
                 campaignIds = campaigns.map(campaign => campaign.id);
             }
             const campaignParams = {
