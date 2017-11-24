@@ -193,6 +193,7 @@ class AdSetService {
         const castrBizId = params.castrBizId;
         const promotionId = params.promotionId;
         let adsetIds = params.adsetIds;
+        const archive = params.archive;
         try {
             logger.debug('Fetching adsets for deletion...');
             if (!adsetIds) {
@@ -212,17 +213,26 @@ class AdSetService {
             }
             if (!params.parentsDeleted) {
                 let batchCompleted = false;
-                const requests = adsetIds.map(id => ({
-                    method: 'DELETE',
-                    relative_url: `${fbRequest.apiVersion}/${id}`,
-                }));
+                let requests;
+                if (archive) {
+                    requests = adsetIds.map(id => ({
+                        method: 'POST',
+                        relative_url: `${fbRequest.apiVersion}/${id}`,
+                        body: { status: AdSetStatus.archived },
+                    }));
+                } else {
+                    requests = adsetIds.map(id => ({
+                        method: 'DELETE',
+                        relative_url: `${fbRequest.apiVersion}/${id}`,
+                    }));
+                }
                 let attempts = 3;
                 let batchResponses;
                 do {
                     const batches = [];
-                    logger.debug(`Batching ${adsetIds.length} delete adset requests...`);
+                    logger.debug(`Batching ${adsetIds.length} ${(archive) ? 'archive' : 'delete'} adset requests...`);
                     for (let i = 0; i < Math.ceil(requests.length / 50); i++) {
-                        batches.push(fbRequest.batch(requests.slice(i * 50, (i * 50) + 50)));
+                        batches.push(fbRequest.batch(requests.slice(i * 50, (i * 50) + 50), archive));
                     }
                     batchResponses = await Promise.all(batches);
                     batchCompleted = true;
@@ -245,18 +255,19 @@ class AdSetService {
                         data: batchResponses,
                     };
                 }
-                logger.debug('FB batch-delete successful');
+                logger.debug(`FB batch-${(archive) ? 'archive' : 'delete'} successful`);
             }
+            const status = (archive) ? AdSetStatus.archived : AdSetStatus.deleted;
             const writeResult = await AdSetModel.updateMany(
                 { id: { $in: adsetIds } },
                 {
                     $set: {
-                        status: AdSetStatus.deleted,
-                        effectiveStatus: AdSetStatus.deleted,
+                        status: status,
+                        effectiveStatus: status,
                     },
                 }
             );
-            const msg = `${writeResult.nModified} adsets deleted`;
+            const msg = `${writeResult.nModified} adsets ${(archive) ? 'archived' : 'deleted'}`;
             logger.debug(msg);
             return {
                 success: true,

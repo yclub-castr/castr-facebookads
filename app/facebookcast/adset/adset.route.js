@@ -61,6 +61,7 @@ router.route('/')
                 // castrLocId: req.body.castrLocId,
                 promotionId: req.body.promotionId,
                 adsetIds: req.body.adsetIds,
+                archive: req.body.archive,
                 parentsDeleted: req.body.parentsDeleted,
             };
             if (!params.castrBizId && !params.promotionId && !params.adsetIds) {
