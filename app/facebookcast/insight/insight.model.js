@@ -23,36 +23,43 @@ exports.Breakdown = Breakdown;
 exports.DatePreset = DatePreset;
 exports.Model = fbCastDB.model(
     'Insight',
-    new mongoose.Schema(
-        {
-            date: { type: Date, required: true },
-            castrBizId: { type: String, required: true },
-            castrLocId: { type: String, required: true },
-            promotionId: { type: String, required: false },
-            platform: { type: String, enum: platforms, required: true },
-            spend: Number,
-            reach: Number,
-            impressions: Number,
-            clicks: Number,
-            linkClicks: Number,
-            purchases: Number,
-            addPaymentInfo: Number,
-            addToCart: Number,
-            addToWishlist: Number,
-            completeRegistration: Number,
-            initiateCheckout: Number,
-            lead: Number,
-            search: Number,
-            viewContent: Number,
-            timeUpdated: { type: Date, required: true },
-        },
-        {
-            timestamps: {
-                updatedAt: 'timeUpdated',
-                createdAt: 'timeCreated',
-            },
-        }
-    )
+    new mongoose.Schema({
+        date: { type: Date, required: true },
+        castrBizId: { type: String, required: true },
+        castrLocId: { type: String, required: true },
+        promotionId: { type: String, required: true },
+        platform: { type: String, enum: platforms, required: true },
+        spend: Number,
+        reach: Number,
+        impressions: Number,
+        clicks: Number,
+        linkClicks: Number,
+        purchases: Number,
+        addPaymentInfo: Number,
+        addToCart: Number,
+        addToWishlist: Number,
+        completeRegistration: Number,
+        initiateCheckout: Number,
+        lead: Number,
+        search: Number,
+        viewContent: Number,
+        timeUpdated: { type: Date, required: true },
+    })
+);
+
+exports.DemographicModel = fbCastDB.model(
+    'Insight-Demographic',
+    new mongoose.Schema({
+        date: { type: Date, required: true },
+        castrBizId: { type: String, required: true },
+        castrLocId: { type: String, required: true },
+        promotionId: { type: String, required: true },
+        impressions: Object,
+        clicks: Object,
+        linkClicks: Object,
+        purchases: Object,
+        timeUpdated: { type: Date, required: true },
+    })
 );
 
 const mockRandomMax = {
