@@ -15,10 +15,10 @@ const moment = utils.moment();
 const ProjectModel = Project.Model;
 const AdSetModel = AdSet.Model;
 const AdModel = Ad.Model;
-const InsightModel = Insight.Model;
+const PlatformModel = Insight.Model;
+const DemographicModel = Insight.DemographicModel;
 const InsightField = Insight.Field;
 const Breakdown = Insight.Breakdown;
-const DatePreset = Insight.DatePreset;
 const Formatter = Insight.Formatter;
 
 const breakdowns = {
@@ -113,7 +113,7 @@ class InsightService {
             let hourResp;
             if (!mock) {
                 query.$and = [{ date: { $gte: start } }, { date: { $lte: end } }];
-                const insightsRecords = await InsightModel.find(query);
+                const insightsRecords = await PlatformModel.find(query);
                 platformReport = Formatter.platform(insightsRecords, platformAds, accountTimezone);
 
                 const genderAgeParams = Object.assign({}, insightParams);
@@ -164,9 +164,6 @@ class InsightService {
 
     async updatePromotionInsights(promotionParams, mock) {
         const insightParams = {
-            breakdowns: breakdowns.platform,
-            fields: fields.platform,
-            // data_preset: DatePreset.last_28d,
             time_increment: 1,
         };
         try {
@@ -174,88 +171,272 @@ class InsightService {
             if (!mock) {
                 for (let i = 0; i < promotionParams.length; i++) {
                     const params = promotionParams[i];
-                    const adlabels = [];
-                    adlabels[0] = `"${params.castrBizId}"`;
-                    adlabels[1] = `"${params.castrLocId}"`;
-                    adlabels[2] = `"${params.promotionId}"`;
+                    const accountId = params.accountId;
+                    params.insights = [];
+                    params.demographicInsights = {
+                        genderAge: [],
+                        region: [],
+                        hour: [],
+                    };
+
+                    // Prepare adlabel filtering
+                    const adlabels = [`"${params.castrBizId}", "${params.castrLocId}", "${params.promotionId}"`];
                     insightParams.filtering = `[ {"field": "campaign.adlabels","operator": "ALL","value": [${adlabels.join()}] } ]`;
+
+                    // Prepare last 28 day time query
                     const end = moment.tz(params.timezone).hour(23).minute(59).second(59).millisecond(999);
                     const start = moment(end).subtract(28, 'day').hour(0).minute(0).second(0).millisecond(0);
                     insightParams.time_range = { since: start.format('YYYY-MM-DD'), until: end.format('YYYY-MM-DD') };
-                    const insightPromise = fbRequest.get(params.accountId, 'insights', insightParams);
-                    insightsRequests.push(insightPromise.then((fbResponse) => {
-                        params.insights = fbResponse;
-                    }));
+
+                    // Fetch platform insights
+                    const platformParams = Object.assign({}, insightParams);
+                    platformParams.breakdowns = breakdowns.platform;
+                    platformParams.fields = fields.platform;
+                    let platformResponse;
+                    do {
+                        if (platformResponse) {
+                            platformResponse = await fbRequest.get(platformResponse.paging.next, null, null, true);
+                        } else {
+                            platformResponse = await fbRequest.get(accountId, 'insights', platformParams, true);
+                        }
+                        params.insights = params.insights.concat(platformResponse.body.data);
+                        const utilization = JSON.parse(platformResponse.headers['x-fb-ads-insights-throttle']);
+                        logger.debug(`Insights utilization (app: ${utilization.app_id_util_pct}, account: ${utilization.acc_id_util_pct})`);
+                    } while (platformResponse.body.paging.next);
+
+                    // Fetch genderAge insights
+                    const genderAgeParams = Object.assign({}, insightParams);
+                    genderAgeParams.breakdowns = breakdowns.genderAge;
+                    genderAgeParams.fields = fields.demographic;
+                    let genderAgeResponse;
+                    do {
+                        if (genderAgeResponse) {
+                            genderAgeResponse = await fbRequest.get(genderAgeResponse.body.paging.next, null, null, true);
+                        } else {
+                            genderAgeResponse = await fbRequest.get(accountId, 'insights', genderAgeParams, true);
+                        }
+                        params.demographicInsights.genderAge = params.demographicInsights.genderAge.concat(genderAgeResponse.body.data);
+                        const utilization = JSON.parse(genderAgeResponse.headers['x-fb-ads-insights-throttle']);
+                        logger.debug(`Insights utilization (app: ${utilization.app_id_util_pct}, account: ${utilization.acc_id_util_pct})`);
+                    } while (genderAgeResponse.body.paging.next);
+
+                    // Fetch region insights
+                    const regionParams = Object.assign({}, insightParams);
+                    regionParams.breakdowns = breakdowns.region;
+                    regionParams.fields = fields.demographic;
+                    let regionResponse;
+                    do {
+                        if (regionResponse) {
+                            regionResponse = await fbRequest.get(regionResponse.body.paging.next, null, null, true);
+                        } else {
+                            regionResponse = await fbRequest.get(accountId, 'insights', regionParams, true);
+                        }
+                        params.demographicInsights.region = params.demographicInsights.region.concat(regionResponse.body.data);
+                        const utilization = JSON.parse(regionResponse.headers['x-fb-ads-insights-throttle']);
+                        logger.debug(`Insights utilization (app: ${utilization.app_id_util_pct}, account: ${utilization.acc_id_util_pct})`);
+                    } while (regionResponse.body.paging.next);
+
+                    // Fetch hour insights
+                    const hourParams = Object.assign({}, insightParams);
+                    hourParams.breakdowns = breakdowns.hour;
+                    hourParams.fields = fields.demographic;
+                    let hourResponse;
+                    do {
+                        if (hourResponse) {
+                            hourResponse = await fbRequest.get(hourResponse.body.paging.next, null, null, true);
+                        } else {
+                            hourResponse = await fbRequest.get(accountId, 'insights', hourParams, true);
+                        }
+                        params.demographicInsights.hour = params.demographicInsights.hour.concat(hourResponse.body.data);
+                        const utilization = JSON.parse(hourResponse.headers['x-fb-ads-insights-throttle']);
+                        logger.debug(`Insights utilization (app: ${utilization.app_id_util_pct}, account: ${utilization.acc_id_util_pct})`);
+                    } while (hourResponse.body.paging.next);
                 }
             } else {
                 for (let i = 0; i < promotionParams.length; i++) {
                     const params = promotionParams[i];
-                    const insightPromise = Insight.Mock.platform(params.timezone);
-                    insightsRequests.push(insightPromise.then((fbResponse) => {
+                    const platformtPromise = Insight.Mock.platform(params.timezone);
+                    insightsRequests.push(platformtPromise.then((fbResponse) => {
                         params.insights = fbResponse;
                     }));
                 }
             }
-            const platformResp = await Promise.all(insightsRequests);
+            // Wait for all insights promises to resolve
+            await Promise.all(insightsRequests);
 
-            const bulkWrites = [];
+            const platformBulk = [];
+            const demographicBulk = [];
             promotionParams.forEach((params) => {
-                if (!params.insights) return;
-                params.insights.data.forEach((insights) => {
-                    const actions = {};
-                    if (insights.actions) {
-                        insights.actions.forEach((event) => {
-                            if (event.action_type === 'link_click') actions.linkClicks = event.value;
-                            else if (event.action_type === 'offsite_conversion.fb_pixel_add_payment_info') actions.addPaymentInfo = event.value;
-                            else if (event.action_type === 'offsite_conversion.fb_pixel_add_to_cart') actions.addToCart = event.value;
-                            else if (event.action_type === 'offsite_conversion.fb_pixel_add_to_wishlist') actions.addToWishlist = event.value;
-                            else if (event.action_type === 'offsite_conversion.fb_pixel_complete_registration') actions.completeRegistration = event.value;
-                            else if (event.action_type === 'offsite_conversion.fb_pixel_initiate_checkout') actions.initiateCheckout = event.value;
-                            else if (event.action_type === 'offsite_conversion.fb_pixel_lead') actions.lead = event.value;
-                            else if (event.action_type === 'offsite_conversion.fb_pixel_purchase') actions.purchase = event.value;
-                            else if (event.action_type === 'offsite_conversion.fb_pixel_search') actions.search = event.value;
-                            else if (event.action_type === 'offsite_conversion.fb_pixel_view_content') actions.viewContent = event.value;
+                if (params.insights.length > 0) {
+                    params.insights.forEach((insights) => {
+                        const actions = {};
+                        if (insights.actions) {
+                            insights.actions.forEach((event) => {
+                                if (event.action_type === 'link_click') actions.linkClicks = event.value;
+                                else if (event.action_type === 'offsite_conversion.fb_pixel_add_payment_info') actions.addPaymentInfo = event.value;
+                                else if (event.action_type === 'offsite_conversion.fb_pixel_add_to_cart') actions.addToCart = event.value;
+                                else if (event.action_type === 'offsite_conversion.fb_pixel_add_to_wishlist') actions.addToWishlist = event.value;
+                                else if (event.action_type === 'offsite_conversion.fb_pixel_complete_registration') actions.completeRegistration = event.value;
+                                else if (event.action_type === 'offsite_conversion.fb_pixel_initiate_checkout') actions.initiateCheckout = event.value;
+                                else if (event.action_type === 'offsite_conversion.fb_pixel_lead') actions.lead = event.value;
+                                else if (event.action_type === 'offsite_conversion.fb_pixel_purchase') actions.purchase = event.value;
+                                else if (event.action_type === 'offsite_conversion.fb_pixel_search') actions.search = event.value;
+                                else if (event.action_type === 'offsite_conversion.fb_pixel_view_content') actions.viewContent = event.value;
+                            });
+                        }
+                        const dateElems = insights.date_stop.split('-');
+                        const date = moment.tz(params.timezone)
+                            .year(dateElems[0]).month(dateElems[1] - 1).date(dateElems[2])
+                            .hour(0).minute(0).second(0).millisecond(0);
+                        platformBulk.push({
+                            updateOne: {
+                                filter: {
+                                    date: date.toDate(),
+                                    castrBizId: params.castrBizId,
+                                    castrLocId: params.castrLocId,
+                                    promotionId: params.promotionId,
+                                    platform: insights.publisher_platform,
+                                },
+                                update: {
+                                    spend: insights.spend || 0,
+                                    reach: insights.reach || 0,
+                                    impressions: insights.impressions || 0,
+                                    clicks: insights.clicks || 0,
+                                    linkClicks: actions.linkClicks || 0,
+                                    purchases: actions.purchase || 0,
+                                    addPaymentInfo: actions.addPaymentInfo || 0,
+                                    addToCart: actions.addToCart || 0,
+                                    addToWishlist: actions.addToWishlist || 0,
+                                    completeRegistration: actions.completeRegistration || 0,
+                                    initiateCheckout: actions.initiateCheckout || 0,
+                                    lead: actions.lead || 0,
+                                    search: actions.search || 0,
+                                    viewContent: actions.viewContent || 0,
+                                    timeUpdated: new Date(),
+                                },
+                                upsert: true,
+                            },
                         });
-                    }
-                    const dateElems = insights.date_stop.split('-');
-                    const date = moment.tz(params.timezone)
-                        .year(dateElems[0]).month(dateElems[1] - 1).date(dateElems[2])
-                        .hour(0).minute(0).second(0).millisecond(0);
-                    bulkWrites.push({
-                        updateOne: {
-                            filter: {
-                                date: date.toDate(),
-                                castrBizId: params.castrBizId,
-                                castrLocId: params.castrLocId,
-                                promotionId: params.promotionId,
-                                platform: insights.publisher_platform,
-                            },
-                            update: {
-                                spend: insights.spend || 0,
-                                reach: insights.reach || 0,
-                                impressions: insights.impressions || 0,
-                                clicks: insights.clicks || 0,
-                                linkClicks: actions.linkClicks || 0,
-                                purchases: actions.purchase || 0,
-                                addPaymentInfo: actions.addPaymentInfo || 0,
-                                addToCart: actions.addToCart || 0,
-                                addToWishlist: actions.addToWishlist || 0,
-                                completeRegistration: actions.completeRegistration || 0,
-                                initiateCheckout: actions.initiateCheckout || 0,
-                                lead: actions.lead || 0,
-                                search: actions.search || 0,
-                                viewContent: actions.viewContent || 0,
-                                timeUpdated: new Date(),
-                            },
-                            upsert: true,
-                        },
+                    });
+                }
+                const demoUpdate = {};
+                if (params.demographicInsights.genderAge.length > 0) {
+                    params.demographicInsights.genderAge.forEach((insights) => {
+                        const bizId = params.castrBizId;
+                        const locId = params.castrLocId;
+                        const promoId = params.promotionId;
+                        const date = insights.date_stop;
+                        if (!demoUpdate[bizId]) demoUpdate[bizId] = {};
+                        if (!demoUpdate[bizId][locId]) demoUpdate[bizId][locId] = {};
+                        if (!demoUpdate[bizId][locId][promoId]) demoUpdate[bizId][locId][promoId] = {};
+                        if (!demoUpdate[bizId][locId][promoId][date]) {
+                            demoUpdate[bizId][locId][promoId][date] = {
+                                impressions: {},
+                                clicks: {},
+                                linkClicks: {},
+                                purchases: {},
+                            };
+                        }
+                        Object.keys(demoUpdate[bizId][locId][promoId][date]).forEach((metric) => {
+                            if (!demoUpdate[bizId][locId][promoId][date][metric].genderAge) {
+                                demoUpdate[bizId][locId][promoId][date][metric].genderAge = {};
+                            }
+                            if (!demoUpdate[bizId][locId][promoId][date][metric].genderAge[insights.gender]) {
+                                demoUpdate[bizId][locId][promoId][date][metric].genderAge[insights.gender] = {};
+                            }
+                            demoUpdate[bizId][locId][promoId][date][metric].genderAge[insights.gender][insights.age] = this.getValue(insights, metric);
+                        });
+                    });
+                }
+                if (params.demographicInsights.region.length > 0) {
+                    params.demographicInsights.region.forEach((insights) => {
+                        const bizId = params.castrBizId;
+                        const locId = params.castrLocId;
+                        const promoId = params.promotionId;
+                        const date = insights.date_stop;
+                        if (!demoUpdate[bizId]) demoUpdate[bizId] = {};
+                        if (!demoUpdate[bizId][locId]) demoUpdate[bizId][locId] = {};
+                        if (!demoUpdate[bizId][locId][promoId]) demoUpdate[bizId][locId][promoId] = {};
+                        if (!demoUpdate[bizId][locId][promoId][date]) {
+                            demoUpdate[bizId][locId][promoId][date] = {
+                                impressions: {},
+                                clicks: {},
+                                linkClicks: {},
+                                purchases: {},
+                            };
+                        }
+                        Object.keys(demoUpdate[bizId][locId][promoId][date]).forEach((metric) => {
+                            if (!demoUpdate[bizId][locId][promoId][date][metric].region) {
+                                demoUpdate[bizId][locId][promoId][date][metric].region = [];
+                            }
+                            demoUpdate[bizId][locId][promoId][date][metric].region.push({
+                                key: insights[Breakdown.region],
+                                value: this.getValue(insights, metric)
+                            });
+                        });
+                    });
+                }
+                if (params.demographicInsights.hour.length > 0) {
+                    params.demographicInsights.hour.forEach((insights) => {
+                        const bizId = params.castrBizId;
+                        const locId = params.castrLocId;
+                        const promoId = params.promotionId;
+                        const date = insights.date_stop;
+                        if (!demoUpdate[bizId]) demoUpdate[bizId] = {};
+                        if (!demoUpdate[bizId][locId]) demoUpdate[bizId][locId] = {};
+                        if (!demoUpdate[bizId][locId][promoId]) demoUpdate[bizId][locId][promoId] = {};
+                        if (!demoUpdate[bizId][locId][promoId][date]) {
+                            demoUpdate[bizId][locId][promoId][date] = {
+                                impressions: {},
+                                clicks: {},
+                                linkClicks: {},
+                                purchases: {},
+                            };
+                        }
+                        Object.keys(demoUpdate[bizId][locId][promoId][date]).forEach((metric) => {
+                            if (!demoUpdate[bizId][locId][promoId][date][metric].hour) {
+                                demoUpdate[bizId][locId][promoId][date][metric].hour = {};
+                            }
+                            demoUpdate[bizId][locId][promoId][date][metric].hour[insights[Breakdown.hourly_stats_aggregated_by_advertiser_time_zone]] = this.getValue(insights, metric);
+                        });
+                    });
+                }
+                Object.keys(demoUpdate).forEach((bizId) => {
+                    Object.keys(demoUpdate[bizId]).forEach((locId) => {
+                        Object.keys(demoUpdate[bizId][locId]).forEach((promoId) => {
+                            Object.keys(demoUpdate[bizId][locId][promoId]).forEach((date) => {
+                                const dateElems = date.split('-');
+                                const insightDate = moment.tz(params.timezone)
+                                    .year(dateElems[0]).month(dateElems[1] - 1).date(dateElems[2])
+                                    .hour(0).minute(0).second(0).millisecond(0);
+                                demographicBulk.push({
+                                    updateOne: {
+                                        filter: {
+                                            date: insightDate.toDate(),
+                                            castrBizId: bizId,
+                                            castrLocId: locId,
+                                            promotionId: promoId,
+                                        },
+                                        update: {
+                                            impressions: demoUpdate[bizId][locId][promoId][date].impressions,
+                                            clicks: demoUpdate[bizId][locId][promoId][date].clicks,
+                                            linkClicks: demoUpdate[bizId][locId][promoId][date].linkClicks,
+                                            purchases: demoUpdate[bizId][locId][promoId][date].purchase,
+                                            timeUpdated: new Date(),
+                                        },
+                                        upsert: true,
+                                    },
+                                });
+                            });
+                        });
                     });
                 });
             });
 
-            if (bulkWrites.length > 0) await InsightModel.bulkWrite(bulkWrites, { ordered: false });
+            if (platformBulk.length > 0) await PlatformModel.bulkWrite(platformBulk, { ordered: false });
+            if (demographicBulk.length > 0) await DemographicModel.bulkWrite(demographicBulk, { ordered: false });
 
-            const updatedPromotions = promotionParams.filter(params => params.insights.data.length !== 0);
+            const updatedPromotions = promotionParams.filter(params => params.insights.length > 0);
             const msg = `${updatedPromotions.length} promotions insights updated`;
             logger.debug(msg);
             return {
@@ -266,6 +447,34 @@ class InsightService {
         } catch (err) {
             throw err;
         }
+    }
+
+    getValue(insightObj, metric) {
+        let value = 0;
+        if (metric === 'impressions') {
+            value = insightObj.impressions;
+        } else if (metric === 'clicks') {
+            value = insightObj.clicks;
+        } else if (metric === 'linkClicks') {
+            if (insightObj.actions) {
+                for (let i = 0; i < insightObj.actions.length; i++) {
+                    if (insightObj.actions[i].action_type === 'link_click') {
+                        value = insightObj.actions[i].value;
+                        break;
+                    }
+                }
+            }
+        } else if (metric === 'purchases') {
+            if (insightObj.actions) {
+                for (let i = 0; i < insightObj.actions.length; i++) {
+                    if (insightObj.actions[i].action_type === 'offsite_conversion.fb_pixel_purchase') {
+                        value = insightObj.actions[i].value;
+                        break;
+                    }
+                }
+            }
+        }
+        return parseInt(value, 10);
     }
 }
 
