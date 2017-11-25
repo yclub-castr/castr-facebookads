@@ -34,8 +34,13 @@ const fbErrSubcodes = {
 };
 
 const getUri = (node, edge) => {
-    let uri = `${host}${apiVersion}`;
-    if (node) uri += `/${node}`;
+    let uri;
+    if (node.includes('https://')) {
+        uri = node;
+    } else {
+        uri = `${host}${apiVersion}`;
+        if (node) uri += `/${node}`;
+    }
     if (edge) uri += `/${edge}`;
     return uri;
 };
@@ -89,7 +94,7 @@ function removeQueue(accountId) {
     else usageQueue[accountId] -= 1;
 }
 
-const get = async (node, edge, params) => {
+const get = async (node, edge, params, respHeader) => {
     const options = {
         uri: getUri(node, edge),
         qs: params,
@@ -98,6 +103,7 @@ const get = async (node, edge, params) => {
             Authorization: `OAuth ${process.env.ADMIN_SYS_USER_TOKEN}`,
         },
         json: true,
+        resolveWithFullResponse: respHeader,
     };
     try {
         const response = await rp(options);
