@@ -34,6 +34,7 @@ exports.Model = fbCastDB.model(
                 locationLabels: [],
                 promotionLabels: [],
             },
+            pixel: Object,
             timezone: String,
             currency: String,
         },
