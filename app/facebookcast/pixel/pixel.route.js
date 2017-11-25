@@ -11,6 +11,7 @@ router.route('/')
     .get(async (req, res, next) => {
         try {
             const params = { castrBizId: req.query.castrBizId };
+            if (!params.castrBizId) throw new Error('Missing param: must provide `castrBizId`');
             res.json(await pixelService.getPixel(params));
         } catch (err) {
             next(err);

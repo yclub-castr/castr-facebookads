@@ -11,25 +11,27 @@ const readFields = ['id', 'name', 'code'].toString();
 
 class PixelService {
     async getPixel(params) {
-        let accountId = params.accountId;
+        const castrBizId = params.castrBizId;
         try {
-            if (!params.castrBizId) throw new Error('Missing param: must provide `castrBizId`');
-            const castrBizId = params.castrBizId;
-            if (!accountId) {
-                const project = await ProjectModel.findOne({ castrBizId: castrBizId });
-                if (!project) throw new Error(`No such Business (#${castrBizId})`);
-                accountId = project.accountId;
-            }
-            const fbResponse = await fbRequest.get(accountId, 'adspixels', { fields: readFields });
-            let pixel;
-            if (fbResponse.data.length !== 0) {
-                pixel = fbResponse.data[0];
-            } else {
-                logger.debug(`No pixel found for Business (#${castrBizId}), creating new pixel...`);
-                pixel = await this.createPixel({
-                    castrBizId: castrBizId,
-                    accountId: accountId,
-                });
+            const project = await ProjectModel.findOne({ castrBizId: castrBizId });
+            if (!project) throw new Error(`No such Business (#${castrBizId})`);
+            let pixel = project.pixel;
+            if (!pixel) {
+                logger.debug(`No pixel saved for Business (#${castrBizId}), fetching from Facebook...`);
+                const accountId = project.accountId;
+                const fbResponse = await fbRequest.get(accountId, 'adspixels', { fields: readFields });
+                if (fbResponse.data.length !== 0) {
+                    pixel = fbResponse.data[0];
+                    project.pixel = pixel;
+                } else {
+                    logger.debug(`No pixel found for Business (#${castrBizId}), creating new pixel...`);
+                    pixel = await this.createPixel({
+                        castrBizId: castrBizId,
+                        accountId: accountId,
+                    });
+                    project.pixel = pixel;
+                }
+                project.save();
             }
             const msg = `Pixel (${pixel.id}) fetched`;
             logger.debug(msg);
