@@ -188,7 +188,7 @@ class InsightService {
                         params.insights = params.insights.concat(platformResponse.body.data);
                         const utilization = JSON.parse(platformResponse.headers['x-fb-ads-insights-throttle']);
                         logger.debug(`Insights utilization (app: ${utilization.app_id_util_pct}, account: ${utilization.acc_id_util_pct})`);
-                    } while (platformResponse.body.paging.next);
+                    } while (platformResponse.body.data.length > 0 && platformResponse.body.paging.next);
 
                     // Fetch genderAge insights
                     const genderAgeParams = Object.assign({}, insightParams);
@@ -204,7 +204,7 @@ class InsightService {
                         params.demographicInsights.genderAge = params.demographicInsights.genderAge.concat(genderAgeResponse.body.data);
                         const utilization = JSON.parse(genderAgeResponse.headers['x-fb-ads-insights-throttle']);
                         logger.debug(`Insights utilization (app: ${utilization.app_id_util_pct}, account: ${utilization.acc_id_util_pct})`);
-                    } while (genderAgeResponse.body.paging.next);
+                    } while (genderAgeResponse.body.data.length > 0 && genderAgeResponse.body.paging.next);
 
                     // Fetch region insights
                     const regionParams = Object.assign({}, insightParams);
@@ -220,7 +220,7 @@ class InsightService {
                         params.demographicInsights.region = params.demographicInsights.region.concat(regionResponse.body.data);
                         const utilization = JSON.parse(regionResponse.headers['x-fb-ads-insights-throttle']);
                         logger.debug(`Insights utilization (app: ${utilization.app_id_util_pct}, account: ${utilization.acc_id_util_pct})`);
-                    } while (regionResponse.body.paging.next);
+                    } while (regionResponse.body.data.length > 0 && regionResponse.body.paging.next);
 
                     // Fetch hour insights
                     const hourParams = Object.assign({}, insightParams);
@@ -236,7 +236,7 @@ class InsightService {
                         params.demographicInsights.hour = params.demographicInsights.hour.concat(hourResponse.body.data);
                         const utilization = JSON.parse(hourResponse.headers['x-fb-ads-insights-throttle']);
                         logger.debug(`Insights utilization (app: ${utilization.app_id_util_pct}, account: ${utilization.acc_id_util_pct})`);
-                    } while (hourResponse.body.paging.next);
+                    } while (hourResponse.body.data.length > 0 && hourResponse.body.paging.next);
                 }
             } else {
                 for (let i = 0; i < promotionParams.length; i++) {
