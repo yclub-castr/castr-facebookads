@@ -293,7 +293,7 @@ class CreativeService {
                     // page_welcome_message: welcomeMsg, // for messenger
                 },
                 page_id: projectParams.pageId,
-                // instagram_actor_id: projectParams.instagramId,
+                instagram_actor_id: projectParams.instagramId,
             };
             return {
                 name: name,
@@ -339,7 +339,7 @@ class CreativeService {
                 multi_share_optimized: true,
             },
             page_id: projectParams.pageId,
-            // instagram_actor_id: projectParams.instagramId,
+            instagram_actor_id: projectParams.instagramId,
         };
         for (let i = 0; i < imageUrls.length; i++) {
             objectStorySpec.link_data.child_attachments.push({
@@ -390,7 +390,7 @@ class CreativeService {
                     // page_welcome_message: welcomeMsg, // for messenger
                 },
                 page_id: projectParams.pageId,
-                // instagram_actor_id: projectParams.instagramId,
+                instagram_actor_id: projectParams.instagramId,
             };
             return {
                 name: name,
@@ -434,7 +434,7 @@ class CreativeService {
                     // page_welcome_message: welcomeMsg, // for messenger
                 },
                 page_id: projectParams.pageId,
-                // instagram_actor_id: projectParams.instagramId,
+                instagram_actor_id: projectParams.instagramId,
             };
             return {
                 name: name,
