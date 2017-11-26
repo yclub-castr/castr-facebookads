@@ -443,7 +443,7 @@ const graph = (report, x, y, type) => {
     }
 };
 
-const platformFormatter = (platformArray, platformAds, tz) => {
+const platformFormatter = (platformRecords, platformAds, tz) => {
     const report = {
         numPromotions: 0,
         numAds: platformAds.total,
@@ -466,7 +466,7 @@ const platformFormatter = (platformArray, platformAds, tz) => {
         audienceNetwork: [],
         total: [],
     };
-    platformArray.forEach((record) => {
+    platformRecords.forEach((record) => {
         // Prepare dates
         const date = moment.tz(record.date, tz).format('YYYY/MM/DD');
         const platform = record.platform;
@@ -599,6 +599,58 @@ const platformFormatter = (platformArray, platformAds, tz) => {
     return report;
 };
 
+const demographicFormatter = (demographicRecords, locale) => {
+    const report = {
+        impressions: {},
+        clicks: {},
+        linkClicks: {},
+        purchases: {},
+    };
+    const regionValues = {};
+    demographicRecords.forEach((record) => {
+        Object.keys(report).forEach((metric) => {
+            Object.keys(record[metric]).forEach((demog) => {
+                if (!report[metric][demog]) report[metric][demog] = {};
+                if (demog === 'genderAge') {
+                    Object.keys(record[metric][demog]).forEach((gender) => {
+                        if (!report[metric][demog][gender]) report[metric][demog][gender] = {};
+                        Object.keys(record[metric][demog][gender]).forEach((age) => {
+                            if (!report[metric][demog][gender][age]) report[metric][demog][gender][age] = 0;
+                            report[metric][demog][gender][age] += record[metric][demog][gender][age];
+                        });
+                    });
+                } else if (demog === 'region') {
+                    record[metric][demog].forEach((region) => {
+                        if (!regionValues[metric]) regionValues[metric] = {};
+                        if (!regionValues[metric][region.key]) regionValues[metric][region.key] = 0;
+                        regionValues[metric][region.key] += region.value;
+                    });
+                } else if (demog === 'hour') {
+                    Object.keys(record[metric][demog]).forEach((hour) => {
+                        if (!report[metric][demog][hour]) report[metric][demog][hour] = 0;
+                        report[metric][demog][hour] += record[metric][demog][hour];
+                    });
+                }
+            });
+        });
+    });
+    Object.keys(report).forEach((metric) => {
+        Object.keys(report[metric].genderAge).forEach((gender) => {
+            report[metric].genderAge[gender].total = Object.values(report[metric].genderAge[gender]).reduce((a, b) => a + b);
+        });
+        report[metric].region = Object.keys(regionValues[metric]).map((regionName) => {
+            const regionData = constants.koreanRegionMap[regionName];
+            return {
+                id: regionData.key,
+                title: (locale === 'kr') ? regionData.name_kr : regionName,
+                value: regionValues[metric][regionName],
+            };
+        });
+    });
+
+    return report;
+};
+
 const getValue = (insightObj, metric) => {
     let value = 0;
     if (metric === 'impressions') {
@@ -675,6 +727,7 @@ const hourFormatter = (demoReport, hourArray) => {
 
 exports.Formatter = {
     platform: platformFormatter,
+    demographic: demographicFormatter,
     genderAge: genderAgeFormatter,
     region: regionFormatter,
     hour: hourFormatter,
