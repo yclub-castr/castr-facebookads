@@ -39,11 +39,11 @@ class InsightService {
         const castrLocId = params.castrLocId;
         const promotionId = params.promotionId;
         const dateRange = params.dateRange;
-        const insightParams = {};
+        // const insightParams = {};
         try {
             const project = await ProjectModel.findOne({ castrBizId: castrBizId });
             if (!project) throw new Error(`No such Business (#${castrBizId})`);
-            const accountId = project.accountId;
+            // const accountId = project.accountId;
             const accountTimezone = project.timezone;
 
             // Preparing time range param
@@ -63,25 +63,25 @@ class InsightService {
                     throw new Error(`Invalid date range: endDate (${end.format('L')}) cannot be earlier than startDate (${start.format('L')})`);
                 }
             }
-            insightParams.time_range = { since: start.format('YYYY-MM-DD'), until: end.format('YYYY-MM-DD') };
+            // insightParams.time_range = { since: start.format('YYYY-MM-DD'), until: end.format('YYYY-MM-DD') };
 
             // Preparing filtering param
             logger.debug('Preparing \'filtering\' parameters...');
             const query = {};
-            const adlabels = [];
+            // const adlabels = [];
             if (castrBizId) {
                 query.castrBizId = castrBizId;
-                adlabels.push(`"${castrBizId}"`);
+                // adlabels.push(`"${castrBizId}"`);
             }
             if (castrLocId) {
                 query.castrLocId = castrLocId;
-                adlabels.push(`"${castrLocId}"`);
+                // adlabels.push(`"${castrLocId}"`);
             }
             if (promotionId) {
                 query.promotionId = promotionId;
-                adlabels.push(`"${promotionId}"`);
+                // adlabels.push(`"${promotionId}"`);
             }
-            insightParams.filtering = `[ {"field": "campaign.adlabels","operator": "ALL","value": [${adlabels.join()}] } ]`;
+            // insightParams.filtering = `[ {"field": "campaign.adlabels","operator": "ALL","value": [${adlabels.join()}] } ]`;
 
             const platformAds = { facebook: 0, instagram: 0, audienceNetwork: 0 };
             const associatedAds = await AdModel.find(query);
@@ -95,19 +95,18 @@ class InsightService {
             adsets.forEach((adset) => {
                 const platforms = adset.targeting.publisher_platforms;
                 if (!platforms) {
-                    platformAds.facebook += 1;
-                    platformAds.instagram += 1;
-                    platformAds.audienceNetwork += 1;
+                    platformAds.facebook += associatedAdsets[adset.id];
+                    platformAds.instagram += associatedAdsets[adset.id];
+                    platformAds.audienceNetwork += associatedAdsets[adset.id];
                 } else {
-                    platforms.forEach((platform) => {
-                        if (platform === 'facebook') platformAds.facebook += 1;
-                        else if (platform === 'instagram') platformAds.instagram += 1;
-                        else if (platform === 'audience_network') platformAds.audienceNetwork += 1;
-                    });
+                    if (platforms.includes('facebook')) platformAds.facebook += associatedAdsets[adset.id];
+                    if (platforms.includes('instagram')) platformAds.instagram += associatedAdsets[adset.id];
+                    if (platforms.includes('audience_network')) platformAds.audienceNetwork += associatedAdsets[adset.id];
                 }
             });
 
             let platformReport;
+            let demographicReport;
             let genderAgeResp;
             let regionResp;
             let hourResp;
@@ -116,36 +115,23 @@ class InsightService {
                 const insightsRecords = await PlatformModel.find(query);
                 platformReport = Formatter.platform(insightsRecords, platformAds, accountTimezone);
 
-                const genderAgeParams = Object.assign({}, insightParams);
-                genderAgeParams.breakdowns = breakdowns.genderAge;
-                genderAgeParams.fields = fields.demographic;
-                genderAgeResp = await fbRequest.get(accountId, 'insights', genderAgeParams);
-
-                const regionParams = Object.assign({}, insightParams);
-                regionParams.breakdowns = breakdowns.region;
-                regionParams.fields = fields.demographic;
-                regionResp = await fbRequest.get(accountId, 'insights', regionParams);
-
-                const hourParams = Object.assign({}, insightParams);
-                hourParams.breakdowns = breakdowns.hour;
-                hourParams.fields = fields.demographic;
-                hourResp = await fbRequest.get(accountId, 'insights', hourParams);
+                const demographicRecords = await DemographicModel.find(query);
+                demographicReport = Formatter.demographic(demographicRecords, platformAds, accountTimezone);
             } else {
+                demographicReport = {
+                    impressions: {},
+                    clicks: {},
+                    linkClicks: {},
+                    purchases: {},
+                };
                 platformReport = Insight.Mock.platformReport();
                 genderAgeResp = Insight.Mock.genderAge();
                 regionResp = Insight.Mock.region();
                 hourResp = Insight.Mock.hour();
+                Formatter.genderAge(demographicReport, genderAgeResp.data);
+                Formatter.region(demographicReport, regionResp.data, params.locale);
+                Formatter.hour(demographicReport, hourResp.data);
             }
-
-            const demoReport = {
-                impressions: {},
-                clicks: {},
-                linkClicks: {},
-                purchases: {},
-            };
-            Formatter.genderAge(demoReport, genderAgeResp.data);
-            Formatter.region(demoReport, regionResp.data, params.locale);
-            Formatter.hour(demoReport, hourResp.data);
 
             const msg = 'Insights returned';
             logger.debug(msg);
@@ -154,7 +140,7 @@ class InsightService {
                 message: msg,
                 data: {
                     platformReport: platformReport,
-                    demoReport: demoReport,
+                    demographicReport: demographicReport,
                 },
             };
         } catch (err) {
@@ -421,7 +407,7 @@ class InsightService {
                                             impressions: demoUpdate[bizId][locId][promoId][date].impressions,
                                             clicks: demoUpdate[bizId][locId][promoId][date].clicks,
                                             linkClicks: demoUpdate[bizId][locId][promoId][date].linkClicks,
-                                            purchases: demoUpdate[bizId][locId][promoId][date].purchase,
+                                            purchases: demoUpdate[bizId][locId][promoId][date].purchases,
                                             timeUpdated: new Date(),
                                         },
                                         upsert: true,
