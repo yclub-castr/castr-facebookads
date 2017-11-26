@@ -299,6 +299,36 @@ class AdSetService {
         await Promise.all(promises);
         logger.debug(`Synchronized ${adsets.length} adsets`);
     }
+
+    async getAdSetsDb(params) {
+        const castrBizId = params.castrBizId;
+        const castrLocId = params.castrLocId;
+        const promotionId = params.promotionId;
+        const campaignId = params.campaignId;
+        try {
+            const query = { status: { $ne: AdSetStatus.deleted } };
+            if (castrBizId) query.castrBizId = castrBizId;
+            if (castrLocId) query.castrLocId = castrLocId;
+            if (promotionId) query.promotionId = promotionId;
+            if (campaignId) query.campaignId = campaignId;
+            const adsets = await AdSetModel.find(query);
+            const msg = `${adsets.length} adsets fetched`;
+            logger.debug(msg);
+            return {
+                success: true,
+                message: msg,
+                data: adsets.map(adset => ({
+                    id: adset.id,
+                    name: adset.name,
+                    billingEvent: adset.billingEvent,
+                    optimizationGoal: adset.optimizationGoal,
+                    status: adset.status,
+                })),
+            };
+        } catch (err) {
+            throw err;
+        }
+    }
 }
 
 module.exports = new AdSetService();

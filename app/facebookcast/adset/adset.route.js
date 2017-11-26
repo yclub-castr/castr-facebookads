@@ -73,5 +73,22 @@ router.route('/')
         }
     });
 
+router.get('/db', async (req, res, next) => {
+    try {
+        const params = {
+            castrBizId: req.query.castrBizId,
+            castrLocId: req.query.castrLocId,
+            promotionId: req.query.promotionId,
+            campaignId: req.query.campaignId,
+        };
+        if (!params.castrBizId && !params.promotionId) {
+            // TODO: Find by castrLocId & campaignId
+            throw new Error('Missing query params: must provide either `castrBizId` or `promotionId`');
+        }
+        res.json(await adsetService.getAdSetsDb(params));
+    } catch (err) {
+        next(err);
+    }
+});
 
 module.exports = router;
