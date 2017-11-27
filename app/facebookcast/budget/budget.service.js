@@ -22,10 +22,17 @@ class BudgetService {
     }
 
     async getMinimumBudget(params) {
-        const accountId = params.accountId;
-        const currency = params.currency;
+        const castrBizId = params.castrBizId;
+        let accountId = params.accountId;
+        let currency = params.currency;
         const billingEvent = params.billingEvent;
         try {
+            if (!accountId) {
+                const project = await ProjectModel.findOne({ castrBizId: castrBizId });
+                if (!project) throw new Error(`No such Business (#${castrBizId})`);
+                accountId = project.accountId;
+                currency = project.currency;
+            }
             logger.debug(`Getting minimum budgets for ${billingEvent} in ${currency} ...`);
             const fbResponse = await fbRequest.get(accountId, 'minimum_budgets');
             const allMinBudgets = fbResponse.data;
