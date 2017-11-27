@@ -80,6 +80,7 @@ router.get('/db', async (req, res, next) => {
             castrLocId: req.query.castrLocId,
             promotionId: req.query.promotionId,
             campaignId: req.query.campaignId,
+            fields: req.query.fields,
         };
         if (!params.castrBizId && !params.promotionId) {
             // TODO: Find by castrLocId & campaignId

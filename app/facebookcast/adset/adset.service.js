@@ -305,6 +305,7 @@ class AdSetService {
         const castrLocId = params.castrLocId;
         const promotionId = params.promotionId;
         const campaignId = params.campaignId;
+        const fields = params.fields;
         try {
             const query = { status: { $ne: AdSetStatus.deleted } };
             if (castrBizId) query.castrBizId = castrBizId;
@@ -317,13 +318,11 @@ class AdSetService {
             return {
                 success: true,
                 message: msg,
-                data: adsets.map(adset => ({
-                    id: adset.id,
-                    name: adset.name,
-                    billingEvent: adset.billingEvent,
-                    optimizationGoal: adset.optimizationGoal,
-                    status: adset.status,
-                })),
+                data: adsets.map((adset) => {
+                    const adsetData = { id: adset.id };
+                    fields.forEach((field) => { adsetData[field] = adset[field]; });
+                    return adsetData;
+                }),
             };
         } catch (err) {
             throw err;
