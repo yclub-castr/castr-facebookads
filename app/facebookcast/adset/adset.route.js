@@ -32,6 +32,7 @@ router.route('/')
                 castrLocId: req.body.castrLocId,
                 promotionId: req.body.promotionId,
                 campaignId: req.body.campaignId,
+                objective: req.body.objective,
                 dailyBudget: req.body.dailyBudget,
                 billingEvent: req.body.billingEvent,
                 optimizationGoal: req.body.optimizationGoal,
@@ -43,6 +44,7 @@ router.route('/')
             if (!params.castrLocId) throw new Error('Missing body parameter: \'castrLocId\'');
             if (!params.promotionId) throw new Error('Missing body parameter: \'promotionId\'');
             if (!params.campaignId) throw new Error('Missing body parameter: \'campaignId\'');
+            if (!params.objective) throw new Error('Missing body parameter: \'objective\'');
             if (!params.dailyBudget) throw new Error('Missing body parameter: \'dailyBudget\'');
             if (!params.billingEvent) throw new Error('Missing body parameter: \'billingEvent\'');
             if (!params.optimizationGoal) throw new Error('Missing body parameter: \'optimizationGoal\'');

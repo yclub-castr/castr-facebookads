@@ -119,6 +119,10 @@ class AdService {
         const castrBizId = params.castrBizId;
         const castrLocId = params.castrLocId;
         const promotionId = params.promotionId;
+        const campaignId = params.campaignId;
+        const objective = params.objective;
+        const adsetId = params.adsetId;
+        const optimizationGoal = params.optimizationGoal;
         const creatives = params.creatives;
         const adCreatePromises = [];
         try {
@@ -126,8 +130,7 @@ class AdService {
             logger.debug(`Generating ads from ${creatives.length} creatives...`);
             const project = await ProjectModel.findOne({ castrBizId: castrBizId });
             if (!project) throw new Error(`No such Business (#${castrBizId})`);
-            const campaign = await CampaignModel.findOne({ id: params.campaignId }, 'objective');
-            const objective = campaign.objective;
+            const accountId = project.accountId;
             const businessLabel = project.adLabels.businessLabel;
             const locationLabel = project.adLabels.locationLabels.filter(label => label.name === castrLocId)[0];
             const promotionLabel = project.adLabels.promotionLabels.filter(label => label.name === promotionId)[0];
@@ -136,9 +139,11 @@ class AdService {
                     castrBizId: castrBizId,
                     castrLocId: castrLocId,
                     promotionId: promotionId,
-                    accountId: project.accountId,
-                    campaignId: params.campaignId,
-                    adsetId: params.adsetId,
+                    accountId: accountId,
+                    campaignId: campaignId,
+                    objective: objective,
+                    adsetId: adsetId,
+                    optimizationGoal: optimizationGoal,
                     creative: creatives[i],
                     businessLabel: businessLabel,
                     locationLabel: locationLabel,
@@ -174,16 +179,18 @@ class AdService {
         const promotionId = params.promotionId;
         const accountId = params.accountId;
         const campaignId = params.campaignId;
+        const objective = params.objective;
         const adsetId = params.adsetId;
+        const optimizationGoal = params.optimizationGoal;
         const creative = params.creative;
         const pixelId = params.pixelId;
-        const name = `Ad [${creative.name.match(/\[(.*)\]/)[1]}]`;
+        const name = `Ad [${objective},${optimizationGoal},${creative.name.match(/\[(.*)\]/)[1]}]`;
         const businessLabel = params.businessLabel;
         const locationLabel = params.locationLabel;
         const promotionLabel = params.promotionLabel;
         try {
             const adParams = {
-                [AdField.adlabels]: [businessLabel, locationLabel, promotionLabel, { name: creative.name }],
+                [AdField.adlabels]: [businessLabel, locationLabel, promotionLabel, { name: creative.adLabelName }],
                 [AdField.campaign_id]: campaignId,
                 [AdField.adset_id]: adsetId,
                 [AdField.creative]: { creative_id: creative.id },

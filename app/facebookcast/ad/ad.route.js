@@ -33,7 +33,9 @@ router.route('/')
                 castrLocId: req.body.castrLocId,
                 promotionId: req.body.promotionId,
                 campaignId: req.body.campaignId,
+                objective: req.body.objective,
                 adsetId: req.body.adsetId,
+                optimizationGoal: req.body.optimizationGoal,
                 creatives: req.body.creatives,
             };
             if (!params.castrBizId) throw new Error('Missing body parameter: \'castrBizId\'');

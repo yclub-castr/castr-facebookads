@@ -19,6 +19,8 @@ const BillingEvent = Model.BillingEvent;
 const OptimizationGoal = Model.OptimizationGoal;
 
 const excludedFields = [
+    AdSetField.account_id,
+    AdSetField.campaign_id,
     AdSetField.adlabels,
     AdSetField.campaign,
     AdSetField.daily_imps,
@@ -78,6 +80,7 @@ class AdSetService {
         const castrLocId = params.castrLocId;
         const promotionId = params.promotionId;
         const campaignId = params.campaignId;
+        const objective = params.objective;
         const dailyBudget = params.dailyBudget;
         const billingEvent = params.billingEvent;
         const optimizationGoal = params.optimizationGoal;
@@ -90,9 +93,6 @@ class AdSetService {
             const project = await ProjectModel.findOne({ castrBizId: castrBizId });
             if (!project) throw new Error(`No such Business (#${castrBizId})`);
             const accountId = project.accountId;
-            const campaign = await CampaignModel.findOne({ id: campaignId }, 'objective');
-            if (!campaign) throw new Error(`No such Campaign (#${campaignId})`);
-            const objective = campaign.objective;
             const name = `AdSet [${objective},${optimizationGoal}]`;
             const businessLabel = project.adLabels.businessLabel;
             const locationLabel = project.adLabels.locationLabels.filter(label => label.name === castrLocId)[0];
@@ -154,8 +154,8 @@ class AdSetService {
                 castrBizId: castrBizId,
                 castrLocId: castrLocId,
                 promotionId: promotionId,
-                accountId: adset.account_id,
-                campaignId: adset.campaign_id,
+                accountId: accountId,
+                campaignId: campaignId,
                 id: adset.id,
                 name: adset.name,
                 optimizationGoal: adset.optimization_goal,
@@ -177,7 +177,10 @@ class AdSetService {
                     castrBizId: castrBizId,
                     castrLocId: castrLocId,
                     promotionId: promotionId,
-                    campaignId: adset.campaign_id,
+                    campaign: {
+                        id: campaignId,
+                        objective: objective,
+                    },
                     id: adset.id,
                     name: adset.name,
                     optimizationGoal: adset.optimization_goal,
