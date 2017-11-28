@@ -106,7 +106,7 @@ class CreativeService {
             adSpecs = adSpecs.concat(await this.getLinkAdCreative(projectParams, creativeParams));
             logger.debug('Creating adlabels for creatives...');
             adSpecs = adSpecs.filter(spec => spec !== null);
-            const labelPromises = adSpecs.map(spec => fbRequest.post(accountId, 'adlabels', { 
+            const labelPromises = adSpecs.map(spec => fbRequest.post(accountId, 'adlabels', {
                 name: `${promotionId}-${castrLocId}-${spec.name}`,
             }));
             const creativeLabels = await Promise.all(labelPromises);
@@ -134,12 +134,16 @@ class CreativeService {
                     effectiveObjectStoryId: creative.effective_object_story_id,
                     objectStorySpec: creative.object_story_spec,
                     objectType: creative.object_type,
-                    creativeLabel: creativeLabels[i],
+                    creativeLabel: {
+                        id: creativeLabels[i].id,
+                        name: `${promotionId}-${castrLocId}-${adSpecs[i].name}`,
+                    },
                 });
                 updatePromises.push(model.save());
                 responseData.push({
                     id: creative.id,
                     name: adSpecs[i].name,
+                    adLabelName: `${promotionId}-${castrLocId}-${adSpecs[i].name}`,
                 });
             }
             await Promise.all(updatePromises);
