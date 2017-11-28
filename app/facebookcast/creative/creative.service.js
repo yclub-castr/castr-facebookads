@@ -106,7 +106,9 @@ class CreativeService {
             adSpecs = adSpecs.concat(await this.getLinkAdCreative(projectParams, creativeParams));
             logger.debug('Creating adlabels for creatives...');
             adSpecs = adSpecs.filter(spec => spec !== null);
-            const labelPromises = adSpecs.map(spec => fbRequest.post(accountId, 'adlabels', { name: spec.name }));
+            const labelPromises = adSpecs.map(spec => fbRequest.post(accountId, 'adlabels', { 
+                name: `${promotionId}-${castrLocId}-${spec.name}`,
+            }));
             const creativeLabels = await Promise.all(labelPromises);
             logger.debug(`Creating creative for promotion (#${promotionId}) ...`);
             const createPromises = adSpecs.map(spec => fbRequest.post(accountId, 'adcreatives', spec));
