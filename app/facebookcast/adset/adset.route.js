@@ -64,8 +64,10 @@ router.route('/')
                 archive: req.body.archive,
                 parentsDeleted: req.body.parentsDeleted,
             };
-            if (!params.castrBizId && !params.promotionId && !params.adsetIds) {
-                throw new Error('Missing body params: must provide either `castrBizId` `promotionId` or `adsetIds`');
+            if (!params.adsetIds) {
+                if (!(params.castrBizId && params.promotionId)) {
+                    throw new Error('Missing body params: must provide either (`castrBizId` and `promotionId`) or `adsetIds`');
+                }
             }
             res.json(await adsetService.deleteAdSets(params));
         } catch (err) {

@@ -250,21 +250,17 @@ class AdService {
     async deleteAds(params) {
         const castrBizId = params.castrBizId;
         const promotionId = params.promotionId;
+        let adIds = params.adIds;
         try {
-            logger.debug('Fetching ads for deletion...');
-            let ads;
-            if (promotionId) {
-                ads = await AdModel.find({
+            if (!adIds) {
+                logger.debug('No ad ids provided, fetching ads from DB for deletion...');
+                const ads = await AdModel.find({
+                    castrBizId: castrBizId,
                     promotionId: promotionId,
                     [AdField.status]: { $ne: AdStatus.deleted },
                 }, 'id');
-            } else if (castrBizId) {
-                ads = await AdModel.find({
-                    castrBizId: castrBizId,
-                    [AdField.status]: { $ne: AdStatus.deleted },
-                }, 'id');
+                adIds = ads.map(ad => ad.id);
             }
-            const adIds = ads.map(ad => ad.id);
             if (!params.parentsDeleted) {
                 let batchCompleted = false;
                 const requests = adIds.map(id => ({
@@ -275,7 +271,7 @@ class AdService {
                 let batchResponses;
                 do {
                     const batches = [];
-                    logger.debug(`Batching ${ads.length} delete ad requests...`);
+                    logger.debug(`Batching ${adIds.length} delete ad requests...`);
                     for (let i = 0; i < Math.ceil(requests.length / 50); i++) {
                         batches.push(fbRequest.batch(requests.slice(i * 50, (i * 50) + 50)));
                     }

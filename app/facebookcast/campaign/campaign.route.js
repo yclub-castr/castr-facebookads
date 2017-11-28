@@ -50,8 +50,10 @@ router.route('/')
                 campaignIds: req.body.campaignIds,
                 archive: req.body.archive,
             };
-            if (!params.castrBizId && !params.promotionId && !params.campaignIds) {
-                throw new Error('Missing body params: must provide either `castrBizId`, `promotionId` or `campaignIds`');
+            if (!params.campaignIds) {
+                if (!(params.castrBizId && params.promotionId)) {
+                    throw new Error('Missing body params: must provide either (`castrBizId` and `promotionId`) or `campaignIds`');
+                }
             }
             res.json(await campaignService.deleteCampaigns(params));
         } catch (err) {

@@ -160,21 +160,18 @@ class CreativeService {
     async deleteCreatives(params) {
         const castrBizId = params.castrBizId;
         const promotionId = params.promotionId;
+        let creativeIds = params.creativeIds;
         try {
-            logger.debug('Fetching creatives for deletion...');
             let creatives;
-            if (promotionId) {
+            if (!creativeIds) {
+                logger.debug('Fetching creatives for deletion...');
                 creatives = await CreativeModel.find({
+                    castrBizId: castrBizId,
                     promotionId: promotionId,
                     [CreativeField.status]: { $ne: CreativeStatus.deleted },
                 }, 'id creativeLabel');
-            } else if (castrBizId) {
-                creatives = await CreativeModel.find({
-                    castrBizId: castrBizId,
-                    [CreativeField.status]: { $ne: CreativeStatus.deleted },
-                }, 'id creativeLabel');
+                creativeIds = creatives.map(creative => creative.id);
             }
-            const creativeIds = creatives.map(creative => creative.id);
             let batchCompleted = false;
             const requests = [];
             for (let i = 0; i < creatives.length; i++) {

@@ -195,20 +195,13 @@ class AdSetService {
         let adsetIds = params.adsetIds;
         const archive = params.archive;
         try {
-            logger.debug('Fetching adsets for deletion...');
             if (!adsetIds) {
-                let adsets;
-                if (promotionId) {
-                    adsets = await AdSetModel.find({
-                        promotionId: promotionId,
-                        [AdSetField.status]: { $ne: AdSetStatus.deleted },
-                    }, 'id');
-                } else if (castrBizId) {
-                    adsets = await AdSetModel.find({
-                        castrBizId: castrBizId,
-                        [AdSetField.status]: { $ne: AdSetStatus.deleted },
-                    }, 'id');
-                }
+                logger.debug('No adset ids provided, fetching adsets from DB for deletion...');
+                const adsets = await AdSetModel.find({
+                    castrBizId: castrBizId,
+                    promotionId: promotionId,
+                    [AdSetField.status]: { $ne: AdSetStatus.deleted },
+                }, 'id');
                 adsetIds = adsets.map(adset => adset.id);
             }
             if (!params.parentsDeleted) {

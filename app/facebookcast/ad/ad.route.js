@@ -50,10 +50,13 @@ router.route('/')
                 castrBizId: req.body.castrBizId,
                 castrLocId: req.body.castrLocId,
                 promotionId: req.body.promotionId,
+                adIds: req.body.adIds,
                 parentsDeleted: req.body.parentsDeleted,
             };
-            if (!params.castrBizId && !params.promotionId) {
-                throw new Error('Missing body params: must provide either `castrBizId` or `promotionId`');
+            if (!params.adIds) {
+                if (!(params.castrBizId && params.promotionId)) {
+                    throw new Error('Missing body params: must provide either (`castrBizId` and `promotionId`) or `adIds`');
+                }
             }
             res.json(await adService.deleteAds(params));
         } catch (err) {

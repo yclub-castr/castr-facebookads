@@ -138,20 +138,13 @@ class CampaignService {
         let campaignIds = params.campaignIds;
         const archive = params.archive;
         try {
-            logger.debug('Fetching campaigns for deletion...');
             if (!campaignIds) {
-                let campaigns;
-                if (promotionId) {
-                    campaigns = await CampaignModel.find({
-                        promotionId: promotionId,
-                        [CampaignField.status]: { $ne: CampaignStatus.deleted },
-                    }, 'id');
-                } else if (castrBizId) {
-                    campaigns = await CampaignModel.find({
-                        castrBizId: castrBizId,
-                        [CampaignField.status]: { $ne: CampaignStatus.deleted },
-                    }, 'id');
-                }
+                logger.debug('No campaign ids provided, fetching campaigns from DB for deletion...');
+                const campaigns = await CampaignModel.find({
+                    castrBizId: castrBizId,
+                    promotionId: promotionId,
+                    [CampaignField.status]: { $ne: CampaignStatus.deleted },
+                }, 'id');
                 campaignIds = campaigns.map(campaign => campaign.id);
             }
             if (BATCH) {

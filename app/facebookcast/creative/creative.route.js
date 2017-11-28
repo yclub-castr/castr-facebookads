@@ -55,9 +55,12 @@ router.route('/')
                 castrBizId: req.body.castrBizId,
                 // castrLocId: req.body.castrLocId,
                 promotionId: req.body.promotionId,
+                creativeIds: req.body.creativeIds,
             };
-            if (!params.castrBizId && !params.promotionId) {
-                throw new Error('Missing body params: must provide either `castrBizId` or `promotionId`');
+            if (!params.creativeIds) {
+                if (!(params.castrBizId && params.promotionId)) {
+                    throw new Error('Missing body params: must provide either (`castrBizId` and `promotionId`) or `creativeIds`');
+                }
             }
             res.json(await creativeService.deleteCreatives(params));
         } catch (err) {
