@@ -23,7 +23,7 @@ router.route('/')
                 promotionId: req.body.promotionId,
             };
             if (!params.castrBizId) throw new Error('Missing body parameter: \'castrBizId\'');
-            // if (!params.castrLocId) throw new Error('Missing body parameter: \'castrLocId\'');
+            if (!params.castrLocId) throw new Error('Missing body parameter: \'castrLocId\'');
             if (!params.promotionId) throw new Error('Missing body parameter: \'promotionId\'');
             res.json(await adstudyService.createAdStudy(params));
         } catch (err) {
@@ -38,8 +38,11 @@ router.route('/')
                 castrLocId: req.body.castrLocId,
                 promotionId: req.body.promotionId,
             };
-            if (!params.castrBizId) throw new Error('Missing body parameter: \'castrBizId\'');
-            if (!params.promotionId) throw new Error('Missing body parameter: \'promotionId\'');
+            if (!params.adstudyId) {
+                if (!params.castrBizId && !params.promotionId) {
+                    throw new Error('Missing body params: Must provide either \'adstudyId\' or (\'castrBizId\' and \'promotionId\')');
+                }
+            }
             res.json(await adstudyService.deleteAdStudy(params));
         } catch (err) {
             next(err);

@@ -19,20 +19,12 @@ class AdStudyService {
         const week = params.week || 1;
         const locationAdsets = {};
         try {
-            let adsets;
-            if (castrLocId) {
-                adsets = await AdSetModel.find({
-                    castrLocId: castrLocId,
-                    promotionId: promotionId,
-                    status: { $ne: AdSetStatus.deleted },
-                });
-            } else {
-                adsets = await AdSetModel.find({
-                    castrBizId: castrBizId,
-                    promotionId: promotionId,
-                    status: { $ne: AdSetStatus.deleted },
-                });
-            }
+            const adsets = await AdSetModel.find({
+                castrBizId: castrBizId,
+                castrLocId: castrLocId,
+                promotionId: promotionId,
+                status: { $ne: AdSetStatus.deleted },
+            });
             adsets.forEach((adset) => {
                 const locId = adset.castrLocId;
                 if (locationAdsets[locId]) locationAdsets[locId].adsets.push(adset.toObject());
@@ -105,48 +97,27 @@ class AdStudyService {
     }
 
     async deleteAdStudy(params) {
-        const adstudyId = params.adstudyId;
-        const castrLocId = params.castrLocId;
-        const promotionId = params.promotionId;
+        let adstudyIds = [];
         const castrBizId = params.castrBizId;
+        // const castrLocId = params.castrLocId;
+        const promotionId = params.promotionId;
         try {
-            let dbUpdate;
-            if (adstudyId) {
-                const fbResponse = await fbRequest.delete(adstudyId);
-                dbUpdate = AdStudyModel.updateOne(
-                    { id: adstudyId },
-                    { $set: { status: 'DELETED' } }
-                );
-            } else if (castrLocId) {
-                const studies = await AdStudyModel.find({
-                    castrLocId: castrLocId,
-                    promotionId: promotionId,
-                    status: { $ne: 'DELETED' },
-                });
-                const fbResponses = await Promise.all(studies.map(study => fbRequest.delete(study.id)));
-                dbUpdate = AdStudyModel.updateMany(
-                    {
-                        castrLocId: castrLocId,
-                        promotionId: promotionId,
-                    },
-                    { $set: { status: 'DELETED' } }
-                );
-            } else {
+            if (!params.adstudyId) {
                 const studies = await AdStudyModel.find({
                     castrBizId: castrBizId,
+                    // castrLocId: castrLocId,
                     promotionId: promotionId,
                     status: { $ne: 'DELETED' },
                 });
-                const fbResponses = await Promise.all(studies.map(study => fbRequest.delete(study.id)));
-                dbUpdate = AdStudyModel.updateMany(
-                    {
-                        castrBizId: castrBizId,
-                        promotionId: promotionId,
-                    },
-                    { $set: { status: 'DELETED' } }
-                );
+                adstudyIds = studies.map(study => study.id);
+            } else {
+                adstudyIds.push(params.adstudyId);
             }
-            const writeResult = await dbUpdate;
+            const fbResponses = await Promise.all(adstudyIds.map(studyId => fbRequest.delete(studyId)));
+            const writeResult = await AdStudyModel.updateMany(
+                { id: { $in: adstudyIds } },
+                { $set: { status: 'DELETED' } }
+            );
             return {
                 success: true,
                 message: `${writeResult.nModified} split tests deleted`,
