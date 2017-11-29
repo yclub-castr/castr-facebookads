@@ -301,7 +301,10 @@ class AdSetService {
         const castrLocId = params.castrLocId;
         const promotionId = params.promotionId;
         const campaignId = params.campaignId;
-        const fields = params.fields;
+        let fields = params.fields || [];
+        if (typeof fields === 'string') {
+            fields = fields.split(',');
+        }
         try {
             const query = { status: { $ne: AdSetStatus.deleted } };
             if (castrBizId) query.castrBizId = castrBizId;
