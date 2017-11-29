@@ -51,6 +51,7 @@ router.route('/')
             if (!params.targeting) throw new Error('Missing body parameter: \'targeting\'');
             if (!params.startDate) throw new Error('Missing body parameter: \'startDate\'');
             if (!params.endDate && params.endDate !== 0) throw new Error('Missing body parameter: \'endDate\'');
+            if (params.endDate !== 0 && params.startDate > params.endDate) throw new Error('Invalid dates: \'startDate\' cannot be greater than \'endDate\'');
             res.json(await adsetService.createAdSet(params));
         } catch (err) {
             next(err);
