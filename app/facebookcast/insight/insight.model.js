@@ -447,7 +447,7 @@ const graph = (report, x, y, type) => {
     }
 };
 
-const platformFormatter = (platformRecords, platformAds, tz) => {
+const platformFormatter = (platformRecords, platformAds, timezone) => {
     const report = {
         numPromotions: 0,
         numAds: platformAds.total,
@@ -473,7 +473,7 @@ const platformFormatter = (platformRecords, platformAds, tz) => {
     };
     platformRecords.forEach((record) => {
         // Prepare dates
-        const date = moment.tz(record.date, tz).format('YYYY/MM/DD');
+        const date = moment.tz(record.date, timezone).format('YYYY/MM/DD');
         const platform = record.platform;
         if (!dates[date]) {
             dates[date] = {
