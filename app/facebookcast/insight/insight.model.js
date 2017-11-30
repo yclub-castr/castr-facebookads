@@ -635,7 +635,7 @@ const demographicFormatter = (demographicRecords, locale) => {
                 } else if (demog === 'hour') {
                     Object.keys(record[metric][demog]).forEach((hour) => {
                         if (!hourValues[metric]) hourValues[metric] = {};
-                        if (!report[metric][hour]) hourValues[metric][hour] = 0;
+                        if (!hourValues[metric][hour]) hourValues[metric][hour] = 0;
                         hourValues[metric][hour] += record[metric][demog][hour];
                     });
                 }
