@@ -39,84 +39,78 @@ class InsightService {
         const castrLocId = params.castrLocId;
         const promotionId = params.promotionId;
         const dateRange = params.dateRange;
-        // const insightParams = {};
+        const locale = params.locale;
+        const summary = params.summary;
         try {
-            const project = await ProjectModel.findOne({ castrBizId: castrBizId });
-            if (!project) throw new Error(`No such Business (#${castrBizId})`);
-            // const accountId = project.accountId;
-            const accountTimezone = project.timezone;
-
-            // Preparing time range param
-            let start;
-            let end;
-            if (!dateRange) {
-                logger.debug('Preparing default \'date_preset\' parameter...');
-                // insightParams.date_preset = DatePreset.last_28d;
-                end = moment.tz(accountTimezone).hour(23).minute(59).second(59).millisecond(999);
-                start = moment(end).subtract(27, 'day').hour(0).minute(0).second(0).millisecond(0);
-            } else {
-                logger.debug('Validating \'dateRange\' parameter...');
-                const dates = dateRange.split(',');
-                start = moment.tz(dates[0], accountTimezone).hour(0).minute(0).second(0).millisecond(0);
-                end = moment.tz(dates[1], accountTimezone).hour(23).minute(59).second(59).millisecond(999);
-                if (end.diff(start) < 0) {
-                    throw new Error(`Invalid date range: endDate (${end.format('L')}) cannot be earlier than startDate (${start.format('L')})`);
-                }
-            }
-            // insightParams.time_range = { since: start.format('YYYY-MM-DD'), until: end.format('YYYY-MM-DD') };
-
-            // Preparing filtering param
-            logger.debug('Preparing \'filtering\' parameters...');
-            const query = {};
-            // const adlabels = [];
-            if (castrBizId) {
-                query.castrBizId = castrBizId;
-                // adlabels.push(`"${castrBizId}"`);
-            }
-            if (castrLocId) {
-                query.castrLocId = castrLocId;
-                // adlabels.push(`"${castrLocId}"`);
-            }
-            if (promotionId) {
-                query.promotionId = promotionId;
-                // adlabels.push(`"${promotionId}"`);
-            }
-            // insightParams.filtering = `[ {"field": "campaign.adlabels","operator": "ALL","value": [${adlabels.join()}] } ]`;
-
-            const platformAds = { facebook: 0, instagram: 0, audienceNetwork: 0 };
-            const associatedAds = await AdModel.find(query);
-            platformAds.total = associatedAds.length;
-            const associatedAdsets = {};
-            associatedAds.forEach((ad) => {
-                if (!associatedAdsets[ad.adsetId]) associatedAdsets[ad.adsetId] = 1;
-                else associatedAdsets[ad.adsetId] += 1;
-            });
-            const adsets = await AdSetModel.find({ id: { $in: Object.keys(associatedAdsets) } });
-            adsets.forEach((adset) => {
-                const platforms = adset.targeting.publisher_platforms;
-                if (!platforms) {
-                    platformAds.facebook += associatedAdsets[adset.id];
-                    platformAds.instagram += associatedAdsets[adset.id];
-                    platformAds.audienceNetwork += associatedAdsets[adset.id];
-                } else {
-                    if (platforms.includes('facebook')) platformAds.facebook += associatedAdsets[adset.id];
-                    if (platforms.includes('instagram')) platformAds.instagram += associatedAdsets[adset.id];
-                    if (platforms.includes('audience_network')) platformAds.audienceNetwork += associatedAdsets[adset.id];
-                }
-            });
-
             let platformReport;
             let demographicReport;
-            let genderAgeResp;
-            let regionResp;
-            let hourResp;
             if (!mock) {
-                query.$and = [{ date: { $gte: start } }, { date: { $lte: end } }];
-                const insightsRecords = await PlatformModel.find(query);
-                platformReport = Formatter.platform(insightsRecords, platformAds, accountTimezone);
+                // Fetch project
+                const project = await ProjectModel.findOne({ castrBizId: castrBizId });
+                if (!project) throw new Error(`No such Business (#${castrBizId})`);
+                const accountTimezone = project.timezone;
 
+                // Prepare date range
+                let start;
+                let end;
+                if (!dateRange) {
+                    logger.debug('Preparing default date range...');
+                    end = moment.tz(accountTimezone).hour(23).minute(59).second(59).millisecond(999);
+                    start = moment(end).subtract(27, 'day').hour(0).minute(0).second(0).millisecond(0);
+                } else {
+                    logger.debug('Validating date range parameter...');
+                    const dates = dateRange.split(',');
+                    start = moment.tz(dates[0], accountTimezone).hour(0).minute(0).second(0).millisecond(0);
+                    end = moment.tz(dates[1], accountTimezone).hour(23).minute(59).second(59).millisecond(999);
+                    if (end.diff(start) < 0) {
+                        throw new Error(`Invalid date range: endDate (${end.format('L')}) cannot be earlier than startDate (${start.format('L')})`);
+                    }
+                }
+
+                // Prepare filtering param
+                logger.debug('Preparing filters...');
+                const query = {};
+                if (castrBizId) query.castrBizId = castrBizId;
+                if (castrLocId) query.castrLocId = castrLocId;
+                if (promotionId) query.promotionId = promotionId;
+
+                // Fetch insights
+                const insightsQuery = Object.assign({}, query);
+                insightsQuery.$and = [{ date: { $gte: start } }, { date: { $lte: end } }]
+                const insightsRecords = await PlatformModel.find(query);
                 const demographicRecords = await DemographicModel.find(query);
-                demographicReport = Formatter.demographic(demographicRecords, platformAds, accountTimezone);
+
+                if (!summary) {
+                    // Format full insights report
+                    const platformAds = { facebook: 0, instagram: 0, audienceNetwork: 0 };
+                    const associatedAds = await AdModel.find(query);
+                    platformAds.total = associatedAds.length;
+                    const associatedAdsets = {};
+                    associatedAds.forEach((ad) => {
+                        if (!associatedAdsets[ad.adsetId]) associatedAdsets[ad.adsetId] = 1;
+                        else associatedAdsets[ad.adsetId] += 1;
+                    });
+                    const adsets = await AdSetModel.find({ id: { $in: Object.keys(associatedAdsets) } });
+                    adsets.forEach((adset) => {
+                        const platforms = adset.targeting.publisher_platforms;
+                        if (!platforms) {
+                            platformAds.facebook += associatedAdsets[adset.id];
+                            platformAds.instagram += associatedAdsets[adset.id];
+                            platformAds.audienceNetwork += associatedAdsets[adset.id];
+                        } else {
+                            if (platforms.includes('facebook')) platformAds.facebook += associatedAdsets[adset.id];
+                            if (platforms.includes('instagram')) platformAds.instagram += associatedAdsets[adset.id];
+                            if (platforms.includes('audience_network')) platformAds.audienceNetwork += associatedAdsets[adset.id];
+                        }
+                    });
+                    platformReport = Formatter.platform(insightsRecords, platformAds, accountTimezone);
+                    demographicReport = Formatter.demographic(demographicRecords, locale);
+                } else {
+                    // Format summary report
+
+                    platformReport = Formatter.platform(insightsRecords, accountTimezone);
+                    demographicReport = Formatter.demographic(demographicRecords, locale);
+                }
             } else {
                 demographicReport = {
                     impressions: {},
@@ -125,11 +119,11 @@ class InsightService {
                     purchases: {},
                 };
                 platformReport = Insight.Mock.platformReport();
-                genderAgeResp = Insight.Mock.genderAge();
-                regionResp = Insight.Mock.region();
-                hourResp = Insight.Mock.hour();
+                const genderAgeResp = Insight.Mock.genderAge();
+                const regionResp = Insight.Mock.region();
+                const hourResp = Insight.Mock.hour();
                 Formatter.genderAge(demographicReport, genderAgeResp.data);
-                Formatter.region(demographicReport, regionResp.data, params.locale);
+                Formatter.region(demographicReport, regionResp.data, locale);
                 Formatter.hour(demographicReport, hourResp.data);
             }
 
