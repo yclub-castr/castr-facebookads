@@ -613,6 +613,7 @@ const demographicFormatter = (demographicRecords, locale) => {
         purchases: {},
     };
     const regionValues = {};
+    const hourValues = {};
     demographicRecords.forEach((record) => {
         Object.keys(report).forEach((metric) => {
             Object.keys(record[metric]).forEach((demog) => {
@@ -633,8 +634,9 @@ const demographicFormatter = (demographicRecords, locale) => {
                     });
                 } else if (demog === 'hour') {
                     Object.keys(record[metric][demog]).forEach((hour) => {
-                        if (!report[metric][demog][hour]) report[metric][demog][hour] = 0;
-                        report[metric][demog][hour] += record[metric][demog][hour];
+                        if (!hourValues[metric]) hourValues[metric] = {};
+                        if (!report[metric][hour]) hourValues[metric][hour] = 0;
+                        hourValues[metric][hour] += record[metric][demog][hour];
                     });
                 }
             });
@@ -652,6 +654,12 @@ const demographicFormatter = (demographicRecords, locale) => {
                 value: regionValues[metric][regionName],
             };
         });
+        const hourX = Object.keys(hourValues[metric]).map(hourRange => hourRange.substring(0, 2));
+        const hourY = [{
+            label: 'hour',
+            data: Object.keys(hourValues[metric]).map(hourRange => hourValues[metric][hourRange]),
+        }];
+        report[metric].hour = { x: hourX, y: hourY };
     });
 
     return report;
@@ -721,13 +729,23 @@ const regionFormatter = (demoReport, regionArray, locale) => {
 };
 
 const hourFormatter = (demoReport, hourArray) => {
+    const hourValues = {};
     Object.keys(demoReport).forEach((metric) => {
-        demoReport[metric].hour = {};
+        hourValues[metric] = {};
         hourArray.forEach((item) => {
             const value = getValue(item, metric);
-            demoReport[metric].hour[item[Breakdown.hourly_stats_aggregated_by_advertiser_time_zone]] = value;
+            hourValues[metric][item[Breakdown.hourly_stats_aggregated_by_advertiser_time_zone]] = value;
         });
     });
+    Object.keys(demoReport).forEach((metric) => {
+        const hourX = Object.keys(hourValues[metric]).map(hourRange => hourRange.substring(0, 2));
+        const hourY = [{
+            label: 'hour',
+            data: Object.keys(hourValues[metric]).map(hourRange => hourValues[metric][hourRange]),
+        }];
+        demoReport[metric].hour = { x: hourX, y: hourY };
+    });
+
     return demoReport;
 };
 
