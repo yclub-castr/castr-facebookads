@@ -354,40 +354,34 @@ class ProjectService {
             };
             logger.debug(`Fetching Instagram account(s) belonging to Business (#${castrBizId}) page...`);
             const instagramRequestData = {
-                fields: ['connected_instagram_account{id,username}'].toString(),
+                fields: ['id', 'username'].toString(),
                 access_token: pageAccessToken,
             };
             const promises = [
-                fbRequest.get(pageId, null, instagramRequestData),
-                // fbRequest.get(pageId, 'page_backed_instagram_accounts', instagramRequestData)
+                fbRequest.get(pageId, 'instagram_accounts', instagramRequestData),
+                fbRequest.get(pageId, 'page_backed_instagram_accounts', instagramRequestData)
             ];
             const fbResponses = await Promise.all(promises);
             let foundInstagramAccount = false;
-            let instagram;
             for (let i = 0; i < fbResponses.length; i++) {
-                if (i === 0) {
-                    instagram = fbResponses[i].connected_instagram_account;
-                } else {
-                    instagram = fbResponses[i].data[0];
-                }
-                const isPBIA = (i === 1);
+                const instagram = fbResponses[i].data[0];
                 if (instagram) {
                     logger.debug('Instagram account fetched');
                     dbUpdate.instagramId = instagram.id;
                     dbUpdate.instagramName = instagram.username;
-                    dbUpdate.isPBIA = isPBIA;
+                    dbUpdate.isPBIA = (i === 1);
                     foundInstagramAccount = true;
                     break;
                 }
             }
-            // if (!foundInstagramAccount) {
-            //     logger.debug('No Instagram account fetched, creating new PBIA...');
-            //     const PBIA = await fbRequest.post(pageId, 'page_backed_instagram_accounts', instagramRequestData);
-            //     logger.debug(`New PBIA created for Business (#${castrBizId}) page`);
-            //     dbUpdate.instagramId = PBIA.id;
-            //     dbUpdate.instagramName = PBIA.username;
-            //     dbUpdate.isPBIA = true;
-            // }
+            if (!foundInstagramAccount) {
+                logger.debug('No Instagram account fetched, creating new PBIA...');
+                const PBIA = await fbRequest.post(pageId, 'page_backed_instagram_accounts', instagramRequestData);
+                logger.debug(`New PBIA created for Business (#${castrBizId}) page`);
+                dbUpdate.instagramId = PBIA.id;
+                dbUpdate.instagramName = PBIA.username;
+                dbUpdate.isPBIA = true;
+            }
             await ProjectModel.update(
                 {
                     castrBizId: castrBizId,
@@ -410,7 +404,7 @@ class ProjectService {
     async getInstagrams(params) {
         const pageId = params.pageId;
         const pageAccessToken = params.pageAccessToken;
-        const fields = ['connected_instagram_account{id,username}'];
+        const fields = ['id', 'username', 'followed_by_count'];
         const data = {
             access_token: pageAccessToken,
             fields: fields.toString(),
@@ -418,21 +412,16 @@ class ProjectService {
         try {
             logger.debug(`Fetching Instagram account(s) belonging to Page (#${pageId}) ...`);
             const promises = [
-                fbRequest.get(pageId, null, data),
-                // fbRequest.get(pageId, 'page_backed_instagram_accounts', data)
+                fbRequest.get(pageId, 'instagram_accounts', data),
+                fbRequest.get(pageId, 'page_backed_instagram_accounts', data)
             ];
             const fbResponses = await Promise.all(promises);
             const msg = 'Instagram account(s) fetched';
             logger.debug(msg);
-            let instagram;
             for (let i = 0; i < fbResponses.length; i++) {
-                if (i === 0) {
-                    instagram = fbResponses[i].connected_instagram_account;
-                } else {
-                    instagram = fbResponses[i].data[0];
-                }
+                const instagram = fbResponses[i].data[0];
                 if (instagram) {
-                    instagram.isPBIA = (i !== 0);
+                    instagram.isPBIA = (i === 1);
                     return {
                         success: true,
                         message: msg,
