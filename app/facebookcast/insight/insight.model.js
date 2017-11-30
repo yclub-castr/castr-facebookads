@@ -258,6 +258,7 @@ const mockPlatformReport = (timezone) => {
         numPromotions: 2,
         numAds: 144,
         impressions: mockRandomMax.impressions,
+        clicks: mockRandomMax.clicks,
         linkClicks: mockRandomMax.linkClicks,
         purchases: mockRandomMax.conversions,
         responses: mockRandomMax.conversions * 8,
@@ -266,6 +267,7 @@ const mockPlatformReport = (timezone) => {
             TEST_PROMO_ID_1: {
                 numAds: 72,
                 impressions: mockRandomMax.impressions / 2,
+                clicks: mockRandomMax.clicks / 2,
                 linkClicks: mockRandomMax.linkClicks / 2,
                 purchases: mockRandomMax.conversions / 2,
                 responses: mockRandomMax.conversions * 4,
@@ -274,6 +276,7 @@ const mockPlatformReport = (timezone) => {
             TEST_PROMO_ID_2: {
                 numAds: 72,
                 impressions: mockRandomMax.impressions / 2,
+                clicks: mockRandomMax.clicks / 2,
                 linkClicks: mockRandomMax.linkClicks / 2,
                 purchases: mockRandomMax.conversions / 2,
                 responses: mockRandomMax.conversions * 4,
@@ -387,6 +390,7 @@ exports.Mock = {
 
 const addUpMetrics = (container, metrics) => {
     container.impressions += metrics.impressions;
+    container.clicks += metrics.clicks;
     container.linkClicks += metrics.linkClicks;
     container.purchases += metrics.purchases;
     container.responses += (metrics.responses || metrics.responses === 0)
@@ -448,6 +452,7 @@ const platformFormatter = (platformRecords, platformAds, tz) => {
         numPromotions: 0,
         numAds: platformAds.total,
         impressions: 0,
+        clicks: 0,
         linkClicks: 0,
         purchases: 0,
         responses: 0,
@@ -509,6 +514,7 @@ const platformFormatter = (platformRecords, platformAds, tz) => {
             report.numPromotions += 1;
             report.promotions[promotionId] = {
                 impressions: 0,
+                clicks: 0,
                 linkClicks: 0,
                 purchases: 0,
                 responses: 0,
