@@ -191,7 +191,10 @@ router.route('/:castrBizId/promotion')
 
 router.get('/', async (req, res, next) => {
     try {
-        res.json(await projectService.getActiveProjects());
+        const params = {
+            castrBizIds: req.query.castrBizIds,
+        };
+        res.json(await projectService.getActiveProjects(params));
     } catch (err) {
         next(err);
     }

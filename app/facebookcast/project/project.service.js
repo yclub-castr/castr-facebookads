@@ -16,11 +16,17 @@ const pageRoles = process.env.PAGE_ROLES.split(',');
 
 class ProjectService {
     async getActiveProjects(params) {
+        let castrBizIds = params.castrBizIds || [];
+        if (typeof castrBizIds === 'string') {
+            castrBizIds = castrBizIds.split(',');
+        }
         try {
-            const runningProjects = await ProjectModel.find({
+            const query = {
                 accountStatus: { $in: [ProjectStatus.Approved, ProjectStatus.Active] },
                 'adLabels.promotionLabels': { $exists: true, $ne: [] },
-            });
+            };
+            if (castrBizIds.length > 0) query.castrBizId = { $in: castrBizIds };
+            const runningProjects = await ProjectModel.find(query);
             return {
                 success: true,
                 message: `${runningProjects.length} active projects found`,
