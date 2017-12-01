@@ -3,6 +3,7 @@
 'use strict';
 
 const utils = require('../../utils');
+const constants = require('../../constants');
 const fbRequest = require('../fbapi');
 const Project = require('../project/project.model');
 const Insight = require('./insight.model');
@@ -42,26 +43,26 @@ class InsightService {
         const locale = params.locale;
         const summary = params.summary;
         try {
-            let platformReport;
-            let demographicReport;
+            let report;
             if (!mock) {
                 // Fetch project
                 const project = await ProjectModel.findOne({ castrBizId: castrBizId });
                 if (!project) throw new Error(`No such Business (#${castrBizId})`);
-                const accountTimezone = project.timezone;
+                const timezone = project.timezone;
+                const currency = project.currency;
 
                 // Prepare date range
                 let start;
                 let end;
                 if (!dateRange) {
                     logger.debug('Preparing default date range...');
-                    end = moment.tz(accountTimezone).hour(23).minute(59).second(59).millisecond(999);
+                    end = moment.tz(timezone).hour(23).minute(59).second(59).millisecond(999);
                     start = moment(end).subtract(27, 'day').hour(0).minute(0).second(0).millisecond(0);
                 } else {
                     logger.debug('Validating date range parameter...');
                     const dates = dateRange.split(',');
-                    start = moment.tz(dates[0], accountTimezone).hour(0).minute(0).second(0).millisecond(0);
-                    end = moment.tz(dates[1], accountTimezone).hour(23).minute(59).second(59).millisecond(999);
+                    start = moment.tz(dates[0], timezone).hour(0).minute(0).second(0).millisecond(0);
+                    end = moment.tz(dates[1], timezone).hour(23).minute(59).second(59).millisecond(999);
                     if (end.diff(start) < 0) {
                         throw new Error(`Invalid date range: endDate (${end.format('L')}) cannot be earlier than startDate (${start.format('L')})`);
                     }
@@ -76,12 +77,13 @@ class InsightService {
 
                 // Fetch insights
                 const insightsQuery = Object.assign({}, query);
-                insightsQuery.$and = [{ date: { $gte: start } }, { date: { $lte: end } }]
+                insightsQuery.$and = [{ date: { $gte: start } }, { date: { $lte: end } }];
                 const insightsRecords = await PlatformModel.find(query);
                 const demographicRecords = await DemographicModel.find(query);
 
                 if (!summary) {
                     // Format full insights report
+                    // Count ads
                     const platformAds = { facebook: 0, instagram: 0, audienceNetwork: 0 };
                     const associatedAds = await AdModel.find(query);
                     platformAds.total = associatedAds.length;
@@ -103,28 +105,89 @@ class InsightService {
                             if (platforms.includes('audience_network')) platformAds.audienceNetwork += associatedAdsets[adset.id];
                         }
                     });
-                    platformReport = Formatter.platform(insightsRecords, platformAds, accountTimezone);
-                    demographicReport = Formatter.demographic(demographicRecords, locale);
+                    const platformReport = Formatter.platform(insightsRecords, platformAds, timezone);
+                    const demographicReport = Formatter.demographic(demographicRecords, locale);
+                    report = {
+                        platformReport: platformReport,
+                        demographicReport: demographicReport,
+                    };
                 } else {
                     // Format summary report
-
-                    platformReport = Formatter.platform(insightsRecords, accountTimezone);
-                    demographicReport = Formatter.demographic(demographicRecords, locale);
+                    const summaryReport = Formatter.summary(insightsRecords, demographicRecords, locale);
+                    report = {
+                        promotionName: null,
+                        amountSpent: summaryReport.amountSpent,
+                        currency: project.currency,
+                        dateStart: moment.tz(start, timezone).locale(locale).format('L'),
+                        dateEnd: moment.tz(end, timezone).locale(locale).format('L'),
+                        locations: null,
+                        optimizations: null,
+                        budget: {
+                            facebook: summaryReport.budget.facebook,
+                            instagram: summaryReport.budget.instagram,
+                            audienceNetwork: summaryReport.budget.audience_network,
+                        },
+                        reach: {
+                            total: summaryReport.reach,
+                            unitCost: (summaryReport.amountSpent / (summaryReport.reach / 1000)).toFixed(constants.currencyOffset(currency)),
+                        },
+                        impressions: {
+                            total: summaryReport.impressions,
+                            unitCost: (summaryReport.amountSpent / (summaryReport.impressions / 1000)).toFixed(constants.currencyOffset(currency)),
+                        },
+                        linkClicks: {
+                            total: summaryReport.linkClicks,
+                            unitCost: (summaryReport.amountSpent / summaryReport.linkClicks).toFixed(constants.currencyOffset(currency)),
+                            rate: ((summaryReport.linkClicks / summaryReport.impressions) * 100).toFixed(constants.currencyOffset(currency)),
+                        },
+                        purchases: {
+                            total: summaryReport.purchases,
+                            unitCost: (summaryReport.amountSpent / summaryReport.purchases).toFixed(constants.currencyOffset(currency)),
+                            rate: ((summaryReport.purchases / summaryReport.linkClicks) * 100).toFixed(constants.currencyOffset(currency)),
+                        },
+                        responses: {
+                            total: summaryReport.responses.total,
+                            addPaymentInfo: summaryReport.responses.addPaymentInfo,
+                            addToCart: summaryReport.responses.addToCart,
+                            addToWishlist: summaryReport.responses.addToWishlist,
+                            completeRegistration: summaryReport.responses.completeRegistration,
+                            initiateCheckout: summaryReport.responses.initiateCheckout,
+                            lead: summaryReport.responses.lead,
+                            search: summaryReport.responses.search,
+                            viewContent: summaryReport.responses.viewContent,
+                        },
+                        genderAge: {
+                            mostLinkClicks: summaryReport.genderAge.linkClicks.sort((a, b) => a.value > b.value),
+                            mostPurchases: summaryReport.genderAge.purchases.sort((a, b) => a.value > b.value),
+                        },
+                        region: {
+                            mostLinkClicks: summaryReport.region.linkClicks.sort((a, b) => a.value > b.value),
+                            mostPurchases: summaryReport.region.purchases.sort((a, b) => a.value > b.value),
+                        },
+                        hour: {
+                            mostLinkClicks: summaryReport.hour.linkClicks.sort((a, b) => a.value > b.value),
+                            mostPurchases: summaryReport.hour.purchases.sort((a, b) => a.value > b.value),
+                        },
+                    };
                 }
             } else {
-                demographicReport = {
+                const demographicReport = {
                     impressions: {},
                     clicks: {},
                     linkClicks: {},
                     purchases: {},
                 };
-                platformReport = Insight.Mock.platformReport();
+                const platformReport = Insight.Mock.platformReport();
                 const genderAgeResp = Insight.Mock.genderAge();
                 const regionResp = Insight.Mock.region();
                 const hourResp = Insight.Mock.hour();
                 Formatter.genderAge(demographicReport, genderAgeResp.data);
                 Formatter.region(demographicReport, regionResp.data, locale);
                 Formatter.hour(demographicReport, hourResp.data);
+                report = {
+                    platformReport: platformReport,
+                    demographicReport: demographicReport,
+                };
             }
 
             const msg = 'Insights returned';
@@ -132,10 +195,7 @@ class InsightService {
             return {
                 success: true,
                 message: msg,
-                data: {
-                    platformReport: platformReport,
-                    demographicReport: demographicReport,
-                },
+                data: report,
             };
         } catch (err) {
             throw err;
@@ -351,7 +411,7 @@ class InsightService {
                             }
                             demoUpdate[bizId][locId][promoId][date][metric].region.push({
                                 key: insights[Breakdown.region],
-                                value: this.getValue(insights, metric)
+                                value: this.getValue(insights, metric),
                             });
                         });
                     });

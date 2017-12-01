@@ -665,6 +665,118 @@ const demographicFormatter = (demographicRecords, locale) => {
     return report;
 };
 
+const summaryFormatter = (insightsRecords, demographicRecords, locale) => {
+    const report = {
+        amountSpent: 0,
+        budget: { facebook: 0, instagram: 0, audience_network: 0 },
+        reach: 0,
+        impressions: 0,
+        linkClicks: 0,
+        purchases: 0,
+        responses: {
+            addPaymentInfo: 0,
+            addToCart: 0,
+            addToWishlist: 0,
+            completeRegistration: 0,
+            initiateCheckout: 0,
+            lead: 0,
+            search: 0,
+            viewContent: 0,
+        },
+        genderAge: {
+            linkClicks: [],
+            purchases: [],
+        },
+        region: {
+            linkClicks: [],
+            purchases: [],
+        },
+        hour: {
+            linkClicks: [],
+            purchases: [],
+        },
+    };
+    insightsRecords.forEach((record) => {
+        report.budget[record.platform] += record.spend;
+        report.reach += record.reach;
+        report.impressions += record.impressions;
+        report.linkClicks += record.linkClicks;
+        report.purchases += record.purchases;
+        report.responses.addPaymentInfo += record.addPaymentInfo;
+        report.responses.addToCart += record.addToCart;
+        report.responses.addToWishlist += record.addToWishlist;
+        report.responses.completeRegistration += record.completeRegistration;
+        report.responses.initiateCheckout += record.initiateCheckout;
+        report.responses.lead += record.lead;
+        report.responses.search += record.search;
+        report.responses.viewContent += record.viewContent;
+    });
+    report.amountSpent = Object.values(report.budget).reduce((a, b) => a + b);
+    report.responses.total = Object.values(report.responses).reduce((a, b) => a + b);
+    const demographicSummary = {};
+    demographicRecords.forEach((record) => {
+        ['linkClicks', 'purchases'].forEach((metric) => {
+            if (!demographicSummary[metric]) demographicSummary[metric] = { genderAge: {}, region: {}, hour: {} };
+            Object.keys(record[metric]).forEach((demog) => {
+                if (demog === 'genderAge') {
+                    Object.keys(record[metric][demog]).forEach((gender) => {
+                        if (!demographicSummary[metric][demog][gender]) demographicSummary[metric][demog][gender] = {};
+                        Object.keys(record[metric][demog][gender]).forEach((age) => {
+                            if (!demographicSummary[metric][demog][gender][age]) demographicSummary[metric][demog][gender][age] = 0;
+                            demographicSummary[metric][demog][gender][age] += record[metric][demog][gender][age];
+                        });
+                    });
+                } else if (demog === 'region') {
+                    record[metric][demog].forEach((region) => {
+                        if (!demographicSummary[metric][demog]) demographicSummary[metric][demog] = {};
+                        if (!demographicSummary[metric][demog][region.key]) demographicSummary[metric][demog][region.key] = 0;
+                        demographicSummary[metric][demog][region.key] += region.value;
+                    });
+                } else if (demog === 'hour') {
+                    Object.keys(record[metric][demog]).forEach((hour) => {
+                        if (!demographicSummary[metric][demog]) demographicSummary[metric][demog] = {};
+                        if (!demographicSummary[metric][demog][hour]) demographicSummary[metric][demog][hour] = 0;
+                        demographicSummary[metric][demog][hour] += record[metric][demog][hour];
+                    });
+                }
+            });
+        });
+    });
+    ['linkClicks', 'purchases'].forEach((metric) => {
+        Object.keys(demographicSummary[metric]).forEach((demog) => {
+            if (demog === 'genderAge') {
+                Object.keys(demographicSummary[metric][demog]).forEach((gender) => {
+                    Object.keys(demographicSummary[metric][demog][gender]).forEach((age) => {
+                        report[demog][metric].push({
+                            gender: gender,
+                            age: age,
+                            value: demographicSummary[metric][demog][gender][age],
+                            ratio: ((demographicSummary[metric][demog][gender][age] / (report[metric] || 1)) * 100).toFixed(2),
+                        });
+                    });
+                });
+            } else if (demog === 'region') {
+                Object.keys(demographicSummary[metric][demog]).forEach((region) => {
+                    report[demog][metric].push({
+                        region: region,
+                        value: demographicSummary[metric][demog][region],
+                        ratio: ((demographicSummary[metric][demog][region] / (report[metric] || 1)) * 100).toFixed(2),
+                    });
+                });
+            } else if (demog === 'hour') {
+                Object.keys(demographicSummary[metric][demog]).forEach((hour) => {
+                    report[demog][metric].push({
+                        hour: hour.substring(0, 2),
+                        value: demographicSummary[metric][demog][hour],
+                        ratio: ((demographicSummary[metric][demog][hour] / (report[metric] || 1)) * 100).toFixed(2),
+                    });
+                });
+            }
+        });
+    });
+    return report;
+};
+
 const getValue = (insightObj, metric) => {
     let value = 0;
     if (metric === 'impressions') {
@@ -755,5 +867,6 @@ exports.Formatter = {
     genderAge: genderAgeFormatter,
     region: regionFormatter,
     hour: hourFormatter,
+    summary: summaryFormatter,
 };
 

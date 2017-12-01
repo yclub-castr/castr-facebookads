@@ -6,6 +6,8 @@ const locale = {
     us: 'en_US',
 };
 
+const zeroBasedCurrencies = ['KRW', 'JPY'];
+
 const koreanRegionMap = {
     Unknown: {
         name_kr: '알수없음',
@@ -217,3 +219,4 @@ exports.locale = (loc) => {
 exports.fullDayMilliseconds = fullDayMilliseconds;
 exports.koreanRegionMap = koreanRegionMap;
 exports.getSamplePromotion = getSamplePromotion;
+exports.currencyOffset = currency => (zeroBasedCurrencies.includes(currency)) ? 0 : 2;
