@@ -44,6 +44,7 @@ class InsightService {
         const summary = params.summary;
         try {
             let report;
+            const insightParams = {};
             if (!mock) {
                 // Fetch project
                 const project = await ProjectModel.findOne({ castrBizId: castrBizId });
@@ -67,13 +68,25 @@ class InsightService {
                         throw new Error(`Invalid date range: endDate (${end.format('L')}) cannot be earlier than startDate (${start.format('L')})`);
                     }
                 }
+                insightParams.time_range = { since: start.format('YYYY-MM-DD'), until: end.format('YYYY-MM-DD') };
 
                 // Prepare filtering param
                 logger.debug('Preparing filters...');
                 const query = {};
-                if (castrBizId) query.castrBizId = castrBizId;
-                if (castrLocId) query.castrLocId = castrLocId;
-                if (promotionId) query.promotionId = promotionId;
+                const adlabels = [];
+                if (castrBizId) {
+                    query.castrBizId = castrBizId;
+                    adlabels.push(params.castrBizId);
+                }
+                if (castrLocId) {
+                    query.castrLocId = castrLocId;
+                    adlabels.push(params.castrLocId);
+                }
+                if (promotionId) {
+                    query.promotionId = promotionId;
+                    adlabels.push(params.promotionId);
+                }
+                insightParams.filtering = `[ {"field": "campaign.adlabels","operator": "ALL","value": [${adlabels.join()}] } ]`;
 
                 // Fetch insights
                 const insightsQuery = Object.assign({}, query);
@@ -138,12 +151,12 @@ class InsightService {
                         linkClicks: {
                             total: summaryReport.linkClicks,
                             unitCost: (summaryReport.amountSpent / summaryReport.linkClicks).toFixed(constants.currencyOffset(currency)),
-                            rate: ((summaryReport.linkClicks / summaryReport.impressions) * 100).toFixed(constants.currencyOffset(currency)),
+                            rate: ((summaryReport.linkClicks / summaryReport.impressions) * 100).toFixed(constants.currencyOffset(2)),
                         },
                         purchases: {
                             total: summaryReport.purchases,
                             unitCost: (summaryReport.amountSpent / summaryReport.purchases).toFixed(constants.currencyOffset(currency)),
-                            rate: ((summaryReport.purchases / summaryReport.linkClicks) * 100).toFixed(constants.currencyOffset(currency)),
+                            rate: ((summaryReport.purchases / summaryReport.linkClicks) * 100).toFixed(constants.currencyOffset(2)),
                         },
                         responses: {
                             total: summaryReport.responses.total,
@@ -157,16 +170,34 @@ class InsightService {
                             viewContent: summaryReport.responses.viewContent,
                         },
                         genderAge: {
-                            mostLinkClicks: summaryReport.genderAge.linkClicks.sort((a, b) => a.value > b.value),
-                            mostPurchases: summaryReport.genderAge.purchases.sort((a, b) => a.value > b.value),
+                            mostLinkClicks: summaryReport.genderAge.linkClicks
+                                .filter(entry => entry.value !== 0)
+                                .sort((a, b) => b.value - a.value)
+                                .slice(0, 4),
+                            mostPurchases: summaryReport.genderAge.purchases
+                                .filter(entry => entry.value !== 0)
+                                .sort((a, b) => b.value - a.value)
+                                .slice(0, 4),
                         },
                         region: {
-                            mostLinkClicks: summaryReport.region.linkClicks.sort((a, b) => a.value > b.value),
-                            mostPurchases: summaryReport.region.purchases.sort((a, b) => a.value > b.value),
+                            mostLinkClicks: summaryReport.region.linkClicks
+                                .filter(entry => entry.value !== 0)
+                                .sort((a, b) => b.value - a.value)
+                                .slice(0, 4),
+                            mostPurchases: summaryReport.region.purchases
+                                .filter(entry => entry.value !== 0)
+                                .sort((a, b) => b.value - a.value)
+                                .slice(0, 4),
                         },
                         hour: {
-                            mostLinkClicks: summaryReport.hour.linkClicks.sort((a, b) => a.value > b.value),
-                            mostPurchases: summaryReport.hour.purchases.sort((a, b) => a.value > b.value),
+                            mostLinkClicks: summaryReport.hour.linkClicks
+                                .filter(entry => entry.value !== 0)
+                                .sort((a, b) => b.value - a.value)
+                                .slice(0, 4),
+                            mostPurchases: summaryReport.hour.purchases
+                                .filter(entry => entry.value !== 0)
+                                .sort((a, b) => b.value - a.value)
+                                .slice(0, 4),
                         },
                     };
                 }
