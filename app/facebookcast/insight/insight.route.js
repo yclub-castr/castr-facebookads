@@ -25,6 +25,22 @@ router.get('/', async (req, res, next) => {
     }
 });
 
+router.get('/minimum', async (req, res, next) => {
+    try {
+        const params = {
+            castrBizId: req.query.castrBizId,
+            castrLocId: req.query.castrLocId,
+            promotionIds: req.query.promotionIds,
+            dateRange: req.query.dateRange,
+        };
+        if (!params.castrBizId && !params.castrLocId) throw new Error('Missing query param: must provide either \'castrBizId\' or \'castrLocId\'');
+        if (params.dateRange && !params.dateRange.match(/^\d{8},\d{8}$/)) throw new Error('Invalid param: \'dateRange\' must be in correct format (YYYYMMDD,YYYYMMDD)');
+        res.json(await insightService.getMinimumInsights(params));
+    } catch (err) {
+        next(err);
+    }
+});
+
 router.get('/summary', async (req, res, next) => {
     try {
         const params = {

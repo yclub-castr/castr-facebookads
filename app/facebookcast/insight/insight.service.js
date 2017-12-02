@@ -220,6 +220,79 @@ class InsightService {
         }
     }
 
+    async getMinimumInsights(params) {
+        const castrBizId = params.castrBizId;
+        const castrLocId = params.castrLocId;
+        let promotionIds = params.promotionIds;
+        const dateRange = params.dateRange;
+        try {
+            const report = {};
+            // Fetch project
+            const project = await ProjectModel.findOne({ castrBizId: castrBizId });
+            if (!project) throw new Error(`No such Business (#${castrBizId})`);
+            const timezone = project.timezone;
+            const currency = project.currency;
+
+            // Prepare date range
+            let start;
+            let end;
+            if (!dateRange) {
+                logger.debug('Preparing default date range...');
+                end = moment.tz(timezone).hour(23).minute(59).second(59).millisecond(999);
+                start = moment(end).subtract(27, 'day').hour(0).minute(0).second(0).millisecond(0);
+            } else {
+                logger.debug('Validating date range parameter...');
+                const dates = dateRange.split(',');
+                start = moment.tz(dates[0], timezone).hour(0).minute(0).second(0).millisecond(0);
+                end = moment.tz(dates[1], timezone).hour(23).minute(59).second(59).millisecond(999);
+                if (end.diff(start) < 0) {
+                    throw new Error(`Invalid date range: endDate (${end.format('L')}) cannot be earlier than startDate (${start.format('L')})`);
+                }
+            }
+
+            // Prepare filtering param
+            logger.debug('Preparing filters...');
+            const query = {};
+            if (castrBizId) query.castrBizId = castrBizId;
+            if (castrLocId) query.castrLocId = castrLocId;
+            if (promotionIds) query.promotionId = { $in: promotionIds };
+
+            // Fetch insights
+            const insightsQuery = Object.assign({}, query);
+            insightsQuery.$and = [{ date: { $gte: start } }, { date: { $lte: end } }];
+            const platformRecords = await PlatformModel.find(query);
+            const demographicRecords = await DemographicModel.find(query);
+
+            if (!promotionIds) {
+                promotionIds = [];
+                platformRecords.forEach((record) => {
+                    if (!promotionIds.includes(record.promotionId)) promotionIds.push(record.promotionId);
+                });
+            }
+
+            promotionIds.forEach((promotionId) => {
+                report[promotionId] = {
+                    linkClicks: 50,
+                    purchases: 20,
+                    amountSpent: 10000,
+                };
+            });
+
+            const msg = 'Insights returned';
+            logger.debug(msg);
+            return {
+                success: true,
+                message: msg,
+                data: {
+                    currency: currency,
+                    promotions: report,
+                }
+            };
+        } catch (err) {
+            throw err;
+        }
+    }
+
     async updatePromotionInsights(promotionParams, mock) {
         const insightParams = {
             time_increment: 1,
