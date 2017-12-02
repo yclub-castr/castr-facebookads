@@ -93,7 +93,9 @@ class AdSetService {
             const project = await ProjectModel.findOne({ castrBizId: castrBizId });
             if (!project) throw new Error(`No such Business (#${castrBizId})`);
             const accountId = project.accountId;
-            const name = `AdSet [${objective},${optimizationGoal}]`;
+            const nameAge = `${targeting.age_min}-${targeting.age_max}`;
+            const nameInterest = targeting.flexible_spec.map(spec => `(${spec.interests.map(interest => interest.name).slice(0, 4).join('*')})`).slice(0, 3).join('+');
+            const name = `AdSet [${objective},${optimizationGoal}] (Gender: ${targeting.genders})(Age: ${nameAge})(Platform: ${targeting.publisher_platforms})(Interest: ${nameInterest})`;
             const businessLabel = project.adLabels.businessLabel;
             const locationLabel = project.adLabels.locationLabels.filter(label => label.name === castrLocId)[0];
             const promotionLabel = project.adLabels.promotionLabels.filter(label => label.name === promotionId)[0];
