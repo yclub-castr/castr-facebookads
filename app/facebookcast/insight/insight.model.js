@@ -758,7 +758,7 @@ const summaryFormatter = (insightsRecords, demographicRecords, locale) => {
             } else if (demog === 'region') {
                 Object.keys(demographicSummary[metric][demog]).forEach((region) => {
                     report[demog][metric].push({
-                        region: region,
+                        region: (locale === 'kr') ? constants.koreanRegionMap[region].name_kr : region,
                         value: demographicSummary[metric][demog][region],
                         ratio: ((demographicSummary[metric][demog][region] / (report[metric] || 1)) * 100).toFixed(2),
                     });
