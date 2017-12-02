@@ -84,6 +84,7 @@ class InsightService {
                 if (!summary) {
                     // Format full insights report
                     // Count ads
+                    const promotionAds = {};
                     const platformAds = { facebook: 0, instagram: 0, audienceNetwork: 0 };
                     const associatedAds = await AdModel.find(query);
                     platformAds.total = associatedAds.length;
@@ -94,7 +95,10 @@ class InsightService {
                     });
                     const adsets = await AdSetModel.find({ id: { $in: Object.keys(associatedAdsets) } });
                     adsets.forEach((adset) => {
+                        const promoId = adset.promotionId;
                         const platforms = adset.targeting.publisher_platforms;
+                        if (!promotionAds[promoId]) promotionAds[promoId] = associatedAdsets[adset.id];
+                        else promotionAds[promoId] += associatedAdsets[adset.id];
                         if (!platforms) {
                             platformAds.facebook += associatedAdsets[adset.id];
                             platformAds.instagram += associatedAdsets[adset.id];
@@ -105,7 +109,7 @@ class InsightService {
                             if (platforms.includes('audience_network')) platformAds.audienceNetwork += associatedAdsets[adset.id];
                         }
                     });
-                    const platformReport = Formatter.platform(insightsRecords, platformAds, timezone);
+                    const platformReport = Formatter.platform(insightsRecords, promotionAds, platformAds, timezone);
                     const demographicReport = Formatter.demographic(demographicRecords, locale);
                     report = {
                         platformReport: platformReport,

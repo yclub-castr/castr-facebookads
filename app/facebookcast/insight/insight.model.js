@@ -447,7 +447,7 @@ const graph = (report, x, y, type) => {
     }
 };
 
-const platformFormatter = (platformRecords, platformAds, timezone) => {
+const platformFormatter = (platformRecords, promotionAds, platformAds, timezone) => {
     const report = {
         numPromotions: 0,
         numAds: platformAds.total,
@@ -513,6 +513,7 @@ const platformFormatter = (platformRecords, platformAds, timezone) => {
         if (!report.promotions[promotionId]) {
             report.numPromotions += 1;
             report.promotions[promotionId] = {
+                ads: 0,
                 impressions: 0,
                 clicks: 0,
                 linkClicks: 0,
@@ -523,6 +524,7 @@ const platformFormatter = (platformRecords, platformAds, timezone) => {
         }
         addUpMetrics(report.promotions[promotionId], record);
     });
+
     const dateIds = Object.keys(dates).sort();
     const budget = JSON.parse(JSON.stringify(platformBreakdown));
     const impression = JSON.parse(JSON.stringify(platformBreakdown));
@@ -600,6 +602,7 @@ const platformFormatter = (platformRecords, platformAds, timezone) => {
     graph(report, x, purchase, 'purchase');
     graph(report, x, response, 'response');
     Object.keys(report.promotions).forEach((promotionId) => {
+        report.promotions[promotionId].ads = promotionAds[promotionId];
         addUpMetrics(report, report.promotions[promotionId]);
     });
     return report;
