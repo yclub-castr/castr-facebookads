@@ -44,7 +44,6 @@ class InsightService {
         const summary = params.summary;
         try {
             let report;
-            const insightParams = {};
             if (!mock) {
                 // Fetch project
                 const project = await ProjectModel.findOne({ castrBizId: castrBizId });
@@ -68,25 +67,13 @@ class InsightService {
                         throw new Error(`Invalid date range: endDate (${end.format('L')}) cannot be earlier than startDate (${start.format('L')})`);
                     }
                 }
-                insightParams.time_range = { since: start.format('YYYY-MM-DD'), until: end.format('YYYY-MM-DD') };
 
                 // Prepare filtering param
                 logger.debug('Preparing filters...');
                 const query = {};
-                const adlabels = [];
-                if (castrBizId) {
-                    query.castrBizId = castrBizId;
-                    adlabels.push(params.castrBizId);
-                }
-                if (castrLocId) {
-                    query.castrLocId = castrLocId;
-                    adlabels.push(params.castrLocId);
-                }
-                if (promotionId) {
-                    query.promotionId = promotionId;
-                    adlabels.push(params.promotionId);
-                }
-                insightParams.filtering = `[ {"field": "campaign.adlabels","operator": "ALL","value": [${adlabels.join()}] } ]`;
+                if (castrBizId) query.castrBizId = castrBizId;
+                if (castrLocId) query.castrLocId = castrLocId;
+                if (promotionId) query.promotionId = promotionId;
 
                 // Fetch insights
                 const insightsQuery = Object.assign({}, query);
@@ -244,6 +231,7 @@ class InsightService {
                     const params = promotionParams[i];
                     const accountId = params.accountId;
                     params.insights = [];
+                    params.platformInsights = [];
                     params.demographicInsights = {
                         genderAge: [],
                         region: [],
@@ -259,6 +247,21 @@ class InsightService {
                     const start = moment(end).subtract(28, 'day').hour(0).minute(0).second(0).millisecond(0);
                     insightParams.time_range = { since: start.format('YYYY-MM-DD'), until: end.format('YYYY-MM-DD') };
 
+                    // Fetch general insights
+                    const generalParams = Object.assign({}, insightParams);
+                    generalParams.fields = fields.platform;
+                    let generalResponse;
+                    do {
+                        if (generalResponse) {
+                            generalResponse = await fbRequest.get(generalResponse.paging.next, null, null, true);
+                        } else {
+                            generalResponse = await fbRequest.get(accountId, 'insights', generalResponse, true);
+                        }
+                        params.insights = params.insights.concat(generalResponse.body.data);
+                        const utilization = JSON.parse(generalResponse.headers['x-fb-ads-insights-throttle']);
+                        logger.debug(`Insights utilization (app: ${utilization.app_id_util_pct}, account: ${utilization.acc_id_util_pct})`);
+                    } while (generalResponse.body.data.length > 0 && generalResponse.body.paging.next);
+
                     // Fetch platform insights
                     const platformParams = Object.assign({}, insightParams);
                     platformParams.breakdowns = breakdowns.platform;
@@ -270,7 +273,7 @@ class InsightService {
                         } else {
                             platformResponse = await fbRequest.get(accountId, 'insights', platformParams, true);
                         }
-                        params.insights = params.insights.concat(platformResponse.body.data);
+                        params.platformInsights = params.platformInsights.concat(platformResponse.body.data);
                         const utilization = JSON.parse(platformResponse.headers['x-fb-ads-insights-throttle']);
                         logger.debug(`Insights utilization (app: ${utilization.app_id_util_pct}, account: ${utilization.acc_id_util_pct})`);
                     } while (platformResponse.body.data.length > 0 && platformResponse.body.paging.next);
@@ -326,20 +329,20 @@ class InsightService {
             } else {
                 for (let i = 0; i < promotionParams.length; i++) {
                     const params = promotionParams[i];
-                    const platformtPromise = Insight.Mock.platform(params.timezone);
-                    insightsRequests.push(platformtPromise.then((fbResponse) => {
-                        params.insights = fbResponse;
+                    const platformPromise = Insight.Mock.platform(params.timezone);
+                    insightsRequests.push(platformPromise.then((fbResponse) => {
+                        params.platformInsights = fbResponse;
                     }));
                 }
+                // Wait for all insights promises to resolve
+                await Promise.all(insightsRequests);
             }
-            // Wait for all insights promises to resolve
-            await Promise.all(insightsRequests);
 
             const platformBulk = [];
             const demographicBulk = [];
             promotionParams.forEach((params) => {
-                if (params.insights.length > 0) {
-                    params.insights.forEach((insights) => {
+                if (params.platformInsights.length > 0) {
+                    params.platformInsights.forEach((insights) => {
                         const actions = {};
                         if (insights.actions) {
                             insights.actions.forEach((event) => {
@@ -507,7 +510,7 @@ class InsightService {
             if (platformBulk.length > 0) await PlatformModel.bulkWrite(platformBulk, { ordered: false });
             if (demographicBulk.length > 0) await DemographicModel.bulkWrite(demographicBulk, { ordered: false });
 
-            const updatedPromotions = promotionParams.filter(params => params.insights.length > 0);
+            const updatedPromotions = promotionParams.filter(params => params.platformInsights.length > 0);
             const msg = `${updatedPromotions.length} promotions insights updated`;
             logger.debug(msg);
             return {
