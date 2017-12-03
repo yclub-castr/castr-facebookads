@@ -11,6 +11,7 @@ const host = 'https://graph.facebook.com/';
 const apiVersion = 'v2.11';
 
 const DELAY_PER_USAGE = 12000; // milliseconds
+const GET_DELAY = DELAY_PER_USAGE / 3;
 const MAX_USAGE = Math.max(Math.floor(DELAY_PER_USAGE / 1000), 1);
 
 const accountUsage = {};
@@ -67,10 +68,10 @@ function objToStr(obj) {
     return `"${obj}"`;
 }
 
-function addUsage(accountId) {
+function addUsage(accountId, delay) {
     if (!accountUsage[accountId]) accountUsage[accountId] = 1;
     else accountUsage[accountId] += 1;
-    logger.trace(`Usage (#${accountId}): ${accountUsage[accountId]} (${accountUsage[accountId] * (DELAY_PER_USAGE / 1000)} seconds delay)`);
+    logger.trace(`Usage (#${accountId}): ${accountUsage[accountId]} (${accountUsage[accountId] * (delay / 1000)} seconds delay)`);
     return accountUsage[accountId];
 }
 
@@ -94,7 +95,28 @@ function removeQueue(accountId) {
     else usageQueue[accountId] -= 1;
 }
 
-const get = async (node, edge, params, respHeader) => {
+const get = async (node, edge, params, respHeader, noThrottle) => {
+    let usage;
+    let throttle;
+    if (!noThrottle) {
+        do {
+            if (edge && edge.includes('delivery_estimate')) usage = addUsage(params.castrBizId, GET_DELAY);
+            if (usage) {
+                if (usage > MAX_USAGE) {
+                    decayUsage(params.castrBizId);
+                    const queue = addQueue(params.castrBizId);
+                    logger.trace(`Max usage reached. Retrying in ${((GET_DELAY * queue) / 1000).toFixed(2)} seconds (${queue} queued)`);
+                    await new Promise((resolve) => { setTimeout(resolve, GET_DELAY * queue); });
+                    removeQueue(params.castrBizId);
+                } else {
+                    throttle = usage * GET_DELAY;
+                    break;
+                }
+            } else {
+                throttle = 0;
+            }
+        } while (usage);
+    }
     const options = {
         uri: getUri(node, edge),
         qs: params,
@@ -106,8 +128,19 @@ const get = async (node, edge, params, respHeader) => {
         resolveWithFullResponse: respHeader,
     };
     try {
-        const response = await rp(options);
-        return response;
+        // const response = await rp(options);
+        const resp = await new Promise((resolve, reject) => {
+            setTimeout(async () => {
+                try {
+                    if (throttle) logger.trace('Throttle complete, proceeding with request...');
+                    const response = await rp(options);
+                    resolve(response);
+                } catch (errr) {
+                    reject(errr);
+                }
+            }, throttle);
+        });
+        return resp;
     } catch (err) {
         const error = (err.error) ? err.error.error || err.error : err;
         throw err;
@@ -119,7 +152,7 @@ const post = async (node, edge, params, method, attempts, noThrottle) => {
     let throttle;
     if (!noThrottle) {
         do {
-            if (node.includes('act_')) usage = addUsage(node);
+            if (node.includes('act_')) usage = addUsage(node, DELAY_PER_USAGE);
             if (usage) {
                 if (usage > MAX_USAGE) {
                     decayUsage(node);
