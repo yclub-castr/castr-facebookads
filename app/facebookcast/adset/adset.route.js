@@ -97,4 +97,18 @@ router.get('/db', async (req, res, next) => {
     }
 });
 
+router.put('/optimize-budget', async (req, res, next) => {
+    try {
+        const params = {
+            adsets: req.body.adsets,
+        };
+        if (!params.adsets) {
+            throw new Error('Missing body param: must provide `adsets` (eg. [ [<adsetId>, newBudget], ... ])');
+        }
+        res.json(await adsetService.updateAdSets(params));
+    } catch (err) {
+        next(err);
+    }
+});
+
 module.exports = router;
