@@ -4,18 +4,43 @@
 
 const logger = require('../../utils').logger();
 const fbRequest = require('../fbapi');
+const uuidv4 = require('uuid/v4');
 const ProjectModel = require('../project/project.model').Model;
+const AdSetModel = require('../adset/adset.model').Model;
 
 class EstimateService {
     async getAdSetEstimate(params) {
-        const adsetId = params.adsetId;
+        const adsetIds = params.adsetIds;
+        const castrBizId = params.castrBizId;
+        const fields = params.fields;
+        let data;
         try {
-            logger.debug(`Getting estimates for adset (#${adsetId}) ...`);
-            const fbResponse = await fbRequest.get(adsetId, 'delivery_estimate');
+            if (adsetIds) {
+                const adsetIdArray = adsetIds.split(',');
+                logger.debug(`Getting estimates for ${adsetIdArray.length} adsets...`);
+                const uuid = uuidv4();
+                const adsets = await AdSetModel.find({ id: { $in: adsetIdArray } }, fields.join(' '));
+                data = await Promise.all(adsets.map((adset) => {
+                    const adsetId = adset.id;
+                    const promise = fbRequest.get(adsetId, 'delivery_estimate', { castrBizId: castrBizId })
+                        .then((estimateResponse) => {
+                            logger.debug(`Adset (#${adset.id} estimate fetched`);
+                            const adsetEstimate = adset.toObject();
+                            adsetEstimate.estimate = estimateResponse.data[0];
+                            return adsetEstimate;
+                        });
+                    return promise;
+                }));
+            } else {
+                const adsetId = params.adsetId;
+                logger.debug(`Getting estimates for adset (#${adsetId}) ...`);
+                const fbResponse = await fbRequest.get(adsetId, 'delivery_estimate', { castrBizId: castrBizId });
+                data = fbResponse.data[0];
+            }
             return {
                 success: true,
                 message: null,
-                data: fbResponse.data[0],
+                data: data,
             };
         } catch (err) {
             throw err;

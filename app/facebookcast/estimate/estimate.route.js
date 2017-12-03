@@ -12,8 +12,11 @@ router.get('/adset', async (req, res, next) => {
     try {
         const params = {
             adsetId: req.query.adsetId,
+            adsetIds: req.query.adsetIds,
+            fields: req.query.fields,
+            castrBizId: req.query.castrBizId,
         };
-        if (!params.adsetId) throw new Error('Missing params: must provide `adsetId`');
+        if (!params.adsetId && !params.adsetIds) throw new Error('Missing params: must provide `adsetId`');
         res.json(await estimateService.getAdSetEstimate(params));
     } catch (err) {
         next(err);
