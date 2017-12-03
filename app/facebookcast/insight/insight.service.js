@@ -16,6 +16,7 @@ const moment = utils.moment();
 const ProjectModel = Project.Model;
 const AdSetModel = AdSet.Model;
 const AdModel = Ad.Model;
+const AdStatus = Ad.Status;
 const PlatformModel = Insight.Model;
 const DemographicModel = Insight.DemographicModel;
 const InsightField = Insight.Field;
@@ -86,7 +87,8 @@ class InsightService {
                     // Count ads
                     const promotionAds = {};
                     const platformAds = { facebook: 0, instagram: 0, audienceNetwork: 0 };
-                    const associatedAds = await AdModel.find(query);
+                    const adsQuery = Object.assign({ status: { $ne: AdStatus.deleted } }, query);
+                    const associatedAds = await AdModel.find(adsQuery);
                     platformAds.total = associatedAds.length;
                     const associatedAdsets = {};
                     associatedAds.forEach((ad) => {
