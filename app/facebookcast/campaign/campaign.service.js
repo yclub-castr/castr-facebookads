@@ -137,6 +137,7 @@ class CampaignService {
         const promotionId = params.promotionId;
         let campaignIds = params.campaignIds;
         const archive = params.archive;
+        const status = (archive) ? CampaignStatus.archived : CampaignStatus.deleted;
         try {
             if (!campaignIds) {
                 logger.debug('No campaign ids provided, fetching campaigns from DB for deletion...');
@@ -154,7 +155,7 @@ class CampaignService {
                     requests = campaignIds.map(id => ({
                         method: 'POST',
                         relative_url: `${fbRequest.apiVersion}/${id}`,
-                        body: { status: CampaignStatus.archived },
+                        body: { status: status },
                     }));
                 } else {
                     requests = campaignIds.map(id => ({
@@ -193,10 +194,9 @@ class CampaignService {
                 }
                 logger.debug(`FB batch-${(archive) ? 'archive' : 'delete'} successful`);
             } else {
-                const deletePromises = campaignIds.map(id => fbRequest.post(id, null, { status: CampaignStatus.archived }));
+                const deletePromises = campaignIds.map(id => fbRequest.post(id, null, { status: status }));
                 await Promise.all(deletePromises);
             }
-            const status = (archive) ? CampaignStatus.archived : CampaignStatus.deleted;
             const writeResult = await CampaignModel.updateMany(
                 { id: { $in: campaignIds } },
                 {
