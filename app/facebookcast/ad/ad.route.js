@@ -53,6 +53,7 @@ router.route('/')
                 castrLocId: req.body.castrLocId,
                 promotionId: req.body.promotionId,
                 adIds: req.body.adIds,
+                archive: req.body.archive,
                 parentsDeleted: req.body.parentsDeleted,
             };
             if (!params.adIds) {
