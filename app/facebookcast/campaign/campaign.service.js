@@ -82,16 +82,19 @@ class CampaignService {
                 [CampaignField.execution_options]: ['validate_only', 'include_recommendations'],
                 fields: readFields,
             };
-            logger.debug(`Validating campaign for promotion (#${promotionId}) ...`);
-            const validation = await fbRequest.post(accountId, 'campaigns', campaignParams);
-            if (!validation.success) {
-                const msg = 'Failed validation from Facebook';
-                return {
-                    success: false,
-                    message: msg,
-                    data: validation,
-                };
-            }
+
+            // Validation
+            // logger.debug(`Validating campaign for promotion (#${promotionId}) ...`);
+            // const validation = await fbRequest.post(accountId, 'campaigns', campaignParams);
+            // if (!validation.success) {
+            //     const msg = 'Failed validation from Facebook';
+            //     return {
+            //         success: false,
+            //         message: msg,
+            //         data: validation,
+            //     };
+            // }
+            
             delete campaignParams[CampaignField.execution_options];
             logger.debug(`Creating campaign for promotion (#${promotionId}) ...`);
             const campaign = await fbRequest.post(accountId, 'campaigns', campaignParams);
