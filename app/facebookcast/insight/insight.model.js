@@ -602,7 +602,7 @@ const platformFormatter = (platformRecords, promotionAds, platformAds, timezone)
     graph(report, x, purchase, 'purchase');
     graph(report, x, response, 'response');
     Object.keys(report.promotions).forEach((promotionId) => {
-        report.promotions[promotionId].ads = promotionAds[promotionId];
+        report.promotions[promotionId].ads = promotionAds[promotionId] || 0;
         addUpMetrics(report, report.promotions[promotionId]);
     });
     return report;
