@@ -636,19 +636,28 @@ const demographicFormatter = (demographicRecords, locale) => {
                         regionValues[metric][region.key] += region.value;
                     });
                 } else if (demog === 'hour') {
-                    Object.keys(record[metric][demog]).forEach((hour) => {
+                    Object.keys(record[metric][demog]).forEach((hourRange) => {
                         if (!hourValues[metric]) hourValues[metric] = {};
+                        const hour = hourRange.substring(0, 2);
                         if (!hourValues[metric][hour]) hourValues[metric][hour] = 0;
-                        hourValues[metric][hour] += record[metric][demog][hour];
+                        hourValues[metric][hour] += record[metric][demog][hourRange];
                     });
                 }
             });
         });
     });
     Object.keys(report).forEach((metric) => {
-        Object.keys(report[metric].genderAge).forEach((gender) => {
-            report[metric].genderAge[gender].total = Object.values(report[metric].genderAge[gender]).reduce((a, b) => a + b);
+        if (!report[metric].genderAge) report[metric].genderAge = { female: {}, male: {}, unknown: {} };
+        genders.forEach((gender) => {
+            let genderTotal = 0;
+            ages.forEach((age) => {
+                if (!report[metric].genderAge[gender][age]) report[metric].genderAge[gender][age] = 0;
+                else genderTotal += report[metric].genderAge[gender][age];
+            });
+            report[metric].genderAge[gender].total = genderTotal;
         });
+
+        if (!regionValues[metric]) regionValues[metric] = {};
         report[metric].region = Object.keys(regionValues[metric]).map((regionName) => {
             const regionData = constants.koreanRegionMap[regionName];
             return {
@@ -657,10 +666,17 @@ const demographicFormatter = (demographicRecords, locale) => {
                 value: regionValues[metric][regionName],
             };
         });
-        const hourX = Object.keys(hourValues[metric]).map(hourRange => hourRange.substring(0, 2));
+
+        if (!hourValues[metric]) hourValues[metric] = {};
+        const hours = [];
+        for (let i = 0; i < 24; i++) hours.push(`0${i}`.slice(-2));
+        const hourX = hours;
         const hourY = [{
             label: 'hour',
-            data: Object.keys(hourValues[metric]).map(hourRange => hourValues[metric][hourRange]),
+            data: hours.map((hour) => {
+                if (hourValues[metric][hour]) return hourValues[metric][hour];
+                return 0;
+            }),
         }];
         report[metric].hour = { x: hourX, y: hourY };
     });
