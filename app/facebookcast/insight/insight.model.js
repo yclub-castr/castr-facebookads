@@ -649,6 +649,7 @@ const demographicFormatter = (demographicRecords, locale) => {
     Object.keys(report).forEach((metric) => {
         if (!report[metric].genderAge) report[metric].genderAge = { female: {}, male: {}, unknown: {} };
         genders.forEach((gender) => {
+            if (!report[metric].genderAge[gender]) report[metric].genderAge[gender] = {};
             let genderTotal = 0;
             ages.forEach((age) => {
                 if (!report[metric].genderAge[gender][age]) report[metric].genderAge[gender][age] = 0;
