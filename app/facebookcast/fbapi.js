@@ -95,19 +95,19 @@ function removeQueue(accountId) {
     else usageQueue[accountId] -= 1;
 }
 
-const get = async (node, edge, params, respHeader, noThrottle) => {
+const get = async (node, edge, params, respHeader, throttler) => {
     let usage;
     let throttle;
-    if (!noThrottle) {
+    if (throttler) {
         do {
-            if (edge && edge.includes('delivery_estimate')) usage = addUsage(params.castrBizId, GET_DELAY);
+            usage = addUsage(throttler.key, GET_DELAY);
             if (usage) {
                 if (usage > MAX_USAGE) {
-                    decayUsage(params.castrBizId);
-                    const queue = addQueue(params.castrBizId);
+                    decayUsage(throttler.key);
+                    const queue = addQueue(throttler.key);
                     logger.trace(`Max usage reached. Retrying in ${((GET_DELAY * queue) / 1000).toFixed(2)} seconds (${queue} queued)`);
                     await new Promise((resolve) => { setTimeout(resolve, GET_DELAY * queue); });
-                    removeQueue(params.castrBizId);
+                    removeQueue(throttler.key);
                 } else {
                     throttle = usage * GET_DELAY;
                     break;
@@ -143,23 +143,23 @@ const get = async (node, edge, params, respHeader, noThrottle) => {
         return resp;
     } catch (err) {
         const error = (err.error) ? err.error.error || err.error : err;
-        throw err;
+        throw error;
     }
 };
 
-const post = async (node, edge, params, method, attempts, noThrottle) => {
+const post = async (node, edge, params, method, attempts, throttler) => {
     let usage;
     let throttle;
-    if (!noThrottle) {
+    if (throttler) {
         do {
-            if (node.includes('act_')) usage = addUsage(node, DELAY_PER_USAGE);
+            usage = addUsage(throttler.key, DELAY_PER_USAGE);
             if (usage) {
                 if (usage > MAX_USAGE) {
-                    decayUsage(node);
-                    const queue = addQueue(node);
+                    decayUsage(throttler.key);
+                    const queue = addQueue(throttler.key);
                     logger.trace(`Max usage reached. Retrying in ${((DELAY_PER_USAGE * queue) / 1000).toFixed(2)} seconds (${queue} queued)`);
                     await new Promise((resolve) => { setTimeout(resolve, DELAY_PER_USAGE * queue); });
-                    removeQueue(node);
+                    removeQueue(throttler.key);
                 } else {
                     throttle = usage * DELAY_PER_USAGE;
                     break;
@@ -268,8 +268,8 @@ setInterval(decayUsage, DELAY_PER_USAGE);
 
 module.exports = {
     get: get,
-    post: (node, edge, params, noThrottle) => post(node, edge, params, 'POST', null, noThrottle),
-    delete: (node, edge, params, noThrottle) => post(node, edge, params, 'DELETE', null, noThrottle),
+    post: (node, edge, params, throttler) => post(node, edge, params, 'POST', null, throttler),
+    delete: (node, edge, params, throttler) => post(node, edge, params, 'DELETE', null, throttler),
     batch: batch,
     apiVersion: apiVersion,
 };
