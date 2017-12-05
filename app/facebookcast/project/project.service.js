@@ -539,8 +539,8 @@ class ProjectService {
             }
             const accountId = project.accountId;
             logger.debug('Creating new promotion & location adlabels...');
-            const locLabelPromises = castrLocIds.map(locId => fbRequest.post(accountId, 'adlabels', { name: locId, fields: 'name' }));
-            const promotionLabel = await fbRequest.post(accountId, 'adlabels', { name: promotionId, fields: 'name' });
+            const locLabelPromises = castrLocIds.map(locId => fbRequest.post(accountId, 'adlabels', { name: locId, fields: 'name' }, { key: castrBizId }));
+            const promotionLabel = await fbRequest.post(accountId, 'adlabels', { name: promotionId, fields: 'name' }, { key: castrBizId });
             project.adLabels.promotionLabels.push(promotionLabel);
             const locationLabels = await Promise.all(locLabelPromises);
             const existingLocs = project.adLabels.locationLabels.map(locLabel => locLabel.name);
