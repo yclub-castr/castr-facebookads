@@ -22,7 +22,7 @@ class EstimateService {
                 const adsets = await AdSetModel.find({ id: { $in: adsetIdArray } }, fields.join(' '));
                 data = await Promise.all(adsets.map((adset) => {
                     const adsetId = adset.id;
-                    const promise = fbRequest.get(adsetId, 'delivery_estimate', { castrBizId: castrBizId })
+                    const promise = fbRequest.get(adsetId, 'delivery_estimate', null, null, { key: castrBizId })
                         .then((estimateResponse) => {
                             logger.debug(`Adset (#${adset.id} estimate fetched`);
                             const adsetEstimate = adset.toObject();
@@ -34,7 +34,7 @@ class EstimateService {
             } else {
                 const adsetId = params.adsetId;
                 logger.debug(`Getting estimates for adset (#${adsetId}) ...`);
-                const fbResponse = await fbRequest.get(adsetId, 'delivery_estimate', { castrBizId: castrBizId });
+                const fbResponse = await fbRequest.get(adsetId, 'delivery_estimate', null, null, { key: castrBizId });
                 data = fbResponse.data[0];
             }
             return {

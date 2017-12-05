@@ -100,6 +100,7 @@ router.get('/db', async (req, res, next) => {
 router.put('/optimize-budget', async (req, res, next) => {
     try {
         const params = {
+            castrBizId: req.body.castrBizId,
             adsets: req.body.adsets,
         };
         if (!params.adsets) {

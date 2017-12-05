@@ -32,6 +32,8 @@ const excludedFields = [
 ];
 const readFields = Object.values(AdSetField).filter(field => !excludedFields.includes(field)).toString();
 
+const BATCH = false;
+
 class AdSetService {
     async getAdSets(params) {
         const castrBizId = params.castrBizId;
@@ -151,7 +153,7 @@ class AdSetService {
 
             delete adsetParams[AdSetField.execution_options];
             logger.debug(`Creating adset for promotion (#${promotionId}) ...`);
-            const fbResponse = await fbRequest.post(accountId, 'adsets', adsetParams);
+            const fbResponse = await fbRequest.post(accountId, 'adsets', adsetParams, { key: castrBizId });
             const adset = fbResponse.data.adsets[fbResponse.id];
             const msg = `AdSet (#${adset.id}) created`;
             logger.debug(msg);
@@ -189,7 +191,7 @@ class AdSetService {
                     id: adset.id,
                     name: adset.name,
                     optimizationGoal: adset.optimization_goal,
-                    recommendations: validation.recommendations,
+                    // recommendations: validation.recommendations,
                 },
             };
         } catch (err) {
@@ -214,50 +216,55 @@ class AdSetService {
                 adsetIds = adsets.map(adset => adset.id);
             }
             if (!params.parentsDeleted) {
-                let batchCompleted = false;
-                let requests;
-                if (archive) {
-                    requests = adsetIds.map(id => ({
-                        method: 'POST',
-                        relative_url: `${fbRequest.apiVersion}/${id}`,
-                        body: { status: status },
-                    }));
-                } else {
-                    requests = adsetIds.map(id => ({
-                        method: 'DELETE',
-                        relative_url: `${fbRequest.apiVersion}/${id}`,
-                    }));
-                }
-                let attempts = 3;
-                let batchResponses;
-                do {
-                    const batches = [];
-                    logger.debug(`Batching ${adsetIds.length} ${(archive) ? 'archive' : 'delete'} adset requests...`);
-                    for (let i = 0; i < Math.ceil(requests.length / 50); i++) {
-                        batches.push(fbRequest.batch(requests.slice(i * 50, (i * 50) + 50), archive));
+                if (BATCH) {
+                    let batchCompleted = false;
+                    let requests;
+                    if (archive) {
+                        requests = adsetIds.map(id => ({
+                            method: 'POST',
+                            relative_url: `${fbRequest.apiVersion}/${id}`,
+                            body: { status: status },
+                        }));
+                    } else {
+                        requests = adsetIds.map(id => ({
+                            method: 'DELETE',
+                            relative_url: `${fbRequest.apiVersion}/${id}`,
+                        }));
                     }
-                    batchResponses = await Promise.all(batches);
-                    batchCompleted = true;
-                    for (let i = 0; i < batchResponses.length; i++) {
-                        const fbResponses = batchResponses[i];
-                        for (let j = 0; j < fbResponses.length; j++) {
-                            if (fbResponses[i].code !== 200) {
-                                logger.debug('One of batch requests failed, trying again...');
-                                batchCompleted = false;
-                                break;
+                    let attempts = 3;
+                    let batchResponses;
+                    do {
+                        const batches = [];
+                        logger.debug(`Batching ${adsetIds.length} ${(archive) ? 'archive' : 'delete'} adset requests...`);
+                        for (let i = 0; i < Math.ceil(requests.length / 50); i++) {
+                            batches.push(fbRequest.batch(requests.slice(i * 50, (i * 50) + 50), archive));
+                        }
+                        batchResponses = await Promise.all(batches);
+                        batchCompleted = true;
+                        for (let i = 0; i < batchResponses.length; i++) {
+                            const fbResponses = batchResponses[i];
+                            for (let j = 0; j < fbResponses.length; j++) {
+                                if (fbResponses[i].code !== 200) {
+                                    logger.debug('One of batch requests failed, trying again...');
+                                    batchCompleted = false;
+                                    break;
+                                }
                             }
                         }
+                        attempts -= 1;
+                    } while (!batchCompleted && attempts !== 0);
+                    if (!batchCompleted) {
+                        return {
+                            success: false,
+                            message: 'Batch requests failed 3 times',
+                            data: batchResponses,
+                        };
                     }
-                    attempts -= 1;
-                } while (!batchCompleted && attempts !== 0);
-                if (!batchCompleted) {
-                    return {
-                        success: false,
-                        message: 'Batch requests failed 3 times',
-                        data: batchResponses,
-                    };
+                    logger.debug(`FB batch-${(archive) ? 'archive' : 'delete'} successful`);
+                } else {
+                    const deletePromises = adsetIds.map(id => fbRequest.post(id, null, { status: status }, { key: castrBizId }));
+                    await Promise.all(deletePromises);
                 }
-                logger.debug(`FB batch-${(archive) ? 'archive' : 'delete'} successful`);
             }
             const writeResult = await AdSetModel.updateMany(
                 { id: { $in: adsetIds } },
@@ -281,59 +288,66 @@ class AdSetService {
     }
 
     async updateAdSets(params) {
+        const castrBizId = params.castrBizId;
         const adsets = params.adsets;
         const adsetBudgets = {};
         try {
-            let requests = adsets.map((adsetBudget) => {
-                adsetBudgets[adsetBudget[0]] = adsetBudget[1];
-                return {
-                    method: 'POST',
-                    relative_url: `${fbRequest.apiVersion}/${adsetBudget[0]}`,
-                    body: { daily_budget: adsetBudget[1], redownload: 1 },
-                };
-            });
-            let attempts = 3;
-            let batchCompleted;
-            let batchResponses;
-            let newRequests;
-            do {
-                const batches = [];
-                if (newRequests) requests = newRequests;
-                logger.debug(`Batching ${requests.length} update adset requests...`);
-                for (let i = 0; i < Math.ceil(requests.length / 50); i++) {
-                    batches.push(fbRequest.batch(requests.slice(i * 50, (i * 50) + 50), true));
-                }
-                batchResponses = await Promise.all(batches);
-                newRequests = [];
-                for (let i = 0; i < batchResponses.length; i++) {
-                    const fbResponses = batchResponses[i];
-                    for (let j = 0; j < fbResponses.length; j++) {
-                        if (fbResponses[i].code !== 200) {
-                            const fbResponse = JSON.parse(fbResponses[i].body).data;
-                            const adset = fbResponse.adsets[Object.keys(fbResponse.adsets)[0]];
-                            newRequests.push({
-                                method: 'POST',
-                                relative_url: `${fbRequest.apiVersion}/${adset.id}`,
-                                body: { daily_budget: adsetBudgets[adset.id], redownload: 1 },
-                            });
-                            break;
+            if (BATCH) {
+                let requests = adsets.map((adsetBudget) => {
+                    adsetBudgets[adsetBudget[0]] = adsetBudget[1];
+                    return {
+                        method: 'POST',
+                        relative_url: `${fbRequest.apiVersion}/${adsetBudget[0]}`,
+                        body: { daily_budget: adsetBudget[1], redownload: 1 },
+                    };
+                });
+                let attempts = 3;
+                let batchCompleted;
+                let batchResponses;
+                let newRequests;
+                do {
+                    const batches = [];
+                    batchCompleted = true;
+                    if (newRequests) requests = newRequests;
+                    logger.debug(`Batching ${requests.length} update adset requests...`);
+                    for (let i = 0; i < Math.ceil(requests.length / 50); i++) {
+                        batches.push(fbRequest.batch(requests.slice(i * 50, (i * 50) + 50), true));
+                    }
+                    batchResponses = await Promise.all(batches);
+                    newRequests = [];
+                    for (let i = 0; i < batchResponses.length; i++) {
+                        const fbResponses = batchResponses[i];
+                        for (let j = 0; j < fbResponses.length; j++) {
+                            if (fbResponses[i].code !== 200) {
+                                const fbResponse = JSON.parse(fbResponses[i].body).data;
+                                const adset = fbResponse.adsets[Object.keys(fbResponse.adsets)[0]];
+                                newRequests.push({
+                                    method: 'POST',
+                                    relative_url: `${fbRequest.apiVersion}/${adset.id}`,
+                                    body: { daily_budget: adsetBudgets[adset.id], redownload: 1 },
+                                });
+                                batchCompleted = false;
+                            }
                         }
                     }
+                    attempts -= 1;
+                } while (newRequests.length > 0 && attempts !== 0);
+                if (!batchCompleted) {
+                    return {
+                        success: false,
+                        message: 'Batch requests failed 3 times',
+                        data: batchResponses,
+                    };
                 }
-                attempts -= 1;
-            } while (newRequests.length > 0 && attempts !== 0);
-            if (!batchCompleted) {
-                return {
-                    success: false,
-                    message: 'Batch requests failed 3 times',
-                    data: batchResponses,
-                };
+                logger.debug('FB batch-update successful');
+            } else {
+                const deletePromises = adsets.map(adsetBudget => fbRequest.post(adsetBudget[0], null, { daily_budget: adsetBudget[1] }, { key: castrBizId }));
+                await Promise.all(deletePromises);
+                logger.debug('Adset update successful');
             }
-            const msg = 'FB batch-update successful';
-            logger.debug(msg);
             return {
                 success: true,
-                message: msg,
+                message: `${adsets.length} adsets updated`,
                 data: null,
             };
         } catch (err) {

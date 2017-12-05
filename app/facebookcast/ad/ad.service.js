@@ -25,6 +25,8 @@ const excludedFields = [
 ];
 const readFields = Object.values(AdField).filter(field => !excludedFields.includes(field)).toString();
 
+const BATCH = false;
+
 class AdService {
     async getAds(params) {
         const castrBizId = params.castrBizId;
@@ -217,7 +219,7 @@ class AdService {
 
             delete adParams[AdField.execution_options];
             logger.debug(`Creating ad for promotion (#${promotionId}) ...`);
-            const fbResponse = await fbRequest.post(accountId, 'ads', adParams);
+            const fbResponse = await fbRequest.post(accountId, 'ads', adParams, { key: castrBizId });
             const ad = fbResponse.data.ads[fbResponse.id];
             const msg = `Ad (#${ad.id}) created`;
             logger.debug(msg);
@@ -243,7 +245,7 @@ class AdService {
                 data: {
                     id: ad.id,
                     name: ad.name,
-                    recommendations: validation.recommendations,
+                    // recommendations: validation.recommendations,
                 },
             };
         } catch (err) {
@@ -274,50 +276,55 @@ class AdService {
                 adIds = ads.map(ad => ad.id);
             }
             if (!params.parentsDeleted) {
-                let batchCompleted = false;
-                let requests;
-                if (archive) {
-                    requests = adIds.map(id => ({
-                        method: 'POST',
-                        relative_url: `${fbRequest.apiVersion}/${id}`,
-                        body: { status: status },
-                    }));
-                } else {
-                    requests = adIds.map(id => ({
-                        method: 'DELETE',
-                        relative_url: `${fbRequest.apiVersion}/${id}`,
-                    }));
-                }
-                let attempts = 3;
-                let batchResponses;
-                do {
-                    const batches = [];
-                    logger.debug(`Batching ${adIds.length} ${(archive) ? 'archive' : 'delete'} ad requests...`);
-                    for (let i = 0; i < Math.ceil(requests.length / 50); i++) {
-                        batches.push(fbRequest.batch(requests.slice(i * 50, (i * 50) + 50), archive));
+                if (BATCH) {
+                    let batchCompleted = false;
+                    let requests;
+                    if (archive) {
+                        requests = adIds.map(id => ({
+                            method: 'POST',
+                            relative_url: `${fbRequest.apiVersion}/${id}`,
+                            body: { status: status },
+                        }));
+                    } else {
+                        requests = adIds.map(id => ({
+                            method: 'DELETE',
+                            relative_url: `${fbRequest.apiVersion}/${id}`,
+                        }));
                     }
-                    batchResponses = await Promise.all(batches);
-                    batchCompleted = true;
-                    for (let i = 0; i < batchResponses.length; i++) {
-                        const fbResponses = batchResponses[i];
-                        for (let j = 0; j < fbResponses.length; j++) {
-                            if (fbResponses[i].code !== 200) {
-                                logger.debug('One of batch requests failed, trying again...');
-                                batchCompleted = false;
-                                break;
+                    let attempts = 3;
+                    let batchResponses;
+                    do {
+                        const batches = [];
+                        logger.debug(`Batching ${adIds.length} ${(archive) ? 'archive' : 'delete'} ad requests...`);
+                        for (let i = 0; i < Math.ceil(requests.length / 50); i++) {
+                            batches.push(fbRequest.batch(requests.slice(i * 50, (i * 50) + 50), archive));
+                        }
+                        batchResponses = await Promise.all(batches);
+                        batchCompleted = true;
+                        for (let i = 0; i < batchResponses.length; i++) {
+                            const fbResponses = batchResponses[i];
+                            for (let j = 0; j < fbResponses.length; j++) {
+                                if (fbResponses[i].code !== 200) {
+                                    logger.debug('One of batch requests failed, trying again...');
+                                    batchCompleted = false;
+                                    break;
+                                }
                             }
                         }
+                        attempts -= 1;
+                    } while (!batchCompleted && attempts !== 0);
+                    if (!batchCompleted) {
+                        return {
+                            success: false,
+                            message: 'Batch requests failed 3 times',
+                            data: batchResponses,
+                        };
                     }
-                    attempts -= 1;
-                } while (!batchCompleted && attempts !== 0);
-                if (!batchCompleted) {
-                    return {
-                        success: false,
-                        message: 'Batch requests failed 3 times',
-                        data: batchResponses,
-                    };
+                    logger.debug(`FB batch-${(archive) ? 'archive' : 'delete'} successful`);
+                } else {
+                    const deletePromises = adIds.map(id => fbRequest.post(id, null, { status: status }, { key: castrBizId }));
+                    await Promise.all(deletePromises);
                 }
-                logger.debug(`FB batch-${(archive) ? 'archive' : 'delete'} successful`);
             }
             const writeResult = await AdModel.updateMany(
                 { id: { $in: adIds } },

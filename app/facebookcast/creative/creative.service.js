@@ -99,19 +99,22 @@ class CreativeService {
             };
             const adSpecPromises = [
                 this.getCarouselAdCreative(projectParams, creativeParams),
-                this.getVideoAdCreative(projectParams, creativeParams),
-                this.getSlideshowAdCreative(projectParams, creativeParams)
+                this.getVideoAdCreative(castrBizId, projectParams, creativeParams),
+                this.getSlideshowAdCreative(castrBizId, projectParams, creativeParams)
             ];
             let adSpecs = await Promise.all(adSpecPromises);
             adSpecs = adSpecs.concat(await this.getLinkAdCreative(projectParams, creativeParams));
             logger.debug('Creating adlabels for creatives...');
             adSpecs = adSpecs.filter(spec => spec !== null);
-            const labelPromises = adSpecs.map(spec => fbRequest.post(accountId, 'adlabels', {
-                name: `${promotionId}-${castrLocId}-${spec.name}`,
-            }));
+            const labelPromises = adSpecs.map(spec => fbRequest.post(
+                accountId,
+                'adlabels',
+                { name: `${promotionId}-${castrLocId}-${spec.name}` },
+                { key: castrBizId }
+            ));
             const creativeLabels = await Promise.all(labelPromises);
             logger.debug(`Creating creative for promotion (#${promotionId}) ...`);
-            const createPromises = adSpecs.map(spec => fbRequest.post(accountId, 'adcreatives', spec));
+            const createPromises = adSpecs.map(spec => fbRequest.post(accountId, 'adcreatives', spec, { key: castrBizId }));
             const creatives = await Promise.all(createPromises);
             // TODO: handle errors
             const msg = `${creatives.length} creatives created`;
@@ -363,7 +366,7 @@ class CreativeService {
         };
     }
 
-    async getVideoAdCreative(projectParams, creativeParams) {
+    async getVideoAdCreative(castrBizId, projectParams, creativeParams) {
         logger.debug('Creating Single-Video ad creative...');
         try {
             const name = '[SINGLE_VIDEO]';
@@ -381,7 +384,7 @@ class CreativeService {
                     link_caption: destinationUrl, // display URL
                 },
             };
-            const video = await this.uploadVideo(projectParams.accountId, videoUrl);
+            const video = await this.uploadVideo(castrBizId, projectParams.accountId, videoUrl);
             const objectStorySpec = {
                 video_data: {
                     message: postText, // post text
@@ -407,7 +410,7 @@ class CreativeService {
         }
     }
 
-    async getSlideshowAdCreative(projectParams, creativeParams) {
+    async getSlideshowAdCreative(castrBizId, projectParams, creativeParams) {
         logger.debug('Creating Slideshow ad creative...');
         try {
             const name = '[SLIDESHOW]';
@@ -425,7 +428,7 @@ class CreativeService {
                     link_caption: destinationUrl, // display URL
                 },
             };
-            const video = await this.uploadSlideshow(projectParams.accountId, imageUrls);
+            const video = await this.uploadSlideshow(castrBizId, projectParams.accountId, imageUrls);
             const objectStorySpec = {
                 video_data: {
                     message: postText, // post text
@@ -451,7 +454,7 @@ class CreativeService {
         }
     }
 
-    async uploadVideo(accountId, videoUrl) {
+    async uploadVideo(castrBizId, accountId, videoUrl) {
         logger.debug(`Uploading video from url (${videoUrl}) ...`);
         try {
             const video = await fbRequest.post(accountId, 'advideos', {
@@ -459,7 +462,7 @@ class CreativeService {
                 title: 'VIDEO TITLE2', // not shown on ad
                 description: 'VIDEO DESCRIPTION2', // not shown on ad
                 name: 'VIDEO NAME2', // not shown on ad
-            });
+            }, { key: castrBizId });
             logger.debug(`Video uploaded (fb_id: ${video.id})`);
             logger.debug(`Checking the status of uploaded video (#${video.id})`);
             await new Promise(async (resolve, reject) => {
@@ -484,7 +487,7 @@ class CreativeService {
         }
     }
 
-    async uploadSlideshow(accountId, imageUrls) {
+    async uploadSlideshow(castrBizId, accountId, imageUrls) {
         logger.debug(`Creating slideshow from ${imageUrls.length} images...`);
         try {
             const video = await fbRequest.post(accountId, 'advideos', {
@@ -496,7 +499,7 @@ class CreativeService {
                 title: 'SLIDESHOW TITLE2', // not shown on ad
                 description: 'SLIDESHOW DESCRIPTION2', // not shown on ad
                 name: 'SLIDESHOW NAME2', // not shown on ad
-            });
+            }, { key: castrBizId });
             logger.debug(`Slideshow uploaded (fb_id: ${video.id})`);
             logger.debug(`Checking the status of uploaded slideshow (#${video.id})`);
             await new Promise(async (resolve, reject) => {

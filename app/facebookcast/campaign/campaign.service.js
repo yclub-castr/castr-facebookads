@@ -97,7 +97,7 @@ class CampaignService {
             
             delete campaignParams[CampaignField.execution_options];
             logger.debug(`Creating campaign for promotion (#${promotionId}) ...`);
-            const campaign = await fbRequest.post(accountId, 'campaigns', campaignParams);
+            const campaign = await fbRequest.post(accountId, 'campaigns', campaignParams, { key: castrBizId });
             const msg = `Campaign (#${campaign.id}) created`;
             logger.debug(msg);
             const model = new CampaignModel({
@@ -127,7 +127,7 @@ class CampaignService {
                     id: campaign.id,
                     name: campaign.name,
                     objective: campaign.objective,
-                    recommendations: validation.recommendations,
+                    // recommendations: validation.recommendations,
                 },
             };
         } catch (err) {
@@ -197,7 +197,7 @@ class CampaignService {
                 }
                 logger.debug(`FB batch-${(archive) ? 'archive' : 'delete'} successful`);
             } else {
-                const deletePromises = campaignIds.map(id => fbRequest.post(id, null, { status: status }));
+                const deletePromises = campaignIds.map(id => fbRequest.post(id, null, { status: status }, { key: castrBizId }));
                 await Promise.all(deletePromises);
             }
             const writeResult = await CampaignModel.updateMany(

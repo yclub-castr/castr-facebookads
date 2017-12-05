@@ -58,7 +58,7 @@ class AdStudyService {
                     cells: cells,
                     fields: 'id,name,description,start_time,end_time,cells',
                 };
-                return fbRequest.post(process.env.CASTR_BUSINESS_ID, 'ad_studies', splitTestParams);
+                return fbRequest.post(process.env.CASTR_BUSINESS_ID, 'ad_studies', splitTestParams, { key: castrBizId });
             }));
             const dbUpdates = fbResponses.map((resp) => {
                 const locId = resp.description.match(/Loc#(\S*)/)[1];
