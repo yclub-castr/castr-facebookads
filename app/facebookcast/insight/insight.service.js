@@ -62,8 +62,8 @@ class InsightService {
                 } else {
                     logger.debug('Validating date range parameter...');
                     const dates = dateRange.split(',');
-                    start = moment.tz(dates[0], timezone).startOf('day');
-                    end = moment.tz(dates[1], timezone).endOf('day');
+                    start = moment.tz(dates[0], 'YYYYMMDD', timezone).startOf('day');
+                    end = moment.tz(dates[1], 'YYYYMMDD', timezone).endOf('day');
                     if (end.diff(start) < 0) {
                         throw new Error(`Invalid date range: endDate (${end.format('L')}) cannot be earlier than startDate (${start.format('L')})`);
                     }
@@ -253,8 +253,8 @@ class InsightService {
             } else {
                 logger.debug('Validating date range parameter...');
                 const dates = dateRange.split(',');
-                start = moment.tz(dates[0], timezone).hour(0).minute(0).second(0).millisecond(0);
-                end = moment.tz(dates[1], timezone).hour(23).minute(59).second(59).millisecond(999);
+                start = moment.tz(dates[0], 'YYYYMMDD', timezone).hour(0).minute(0).second(0).millisecond(0);
+                end = moment.tz(dates[1], 'YYYYMMDD', timezone).hour(23).minute(59).second(59).millisecond(999);
                 if (end.diff(start) < 0) {
                     throw new Error(`Invalid date range: endDate (${end.format('L')}) cannot be earlier than startDate (${start.format('L')})`);
                 }
