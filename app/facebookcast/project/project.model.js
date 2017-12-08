@@ -30,6 +30,7 @@ exports.Model = fbCastDB.model(
             pageVerified: Boolean,
             paymentMethodVerified: Boolean,
             adLabels: {
+                _id: false,
                 businessLabel: Object,
                 locationLabels: [],
                 promotionLabels: [],
