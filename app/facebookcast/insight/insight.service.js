@@ -74,10 +74,15 @@ class InsightService {
                 const query = {};
                 if (castrBizId) query.castrBizId = castrBizId;
                 if (castrLocId) query.castrLocId = castrLocId;
-                if (promotionId) query.promotionId = promotionId;
+                if (promotionId) {
+                    query.promotionId = promotionId;
+                } else {
+                    query.promotionId = { $in: project.adLabels.promotionLabels.map(label => label.name) };
+                }
 
                 // Fetch insights
-                const insightsQuery = Object.assign({ $and: [{ date: { $gte: start.toDate() } }, { date: { $lte: end.toDate() } }] }, query);
+                const dateQuery = (summary && !dateRange) ? {} : { $and: [{ date: { $gte: start.toDate() } }, { date: { $lte: end.toDate() } }] }
+                const insightsQuery = Object.assign(dateQuery, query);
                 const insightsRecords = await PlatformModel.find(insightsQuery);
                 const demographicRecords = await DemographicModel.find(insightsQuery);
 
@@ -118,13 +123,13 @@ class InsightService {
                     };
                 } else {
                     // Format summary report
-                    const summaryReport = Formatter.summary(insightsRecords, demographicRecords, locale);
+                    const summaryReport = Formatter.summary(insightsRecords, demographicRecords, locale, timezone);
                     report = {
                         promotionName: null,
                         amountSpent: summaryReport.amountSpent,
                         currency: project.currency,
-                        dateStart: moment.tz(start, timezone).locale(locale).format('L'),
-                        dateEnd: moment.tz(end, timezone).locale(locale).format('L'),
+                        dateStart: moment.tz(summaryReport.start, timezone).locale(locale).format('L'),
+                        dateEnd: moment.tz(summaryReport.end, timezone).locale(locale).format('L'),
                         locations: null,
                         optimizations: null,
                         budget: {

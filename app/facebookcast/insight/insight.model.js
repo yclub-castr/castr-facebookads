@@ -685,7 +685,7 @@ const demographicFormatter = (demographicRecords, locale) => {
     return report;
 };
 
-const summaryFormatter = (insightsRecords, demographicRecords, locale) => {
+const summaryFormatter = (insightsRecords, demographicRecords, locale, timezone) => {
     const report = {
         amountSpent: 0,
         budget: { facebook: 0, instagram: 0, audience_network: 0 },
@@ -716,7 +716,10 @@ const summaryFormatter = (insightsRecords, demographicRecords, locale) => {
             purchases: [],
         },
     };
+    const dates = [];
     insightsRecords.forEach((record) => {
+        const date = moment.tz(record.date, timezone).format('YYYY/MM/DD');
+        if (!dates.includes(date)) dates.push(date);
         report.budget[record.platform] += record.spend;
         report.reach += record.reach;
         report.impressions += record.impressions;
@@ -731,6 +734,9 @@ const summaryFormatter = (insightsRecords, demographicRecords, locale) => {
         report.responses.search += record.search;
         report.responses.viewContent += record.viewContent;
     });
+    dates.sort();
+    report.start = moment.tz(dates[0], 'YYYY/MM/DD', timezone);
+    report.end = moment.tz(dates[dates.length - 1], 'YYYY/MM/DD', timezone);
     report.amountSpent = Object.values(report.budget).reduce((a, b) => a + b);
     report.responses.total = Object.values(report.responses).reduce((a, b) => a + b);
     const demographicSummary = {};
