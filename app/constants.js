@@ -8,6 +8,8 @@ const locale = {
 
 const zeroBasedCurrencies = ['KRW', 'JPY'];
 
+const platforms = ['Android', 'Windows', 'Windows Phone', 'iOS'];
+
 const koreanRegionMap = {
     Unknown: {
         name_kr: '알수없음',
@@ -220,3 +222,4 @@ exports.fullDayMilliseconds = fullDayMilliseconds;
 exports.koreanRegionMap = koreanRegionMap;
 exports.getSamplePromotion = getSamplePromotion;
 exports.currencyOffset = currency => (zeroBasedCurrencies.includes(currency)) ? 0 : 2;
+exports.platforms = platforms;

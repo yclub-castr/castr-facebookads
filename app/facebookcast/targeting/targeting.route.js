@@ -4,6 +4,7 @@
 
 const express = require('express');
 const locale = require('../../constants').locale;
+const constants = require('../../constants');
 const targetingService = require('./targeting.service');
 
 const router = express.Router();
@@ -76,40 +77,50 @@ router.get('/radius', async (req, res, next) => {
     }
 });
 
-// Not being used
-router.get('/country', async (req, res, next) => {
+router.get('/behavior', async (req, res, next) => {
     try {
         const params = {
             query: req.query.q,
             locale: locale(req.query.locale),
         };
-        res.json(await targetingService.searchCountries(params));
+        res.json(await targetingService.searchBehaviors(params));
     } catch (err) {
         next(err);
     }
 });
 
-// Not being used
-router.get('/region', async (req, res, next) => {
+router.get('/language', async (req, res, next) => {
     try {
         const params = {
             query: req.query.q,
             locale: locale(req.query.locale),
         };
-        res.json(await targetingService.searchRegions(params));
+        res.json(await targetingService.searchLanguages(params));
     } catch (err) {
         next(err);
     }
 });
 
-// Not being used
-router.get('/city', async (req, res, next) => {
+router.get('/device', async (req, res, next) => {
     try {
         const params = {
             query: req.query.q,
             locale: locale(req.query.locale),
         };
-        res.json(await targetingService.searchCities(params));
+        res.json(await targetingService.searchDevices(params));
+    } catch (err) {
+        next(err);
+    }
+});
+
+router.get('/os', async (req, res, next) => {
+    try {
+        const params = {
+            platform: req.query.platform,
+            locale: locale(req.query.locale),
+        };
+        if (params.platform && !constants.platforms.includes(params.platform)) throw new Error(`Invalid param: 'platfrom' must be one of the following (${constants.platforms})`);
+        res.json(await targetingService.searchOs(params));
     } catch (err) {
         next(err);
     }

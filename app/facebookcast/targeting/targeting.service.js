@@ -134,6 +134,90 @@ class TargetingService {
         }
     }
 
+    async searchBehaviors(params) {
+        const searchParams = {
+            type: 'adTargetingCategory',
+            class: 'behaviors',
+            locale: params.locale,
+            limit: 20,
+        };
+        try {
+            const fbResponse = await fbRequest.get('search', null, searchParams);
+            logger.debug(`${fbResponse.data.length} behaviors found`);
+            const response = fbResponse.data.map(behavior => ({
+                id: behavior.id,
+                name: behavior.name,
+                audienceSize: behavior.audience_size,
+            }));
+            return response.sort((a, b) => parseInt(b.audienceSize, 10) - parseInt(a.audienceSize, 10));
+        } catch (err) {
+            throw err;
+        }
+    }
+
+    async searchLanguages(params) {
+        const searchParams = {
+            type: 'adlocale',
+            q: params.query,
+            locale: params.locale,
+            limit: 20,
+        };
+        try {
+            const fbResponse = await fbRequest.get('search', null, searchParams);
+            logger.debug(`${fbResponse.data.length} languages found for query (${params.query})`);
+            const response = fbResponse.data.map(interest => ({
+                key: interest.key,
+                name: interest.name,
+            }));
+            return response.sort((a, b) => parseInt(a.key, 10) - parseInt(b.key, 10));
+        } catch (err) {
+            throw err;
+        }
+    }
+
+    async searchDevices(params) {
+        const searchParams = {
+            type: 'adTargetingCategory',
+            class: 'user_device',
+            locale: params.locale,
+            limit: 20,
+        };
+        try {
+            const fbResponse = await fbRequest.get('search', null, searchParams);
+            logger.debug(`${fbResponse.data.length} devices found`);
+            const response = fbResponse.data.map(device => ({
+                platform: device.platform,
+                name: device.name,
+                audienceSize: device.audience_size,
+            }));
+            return response.sort((a, b) => parseInt(b.audienceSize, 10) - parseInt(a.audienceSize, 10));
+        } catch (err) {
+            throw err;
+        }
+    }
+
+    async searchOs(params) {
+        const searchParams = {
+            type: 'adTargetingCategory',
+            class: 'user_os',
+            locale: params.locale,
+            limit: 20,
+        };
+        try {
+            const fbResponse = await fbRequest.get('search', null, searchParams);
+            logger.debug(`${fbResponse.data.length} os found`);
+            const response = fbResponse.data
+                .filter(os => !params.platform || os.platform === params.platform)
+                .map(os => ({
+                    platform: os.platform,
+                    list: os.description.split(';'),
+                }));
+            return response;
+        } catch (err) {
+            throw err;
+        }
+    }
+
     async getSuggestedRadius(params) {
         const distanceUnit = (params.locale === 'en_US') ? 'mile' : 'kilometer';
         const searchParams = {
@@ -147,66 +231,6 @@ class TargetingService {
             const fbResponse = await fbRequest.get('search', null, searchParams);
             logger.debug(`${fbResponse.data[0].suggested_radius} ${distanceUnit} suggested around coordinate (${params.lat}, ${params.long})`);
             return fbResponse.data;
-        } catch (err) {
-            throw err;
-        }
-    }
-
-    // Not being used
-    async searchCountries(params) {
-        const searchParams = {
-            type: 'adgeolocation',
-            q: params.query,
-            location_types: ['country'],
-            locale: params.locale,
-        };
-        try {
-            const fbResponse = await fbRequest.get('search', null, searchParams);
-            logger.debug(`${fbResponse.data.length} countries found for query (${params.query})`);
-            return fbResponse.data;
-        } catch (err) {
-            throw err;
-        }
-    }
-
-    // Not being used
-    async searchRegions(params) {
-        const searchParams = {
-            type: 'adgeolocation',
-            q: params.query,
-            location_types: ['region'],
-            locale: params.locale,
-        };
-        try {
-            const fbResponse = await fbRequest.get('search', null, searchParams);
-            logger.debug(`${fbResponse.data.length} regions found for query (${params.query})`);
-            return fbResponse.data;
-        } catch (err) {
-            throw err;
-        }
-    }
-
-    // Not being used
-    async searchCities(params) {
-        const searchParams = {
-            type: 'adgeolocation',
-            q: params.query,
-            location_types: ['city'],
-            locale: params.locale,
-        };
-        try {
-            const fbResponse = await fbRequest.get('search', null, searchParams);
-            logger.debug(`${fbResponse.data.length} cities found for query (${params.query})`);
-            return fbResponse.data;
-        } catch (err) {
-            throw err;
-        }
-    }
-
-    async generateTargetingSpec(castrLocid) {
-        try {
-            const i = 1;
-            return (i > 2) ? null : null;
         } catch (err) {
             throw err;
         }
