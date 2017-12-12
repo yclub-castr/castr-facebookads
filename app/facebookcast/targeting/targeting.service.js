@@ -5,7 +5,10 @@
 const fs = require('fs');
 const path = require('path');
 const logger = require('../../utils').logger();
+const constants = require('../../constants');
 const fbRequest = require('../fbapi');
+
+const Os = constants.Os;
 
 function korLocDecoder(params) {
     const query = params.query;
@@ -135,11 +138,11 @@ class TargetingService {
     }
 
     async searchBehaviors(params) {
+        const query = params.query;
         const searchParams = {
             type: 'adTargetingCategory',
             class: 'behaviors',
             locale: params.locale,
-            limit: 20,
         };
         try {
             const fbResponse = await fbRequest.get('search', null, searchParams);
@@ -149,7 +152,9 @@ class TargetingService {
                 name: behavior.name,
                 audienceSize: behavior.audience_size,
             }));
-            return response.sort((a, b) => parseInt(b.audienceSize, 10) - parseInt(a.audienceSize, 10));
+            const queryFiltered = response.filter(behavior => behavior.name.match(new RegExp(query, 'gi')));
+            logger.debug(`${queryFiltered.length} behaviors match query`);
+            return queryFiltered.sort((a, b) => parseInt(b.audienceSize, 10) - parseInt(a.audienceSize, 10));
         } catch (err) {
             throw err;
         }
@@ -176,11 +181,12 @@ class TargetingService {
     }
 
     async searchDevices(params) {
+        const os = Os[params.os];
+        const query = params.query;
         const searchParams = {
             type: 'adTargetingCategory',
             class: 'user_device',
             locale: params.locale,
-            limit: 20,
         };
         try {
             const fbResponse = await fbRequest.get('search', null, searchParams);
@@ -190,27 +196,31 @@ class TargetingService {
                 name: device.name,
                 audienceSize: device.audience_size,
             }));
-            return response.sort((a, b) => parseInt(b.audienceSize, 10) - parseInt(a.audienceSize, 10));
+            const platformFiltered = response.filter(device => !os || device.platform === os);
+            logger.debug(`${platformFiltered.length} devices match platform`);
+            const queryFiltered = platformFiltered.filter(device => device.name.match(new RegExp(query, 'gi')));
+            logger.debug(`${queryFiltered.length} devices match query`);
+            return queryFiltered.sort((a, b) => parseInt(b.audienceSize, 10) - parseInt(a.audienceSize, 10));
         } catch (err) {
             throw err;
         }
     }
 
-    async searchOs(params) {
+    async searchOsVers(params) {
+        const os = Os[params.os];
         const searchParams = {
             type: 'adTargetingCategory',
             class: 'user_os',
             locale: params.locale,
-            limit: 20,
         };
         try {
             const fbResponse = await fbRequest.get('search', null, searchParams);
             logger.debug(`${fbResponse.data.length} os found`);
             const response = fbResponse.data
-                .filter(os => !params.platform || os.platform === params.platform)
-                .map(os => ({
-                    platform: os.platform,
-                    list: os.description.split(';'),
+                .filter(userOs => !os || userOs.platform === os)
+                .map(userOs => ({
+                    platform: userOs.platform,
+                    list: userOs.description.split(';'),
                 }));
             return response;
         } catch (err) {

@@ -104,23 +104,25 @@ router.get('/language', async (req, res, next) => {
 router.get('/device', async (req, res, next) => {
     try {
         const params = {
+            os: req.query.os,
             query: req.query.q,
             locale: locale(req.query.locale),
         };
+        if (params.os && !constants.Os.hasOwnProperty(params.os)) throw new Error(`Invalid param: 'os' must be one of the following (${Object.keys(constants.Os)})`);
         res.json(await targetingService.searchDevices(params));
     } catch (err) {
         next(err);
     }
 });
 
-router.get('/os', async (req, res, next) => {
+router.get('/os-versions', async (req, res, next) => {
     try {
         const params = {
-            platform: req.query.platform,
+            os: req.query.os,
             locale: locale(req.query.locale),
         };
-        if (params.platform && !constants.platforms.includes(params.platform)) throw new Error(`Invalid param: 'platfrom' must be one of the following (${constants.platforms})`);
-        res.json(await targetingService.searchOs(params));
+        if (params.os && !constants.Os.hasOwnProperty(params.os)) throw new Error(`Invalid param: 'os' must be one of the following (${Object.keys(constants.Os)})`);
+        res.json(await targetingService.searchOsVers(params));
     } catch (err) {
         next(err);
     }
