@@ -6,9 +6,15 @@ const fs = require('fs');
 const path = require('path');
 const logger = require('../../utils').logger();
 const constants = require('../../constants');
+const translation = require('../../translation');
 const fbRequest = require('../fbapi');
 
 const Os = constants.Os;
+const PublisherPlatform = constants.PublisherPlatform;
+const FacebookPosition = constants.FacebookPosition;
+const InstagramPosition = constants.InstagramPosition;
+const AudienceNetworkPosition = constants.AudienceNetworkPosition;
+const MessengerPosition = constants.MessengerPosition;
 
 function korLocDecoder(params) {
     const query = params.query;
@@ -223,6 +229,41 @@ class TargetingService {
                     list: userOs.description.split(';'),
                 }));
             return response;
+        } catch (err) {
+            throw err;
+        }
+    }
+
+    async getPublisherPlatforms(params) {
+        const locale = params.locale;
+        try {
+            const platforms = Object.keys(PublisherPlatform);
+            const positions = {
+                facebook: Object.keys(FacebookPosition),
+                instagram: Object.keys(InstagramPosition),
+                audienceNetwork: Object.keys(AudienceNetworkPosition),
+                messenger: Object.keys(MessengerPosition),
+            };
+            const platformPositions = [];
+            platforms.forEach((platform) => {
+                const platformPosition = {
+                    key: platform,
+                    name: translation.platformPositionTrans[platform][locale],
+                    positions: [],
+                };
+                positions[platform].forEach((position) => {
+                    // platformPositions[platform].positions[position] = {
+                    //     key: position,
+                    //     name: translation.platformPositionTrans[position][locale],
+                    // };
+                    platformPosition.positions.push({
+                        key: position,
+                        name: translation.platformPositionTrans[position][locale],
+                    });
+                });
+                platformPositions.push(platformPosition);
+            });
+            return platformPositions;
         } catch (err) {
             throw err;
         }

@@ -15,6 +15,31 @@ const Os = {
     ios: 'iOS',
 };
 
+const PublisherPlatform = {
+    facebook: 'facebook',
+    instagram: 'instagram',
+    audienceNetwork: 'audience_network',
+    messenger: 'messenger',
+};
+const FacebookPosition = {
+    feed: 'feed',
+    instantArticle: 'instant_article',
+    instreamVideo: 'instream_video',
+    rightHandColumn: 'right_hand_column',
+    suggestedVideo: 'suggested_video',
+};
+const InstagramPosition = {
+    stream: 'stream',
+};
+const AudienceNetworkPosition = {
+    classic: 'classic',
+    instreamVideo: 'instream_video',
+    rewardedVideo: 'rewarded_video',
+};
+const MessengerPosition = {
+    messengerHome: 'messenger_home',
+};
+
 const koreanRegionMap = {
     Unknown: {
         name_kr: '알수없음',
@@ -228,3 +253,8 @@ exports.koreanRegionMap = koreanRegionMap;
 exports.getSamplePromotion = getSamplePromotion;
 exports.currencyOffset = currency => (zeroBasedCurrencies.includes(currency)) ? 0 : 2;
 exports.Os = Os;
+exports.PublisherPlatform = PublisherPlatform;
+exports.FacebookPosition = FacebookPosition;
+exports.InstagramPosition = InstagramPosition;
+exports.AudienceNetworkPosition = AudienceNetworkPosition;
+exports.MessengerPosition = MessengerPosition;
