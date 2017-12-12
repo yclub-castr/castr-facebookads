@@ -4,7 +4,6 @@
 
 const logger = require('../../utils').logger();
 const fbRequest = require('../fbapi');
-const uuidv4 = require('uuid/v4');
 const ProjectModel = require('../project/project.model').Model;
 const AdSetModel = require('../adset/adset.model').Model;
 
@@ -18,7 +17,6 @@ class EstimateService {
             if (adsetIds) {
                 const adsetIdArray = adsetIds.split(',');
                 logger.debug(`Getting estimates for ${adsetIdArray.length} adsets...`);
-                const uuid = uuidv4();
                 const adsets = await AdSetModel.find({ id: { $in: adsetIdArray } }, fields.join(' '));
                 data = await Promise.all(adsets.map((adset) => {
                     const adsetId = adset.id;
