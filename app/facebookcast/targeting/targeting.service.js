@@ -252,10 +252,6 @@ class TargetingService {
                     positions: [],
                 };
                 positions[platform].forEach((position) => {
-                    // platformPositions[platform].positions[position] = {
-                    //     key: position,
-                    //     name: translation.platformPositionTrans[position][locale],
-                    // };
                     platformPosition.positions.push({
                         key: position,
                         name: translation.platformPositionTrans[position][locale],
