@@ -81,7 +81,7 @@ class InsightService {
                 }
 
                 // Fetch insights
-                const dateQuery = (summary && !dateRange) ? {} : { $and: [{ date: { $gte: start.toDate() } }, { date: { $lte: end.toDate() } }] }
+                const dateQuery = (summary && !dateRange) ? {} : { $and: [{ date: { $gte: start.toDate() } }, { date: { $lte: end.toDate() } }] };
                 const insightsQuery = Object.assign(dateQuery, query);
                 const insightsRecords = await PlatformModel.find(insightsQuery);
                 const demographicRecords = await DemographicModel.find(insightsQuery);
@@ -271,7 +271,7 @@ class InsightService {
             const insightsQuery = Object.assign({}, query);
             insightsQuery.$and = [{ date: { $gte: start } }, { date: { $lte: end } }];
             const platformRecords = await PlatformModel.find(query);
-            const demographicRecords = await DemographicModel.find(query);
+            // const demographicRecords = await DemographicModel.find(query);
 
             if (!promotionIds) {
                 promotionIds = [];
@@ -296,7 +296,7 @@ class InsightService {
                 data: {
                     currency: currency,
                     promotions: report,
-                }
+                },
             };
         } catch (err) {
             throw err;
