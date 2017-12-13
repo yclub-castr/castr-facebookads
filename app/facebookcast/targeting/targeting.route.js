@@ -139,6 +139,17 @@ router.get('/publisher-platforms', async (req, res, next) => {
     }
 });
 
+router.get('/excluded-categories', async (req, res, next) => {
+    try {
+        const params = {
+            locale: req.query.locale,
+        };
+        res.json(await targetingService.getPublisherCategories(params));
+    } catch (err) {
+        next(err);
+    }
+});
+
 router.get('/location-sample', async (req, res, next) => {
     try {
         res.json(await targetingService.locationSample(req.query.castrLocId));

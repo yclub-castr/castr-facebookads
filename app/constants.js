@@ -40,6 +40,14 @@ const MessengerPosition = {
     messengerHome: 'messenger_home',
 };
 
+const PublisherCategory = {
+    controversial: 'debated_social_issues',
+    mature: 'mature_audiences',
+    tragic: 'tragedy_and_conflict',
+    dating: 'dating',
+    gambling: 'gambling',
+};
+
 const koreanRegionMap = {
     Unknown: {
         name_kr: '알수없음',
@@ -258,3 +266,4 @@ exports.FacebookPosition = FacebookPosition;
 exports.InstagramPosition = InstagramPosition;
 exports.AudienceNetworkPosition = AudienceNetworkPosition;
 exports.MessengerPosition = MessengerPosition;
+exports.PublisherCategory = PublisherCategory;

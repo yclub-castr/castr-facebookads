@@ -15,6 +15,7 @@ const FacebookPosition = constants.FacebookPosition;
 const InstagramPosition = constants.InstagramPosition;
 const AudienceNetworkPosition = constants.AudienceNetworkPosition;
 const MessengerPosition = constants.MessengerPosition;
+const PublisherCategory = constants.PublisherCategory;
 
 function korLocDecoder(params) {
     const query = params.query;
@@ -260,6 +261,19 @@ class TargetingService {
                 platformPositions.push(platformPosition);
             });
             return platformPositions;
+        } catch (err) {
+            throw err;
+        }
+    }
+
+    async getPublisherCategories(params) {
+        const locale = params.locale;
+        try {
+            const categories = Object.keys(PublisherCategory);
+            return categories.map(category => ({
+                key: category,
+                name: translation.publisherCategoryTrans[category][locale],
+            }));
         } catch (err) {
             throw err;
         }

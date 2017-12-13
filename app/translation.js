@@ -53,4 +53,28 @@ const platformPositionTrans = {
     },
 };
 
+const publisherCategoryTrans = {
+    dating: {
+        us: 'Dating',
+        kr: '데이트',
+    },
+    gambling: {
+        us: 'Gambling',
+        kr: '도박',
+    },
+    controversial: {
+        us: 'Debated Social Issues',
+        kr: '논란의 여지가 있는 사회 문제',
+    },
+    mature: {
+        us: 'Mature',
+        kr: '성인용',
+    },
+    tragic: {
+        us: 'Tragedy & Conflict',
+        kr: '참사 및 분쟁',
+    },
+};
+
 exports.platformPositionTrans = platformPositionTrans;
+exports.publisherCategoryTrans = publisherCategoryTrans;
