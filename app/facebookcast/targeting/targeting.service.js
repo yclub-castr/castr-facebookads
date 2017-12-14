@@ -7,7 +7,9 @@ const path = require('path');
 const logger = require('../../utils').logger();
 const constants = require('../../constants');
 const translation = require('../../translation');
+const ProjectModel = require('../project/project.model').Model;
 const fbRequest = require('../fbapi');
+const Locale = require('../../constants').locale;
 
 const Os = constants.Os;
 const PublisherPlatform = constants.PublisherPlatform;
@@ -16,6 +18,8 @@ const InstagramPosition = constants.InstagramPosition;
 const AudienceNetworkPosition = constants.AudienceNetworkPosition;
 const MessengerPosition = constants.MessengerPosition;
 const PublisherCategory = constants.PublisherCategory;
+
+const SEARCH_LIMIT = 1000;
 
 function korLocDecoder(params) {
     const query = params.query;
@@ -76,17 +80,61 @@ function korLocDecoder(params) {
 }
 
 class TargetingService {
-    async searchInterests(params) {
+    async searchKeywords(params, options) {
+        const castrBizId = params.castrBizId;
+        let accountId = params.accountId;
+        const query = params.query;
+        const locale = params.locale;
+        try {
+            if (!accountId) {
+                const project = await ProjectModel.findOne({ castrBizId: castrBizId });
+                if (!project) throw new Error(`No such Business (#${castrBizId})`);
+                accountId = project.accountId;
+            }
+            logger.debug(`Getting keywords for Business (#${castrBizId}) ...`);
+            const fbResponse = await fbRequest.get(accountId, 'targetingbrowse', { locale: Locale(locale) });
+            logger.debug(`${fbResponse.data.length} keywords found`);
+            const queryFiltered = fbResponse.data.filter(keyword => keyword.name.match(new RegExp(query, 'gi')));
+            logger.debug(`${queryFiltered.length} keywords match '${query}'`);
+            const typeKeyMap = {};
+            Object.keys(constants.KeywordType).forEach((key) => {
+                typeKeyMap[constants.KeywordType[key]] = key;
+            });
+            const formatted = queryFiltered.map((keyword) => {
+                if (options && options.raw) return keyword;
+                return {
+                    id: keyword.id,
+                    name: keyword.name,
+                    keywordType: translation.keywordTypeTrans[typeKeyMap[keyword.type]][locale],
+                    type: typeKeyMap[keyword.type],
+                    audienceSize: keyword.audience_size,
+                };
+            });
+            let result;
+            if (options && options.sort) result = formatted.sort((a, b) => parseInt(b.audienceSize, 10) - parseInt(a.audienceSize, 10));
+            else result = formatted;
+            return {
+                success: true,
+                message: `${result.length} keywords found`,
+                data: result,
+            };
+        } catch (err) {
+            throw err;
+        }
+    }
+
+    async searchInterests(params, options) {
         const searchParams = {
             type: 'adinterest',
             q: params.query,
             locale: params.locale,
-            limit: 20,
+            limit: SEARCH_LIMIT,
         };
         try {
             const fbResponse = await fbRequest.get('search', null, searchParams);
             logger.debug(`${fbResponse.data.length} interests found for query (${params.query})`);
             const response = fbResponse.data.map((interest) => {
+                if (options && options.raw) return interest;
                 let name = interest.name;
                 if (interest.disambiguation_category) {
                     name += `, ${interest.disambiguation_category}`;
@@ -97,7 +145,151 @@ class TargetingService {
                     audienceSize: interest.audience_size,
                 };
             });
-            return response.sort((a, b) => parseInt(b.audienceSize, 10) - parseInt(a.audienceSize, 10));
+            if (options && options.sort) return response.sort((a, b) => parseInt(b.audienceSize, 10) - parseInt(a.audienceSize, 10));
+            return response;
+        } catch (err) {
+            throw err;
+        }
+    }
+
+    async searchBehaviors(params, options) {
+        const query = params.query;
+        const searchParams = {
+            type: 'adTargetingCategory',
+            class: 'behaviors',
+            locale: params.locale,
+        };
+        try {
+            const fbResponse = await fbRequest.get('search', null, searchParams);
+            logger.debug(`${fbResponse.data.length} behaviors found`);
+            const response = fbResponse.data.map((behavior) => {
+                if (options && options.raw) return behavior;
+                return {
+                    id: behavior.id,
+                    name: behavior.name,
+                    audienceSize: behavior.audience_size,
+                };
+            });
+            const queryFiltered = response.filter(behavior => behavior.name.match(new RegExp(query, 'gi')));
+            logger.debug(`${queryFiltered.length} behaviors match query`);
+            if (options && options.sort) return queryFiltered.sort((a, b) => parseInt(b.audienceSize, 10) - parseInt(a.audienceSize, 10));
+            return queryFiltered;
+        } catch (err) {
+            throw err;
+        }
+    }
+
+    async searchSchools(params, options) {
+        const searchParams = {
+            type: 'adeducationschool',
+            q: params.query,
+            locale: params.locale,
+            limit: SEARCH_LIMIT,
+        };
+        try {
+            const fbResponse = await fbRequest.get('search', null, searchParams);
+            logger.debug(`${fbResponse.data.length} schools found for query (${params.query})`);
+            const response = fbResponse.data.map((school) => {
+                if (options && options.raw) return school;
+                let name = school.name;
+                if (school.disambiguation_category) {
+                    name += `, ${school.disambiguation_category}`;
+                }
+                return {
+                    id: school.id,
+                    name: name,
+                    audienceSize: school.audience_size,
+                };
+            });
+            if (options && options.sort) return response.sort((a, b) => parseInt(b.audienceSize, 10) - parseInt(a.audienceSize, 10));
+            return response;
+        } catch (err) {
+            throw err;
+        }
+    }
+
+    async searchMajors(params, options) {
+        const searchParams = {
+            type: 'adeducationmajor',
+            q: params.query,
+            locale: params.locale,
+            limit: SEARCH_LIMIT,
+        };
+        try {
+            const fbResponse = await fbRequest.get('search', null, searchParams);
+            logger.debug(`${fbResponse.data.length} majors found for query (${params.query})`);
+            const response = fbResponse.data.map((major) => {
+                if (options && options.raw) return major;
+                let name = major.name;
+                if (major.disambiguation_category) {
+                    name += `, ${major.disambiguation_category}`;
+                }
+                return {
+                    id: major.id,
+                    name: name,
+                    audienceSize: major.audience_size,
+                };
+            });
+            if (options && options.sort) return response.sort((a, b) => parseInt(b.audienceSize, 10) - parseInt(a.audienceSize, 10));
+            return response;
+        } catch (err) {
+            throw err;
+        }
+    }
+
+    async searchEmployers(params, options) {
+        const searchParams = {
+            type: 'adworkemployer',
+            q: params.query,
+            locale: params.locale,
+            limit: SEARCH_LIMIT,
+        };
+        try {
+            const fbResponse = await fbRequest.get('search', null, searchParams);
+            logger.debug(`${fbResponse.data.length} employers found for query (${params.query})`);
+            const response = fbResponse.data.map((employer) => {
+                if (options && options.raw) return employer;
+                let name = employer.name;
+                if (employer.disambiguation_category) {
+                    name += `, ${employer.disambiguation_category}`;
+                }
+                return {
+                    id: employer.id,
+                    name: name,
+                    audienceSize: employer.audience_size,
+                };
+            });
+            if (options && options.sort) return response.sort((a, b) => parseInt(b.audienceSize, 10) - parseInt(a.audienceSize, 10));
+            return response;
+        } catch (err) {
+            throw err;
+        }
+    }
+
+    async searchJobTitles(params, options) {
+        const searchParams = {
+            type: 'adworkposition',
+            q: params.query,
+            locale: params.locale,
+            limit: SEARCH_LIMIT,
+        };
+        try {
+            const fbResponse = await fbRequest.get('search', null, searchParams);
+            logger.debug(`${fbResponse.data.length} jobs found for query (${params.query})`);
+            const response = fbResponse.data.map((job) => {
+                if (options && options.raw) return job;
+                let name = job.name;
+                if (job.disambiguation_category) {
+                    name += `, ${job.disambiguation_category}`;
+                }
+                return {
+                    id: job.id,
+                    name: name,
+                    audienceSize: job.audience_size,
+                };
+            });
+            if (options && options.sort) return response.sort((a, b) => parseInt(b.audienceSize, 10) - parseInt(a.audienceSize, 10));
+            return response;
         } catch (err) {
             throw err;
         }
@@ -138,30 +330,11 @@ class TargetingService {
                     type: loc.type,
                 };
             });
-            return response;
-        } catch (err) {
-            throw err;
-        }
-    }
-
-    async searchBehaviors(params) {
-        const query = params.query;
-        const searchParams = {
-            type: 'adTargetingCategory',
-            class: 'behaviors',
-            locale: params.locale,
-        };
-        try {
-            const fbResponse = await fbRequest.get('search', null, searchParams);
-            logger.debug(`${fbResponse.data.length} behaviors found`);
-            const response = fbResponse.data.map(behavior => ({
-                id: behavior.id,
-                name: behavior.name,
-                audienceSize: behavior.audience_size,
-            }));
-            const queryFiltered = response.filter(behavior => behavior.name.match(new RegExp(query, 'gi')));
-            logger.debug(`${queryFiltered.length} behaviors match query`);
-            return queryFiltered.sort((a, b) => parseInt(b.audienceSize, 10) - parseInt(a.audienceSize, 10));
+            return {
+                success: true,
+                message: `${response.length} locations found`,
+                data: response,
+            };
         } catch (err) {
             throw err;
         }
@@ -172,7 +345,7 @@ class TargetingService {
             type: 'adlocale',
             q: params.query,
             locale: params.locale,
-            limit: 20,
+            limit: SEARCH_LIMIT,
         };
         try {
             const fbResponse = await fbRequest.get('search', null, searchParams);
@@ -181,7 +354,30 @@ class TargetingService {
                 key: interest.key,
                 name: interest.name,
             }));
-            return response.sort((a, b) => parseInt(a.key, 10) - parseInt(b.key, 10));
+            return {
+                success: true,
+                message: `${response.length} langauges found`,
+                data: response.sort((a, b) => parseInt(a.key, 10) - parseInt(b.key, 10)),
+            };
+        } catch (err) {
+            throw err;
+        }
+    }
+
+    async getConnections(params) {
+        const castrBizId = params.castrBizId;
+        try {
+            const project = await ProjectModel.findOne({ castrBizId: castrBizId });
+            if (!project) throw new Error(`No such Business (#${castrBizId})`);
+            return {
+                success: true,
+                message: null,
+                data: [{
+                    id: project.pageId,
+                    name: project.pageName,
+                    objType: 'PAGE',
+                }],
+            };
         } catch (err) {
             throw err;
         }
@@ -207,7 +403,11 @@ class TargetingService {
             logger.debug(`${platformFiltered.length} devices match platform`);
             const queryFiltered = platformFiltered.filter(device => device.name.match(new RegExp(query, 'gi')));
             logger.debug(`${queryFiltered.length} devices match query`);
-            return queryFiltered.sort((a, b) => parseInt(b.audienceSize, 10) - parseInt(a.audienceSize, 10));
+            return {
+                success: true,
+                message: `${queryFiltered.length} ${os} devices found`,
+                data: queryFiltered.sort((a, b) => parseInt(b.audienceSize, 10) - parseInt(a.audienceSize, 10)),
+            };
         } catch (err) {
             throw err;
         }
@@ -229,7 +429,11 @@ class TargetingService {
                     platform: userOs.platform,
                     list: userOs.description.split(';'),
                 }));
-            return response;
+            return {
+                success: true,
+                message: `${response.length} ${os} versions fetched`,
+                data: response,
+            };
         } catch (err) {
             throw err;
         }
@@ -260,7 +464,11 @@ class TargetingService {
                 });
                 platformPositions.push(platformPosition);
             });
-            return platformPositions;
+            return {
+                success: true,
+                message: `${platformPositions.length} publisher platforms fetched`,
+                data: platformPositions,
+            };
         } catch (err) {
             throw err;
         }
@@ -270,10 +478,14 @@ class TargetingService {
         const locale = params.locale;
         try {
             const categories = Object.keys(PublisherCategory);
-            return categories.map(category => ({
-                key: category,
-                name: translation.publisherCategoryTrans[category][locale],
-            }));
+            return {
+                success: true,
+                message: `${categories.length} publisher categories fetched`,
+                data: categories.map(category => ({
+                    key: category,
+                    name: translation.publisherCategoryTrans[category][locale],
+                })),
+            };
         } catch (err) {
             throw err;
         }
@@ -292,6 +504,55 @@ class TargetingService {
             const fbResponse = await fbRequest.get('search', null, searchParams);
             logger.debug(`${fbResponse.data[0].suggested_radius} ${distanceUnit} suggested around coordinate (${params.lat}, ${params.long})`);
             return fbResponse.data;
+        } catch (err) {
+            throw err;
+        }
+    }
+
+    async getPredefinedInterests(params) {
+        const type = params.type;
+        const industryId = params.industryId;
+        const businessIds = params.businessIds;
+        const locale = params.locale;
+        try {
+            const dir = path.join(__dirname, 'interests', locale);
+            let responseBucket = [];
+            const files = fs.readdirSync(dir);
+            for (let i = 0; i < files.length; i++) {
+                const industry = Object.assign({}, require(path.join(dir, files[i]))); // eslint-disable-line
+                if (type === 'INDUSTRY') {
+                    delete industry.businessType;
+                    responseBucket.push(industry);
+                } else if (type === 'BUSINESS') {
+                    if (industry.id === industryId) {
+                        responseBucket = industry.businessType;
+                        break;
+                    }
+                } else if (type === 'DETAIL') {
+                    if (industry.id === industryId) {
+                        const businessTypes = industry.businessType;
+                        const flagged = [];
+                        for (let j = 0; j < businessTypes.length; j++) {
+                            const businessType = businessTypes[j];
+                            if (businessIds.includes(businessType.id)) {
+                                const keywords = businessType.keywords;
+                                for (let k = 0; k < keywords.length; k++) {
+                                    if (!flagged.includes(keywords[k].id)) {
+                                        responseBucket.push(keywords[k]);
+                                        flagged.push(keywords[k].id);
+                                    }
+                                }
+                            }
+                        }
+                        break;
+                    }
+                }
+            }
+            return {
+                success: true,
+                message: `Fetched ${responseBucket.length} ${type} options`,
+                data: responseBucket,
+            };
         } catch (err) {
             throw err;
         }
@@ -378,55 +639,6 @@ class TargetingService {
                 },
             },
         };
-    }
-
-    async getPredefinedInterests(params) {
-        const type = params.type;
-        const industryId = params.industryId;
-        const businessIds = params.businessIds;
-        const locale = params.locale;
-        try {
-            const dir = path.join(__dirname, 'interests', locale);
-            let responseBucket = [];
-            const files = fs.readdirSync(dir);
-            for (let i = 0; i < files.length; i++) {
-                const industry = Object.assign({}, require(path.join(dir, files[i]))); // eslint-disable-line
-                if (type === 'INDUSTRY') {
-                    delete industry.businessType;
-                    responseBucket.push(industry);
-                } else if (type === 'BUSINESS') {
-                    if (industry.id === industryId) {
-                        responseBucket = industry.businessType;
-                        break;
-                    }
-                } else if (type === 'DETAIL') {
-                    if (industry.id === industryId) {
-                        const businessTypes = industry.businessType;
-                        const flagged = [];
-                        for (let j = 0; j < businessTypes.length; j++) {
-                            const businessType = businessTypes[j];
-                            if (businessIds.includes(businessType.id)) {
-                                const keywords = businessType.keywords;
-                                for (let k = 0; k < keywords.length; k++) {
-                                    if (!flagged.includes(keywords[k].id)) {
-                                        responseBucket.push(keywords[k]);
-                                        flagged.push(keywords[k].id);
-                                    }
-                                }
-                            }
-                        }
-                        break;
-                    }
-                }
-            }
-            return {
-                success: true,
-                message: `Fetched ${responseBucket.length} ${type} options`,
-                data: responseBucket,
-            };
-        } catch (err) {
-            throw err;
-        }
     }
 }
 

@@ -36,13 +36,87 @@ router.get('/predefined-interests', async (req, res, next) => {
     }
 });
 
+router.get('/keyword', async (req, res, next) => {
+    try {
+        const params = {
+            castrBizId: req.query.castrBizId,
+            accountId: req.query.accountId,
+            query: req.query.q,
+            locale: req.query.locale,
+        };
+        res.json(await targetingService.searchKeywords(params, { raw: req.query.raw, sort: req.query.sort }));
+    } catch (err) {
+        next(err);
+    }
+});
+
 router.get('/interest', async (req, res, next) => {
     try {
         const params = {
             query: req.query.q,
             locale: locale(req.query.locale),
         };
-        res.json(await targetingService.searchInterests(params));
+        res.json(await targetingService.searchInterests(params, { raw: req.query.raw, sort: req.query.sort }));
+    } catch (err) {
+        next(err);
+    }
+});
+
+router.get('/behavior', async (req, res, next) => {
+    try {
+        const params = {
+            query: req.query.q,
+            locale: locale(req.query.locale),
+        };
+        res.json(await targetingService.searchBehaviors(params, { raw: req.query.raw, sort: req.query.sort }));
+    } catch (err) {
+        next(err);
+    }
+});
+
+router.get('/school', async (req, res, next) => {
+    try {
+        const params = {
+            query: req.query.q,
+            locale: locale(req.query.locale),
+        };
+        res.json(await targetingService.searchSchools(params, { raw: req.query.raw, sort: req.query.sort }));
+    } catch (err) {
+        next(err);
+    }
+});
+
+router.get('/major', async (req, res, next) => {
+    try {
+        const params = {
+            query: req.query.q,
+            locale: locale(req.query.locale),
+        };
+        res.json(await targetingService.searchMajors(params, { raw: req.query.raw, sort: req.query.sort }));
+    } catch (err) {
+        next(err);
+    }
+});
+
+router.get('/employer', async (req, res, next) => {
+    try {
+        const params = {
+            query: req.query.q,
+            locale: locale(req.query.locale),
+        };
+        res.json(await targetingService.searchEmployers(params, { raw: req.query.raw, sort: req.query.sort }));
+    } catch (err) {
+        next(err);
+    }
+});
+
+router.get('/job', async (req, res, next) => {
+    try {
+        const params = {
+            query: req.query.q,
+            locale: locale(req.query.locale),
+        };
+        res.json(await targetingService.searchJobTitles(params, { raw: req.query.raw, sort: req.query.sort }));
     } catch (err) {
         next(err);
     }
@@ -77,18 +151,6 @@ router.get('/radius', async (req, res, next) => {
     }
 });
 
-router.get('/behavior', async (req, res, next) => {
-    try {
-        const params = {
-            query: req.query.q,
-            locale: locale(req.query.locale),
-        };
-        res.json(await targetingService.searchBehaviors(params));
-    } catch (err) {
-        next(err);
-    }
-});
-
 router.get('/language', async (req, res, next) => {
     try {
         const params = {
@@ -96,6 +158,18 @@ router.get('/language', async (req, res, next) => {
             locale: locale(req.query.locale),
         };
         res.json(await targetingService.searchLanguages(params));
+    } catch (err) {
+        next(err);
+    }
+});
+
+router.get('/connection', async (req, res, next) => {
+    try {
+        const params = {
+            castrBizId: req.query.castrBizId,
+        };
+        if (!params.castrBizId) throw new Error('Missing param: must provide \'castrBizId\'');
+        res.json(await targetingService.getConnections(params));
     } catch (err) {
         next(err);
     }
