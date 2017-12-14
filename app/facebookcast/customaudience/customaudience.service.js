@@ -40,22 +40,27 @@ class CustomAudienceService {
             }
             logger.debug(`Getting custom audiences for Business (#${castrBizId}) ...`);
             const fbResponse = await fbRequest.get(accountId, 'customaudiences', { fields: readFields });
-            const audiences = fbResponse.data
+            const audiences = { LOOKALIKE: [], CUSTOM: [] };
+            fbResponse.data
                 .sort((a, b) => b.approximate_count - a.approximate_count)
-                .map((audience) => {
-                    if (params.detail) return audience;
-                    return {
-                        id: audience.id,
-                        name: audience.name,
-                        type: (audience.subtype === 'LOOKALIKE') ? 'LOOKALIKE' : 'CUSTOM',
-                        subtype: audience.subtype,
-                        approxSize: audience.approximate_count,
-                        isDeliverable: audience.delivery_status.code === 200,
-                    };
+                .forEach((audience) => {
+                    const type = (audience.subtype === 'LOOKALIKE') ? 'LOOKALIKE' : 'CUSTOM';
+                    if (params.detail) {
+                        audiences[type].push(audience);
+                    } else {
+                        audiences[type].push({
+                            id: audience.id,
+                            name: audience.name,
+                            type: type,
+                            subtype: audience.subtype,
+                            approxSize: audience.approximate_count,
+                            isDeliverable: audience.delivery_status.code === 200,
+                        });
+                    }
                 });
             return {
                 success: true,
-                message: `${audiences.length} custom audiences fetched`,
+                message: `${audiences.LOOKALIKE.length + audiences.CUSTOM.length} custom audiences fetched`,
                 data: audiences,
             };
         } catch (err) {
