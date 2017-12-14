@@ -76,5 +76,49 @@ const publisherCategoryTrans = {
     },
 };
 
+const keywordTypeTrans = {
+    educationStats: {
+        us: 'Education Level',
+        kr: '학력',
+    },
+    householdComp: {
+        us: 'Household Composition',
+        kr: '가구 구성',
+    },
+    lifeEvents: {
+        us: 'Life Events',
+        kr: '중요 이벤트',
+    },
+    familyStats: {
+        us: 'Parents',
+        kr: '부모',
+    },
+    politics: {
+        us: 'Politics',
+        kr: '정치',
+    },
+    interestIn: {
+        us: 'Interested In',
+        kr: '관심 있는 성별',
+    },
+    relationshipStats: {
+        us: 'Relationship Status',
+        kr: '결혼/연애 상태',
+    },
+    industries: {
+        us: 'Industries',
+        kr: '업종',
+    },
+    interests: {
+        us: 'Interests',
+        kr: '관심사',
+    },
+    behaviors: {
+        us: 'Behaviors',
+        kr: '행동',
+    },
+};
+
 exports.platformPositionTrans = platformPositionTrans;
 exports.publisherCategoryTrans = publisherCategoryTrans;
+exports.keywordTypeTrans = keywordTypeTrans;
