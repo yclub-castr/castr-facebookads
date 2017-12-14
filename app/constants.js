@@ -48,6 +48,20 @@ const PublisherCategory = {
     gambling: 'gambling',
 };
 
+const KeywordType = {
+    educationStats: 'education_statuses',
+    householdComp: 'household_composition',
+    lifeEvents: 'life_events',
+    familyStats: 'family_statuses',
+    politics: 'politics',
+    interestIn: 'interested_in',
+    relationshipStats: 'relationship_statuses',
+    industries: 'industries',
+    interests: 'interests',
+    behaviors: 'behaviors',
+    adclusters: 'user_adclusters',
+};
+
 const koreanRegionMap = {
     Unknown: {
         name_kr: '알수없음',
@@ -267,3 +281,4 @@ exports.InstagramPosition = InstagramPosition;
 exports.AudienceNetworkPosition = AudienceNetworkPosition;
 exports.MessengerPosition = MessengerPosition;
 exports.PublisherCategory = PublisherCategory;
+exports.KeywordType = KeywordType;
